@@ -26,12 +26,8 @@ const ReportHeader = ({ data, onToggleHoldings, holdingsOpen }: { data: StockAna
   const downloadHtml = () => {
     const reportEl = document.querySelector('[data-report-root]');
     if (!reportEl) return;
-
-    // Clone and clean: remove nav, buttons, interactive elements
     const clone = reportEl.cloneNode(true) as HTMLElement;
     clone.querySelectorAll('button, nav, .no-print, [data-sidebar]').forEach(el => el.remove());
-
-    // Grab computed styles from the live DOM and inline them
     const inlineStyles = (source: Element, target: Element) => {
       const computed = window.getComputedStyle(source);
       const important = [
@@ -51,16 +47,13 @@ const ReportHeader = ({ data, onToggleHoldings, holdingsOpen }: { data: StockAna
         }
       }
       (target as HTMLElement).setAttribute('style', style);
-
       const sourceChildren = source.children;
       const targetChildren = target.children;
       for (let i = 0; i < sourceChildren.length && i < targetChildren.length; i++) {
         inlineStyles(sourceChildren[i], targetChildren[i]);
       }
     };
-
     inlineStyles(reportEl, clone);
-
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${data.company} — MII Engine Report</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -116,66 +109,72 @@ img,svg{max-width:100%;height:auto}
   };
 
   return (
-    <div className="bg-sidebar text-sidebar-foreground px-4 sm:px-8 pt-10 pb-8 relative overflow-hidden">
+    <div className="bg-sidebar text-sidebar-foreground px-3 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-6 sm:pb-8 relative overflow-hidden">
       <div className="absolute top-0 right-0 bottom-0 w-[40%]" style={{ background: 'linear-gradient(135deg, transparent 0%, rgba(201,168,76,0.08) 100%)' }} />
-      <div className="flex flex-col sm:flex-row justify-between items-start mb-8 relative z-10 gap-3">
-        <div>
+
+      {/* Top section: company info + actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-6 sm:mb-8 relative z-10 gap-4">
+        <div className="min-w-0">
           <p className="font-mono text-[10px] tracking-[3px] text-sidebar-primary uppercase mb-1.5">Multi-Institutional Intelligence Engine</p>
-          <h1 className="font-display text-3xl sm:text-[48px] font-black leading-none mb-1.5 tracking-tight">{data.company}</h1>
-          <p className="text-[13px] text-sidebar-foreground/50 font-light tracking-wide">{data.subtitle}</p>
+          <h1 className="font-display text-2xl sm:text-4xl lg:text-[48px] font-black leading-none mb-1.5 tracking-tight">{data.company}</h1>
+          <p className="text-[12px] sm:text-[13px] text-sidebar-foreground/50 font-light tracking-wide break-words">{data.subtitle}</p>
           <p className="font-mono text-[10px] tracking-[2px] text-sidebar-foreground/30 uppercase mt-2">{data.reportType}</p>
         </div>
-        <div className="flex flex-col items-end gap-2 shrink-0">
+
+        {/* Action buttons — horizontal row on mobile */}
+        <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-2 shrink-0 flex-wrap">
           <div className="bg-sidebar-primary text-sidebar-primary-foreground font-mono text-[11px] font-semibold tracking-[2px] px-[18px] py-2 uppercase rounded">
             {data.verdictBadge}
           </div>
           <button
             onClick={handleSaveSearch}
             disabled={saved}
-            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors disabled:text-sidebar-primary"
+            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors disabled:text-sidebar-primary p-2 touch-target"
           >
-            <Bookmark className={`h-3.5 w-3.5 ${saved ? 'fill-current' : ''}`} />
-            {saved ? "Saved" : "Save Search"}
+            <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
+            <span className="hidden sm:inline">{saved ? "Saved" : "Save"}</span>
           </button>
           <div className="relative">
             <button
               onClick={() => setShowDownload(!showDownload)}
-              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors"
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors p-2 touch-target"
             >
-              <Download className="h-3.5 w-3.5" />
-              Download
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Download</span>
             </button>
             {showDownload && (
               <div className="absolute right-0 top-full mt-1 bg-sidebar border border-sidebar-border rounded shadow-lg z-50 min-w-[140px]">
                 <button
                   onClick={downloadPdf}
-                  className="flex items-center gap-2 w-full px-3 py-2 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-3 font-mono text-[11px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors touch-target"
                 >
-                  <FileText className="h-3 w-3" /> Save as PDF
+                  <FileText className="h-4 w-4" /> Save as PDF
                 </button>
                 <button
                   onClick={downloadHtml}
-                  className="flex items-center gap-2 w-full px-3 py-2 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-3 font-mono text-[11px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors touch-target"
                 >
-                  <FileCode className="h-3 w-3" /> Save as HTML
+                  <FileCode className="h-4 w-4" /> Save as HTML
                 </button>
               </div>
             )}
           </div>
           <button
             onClick={onToggleHoldings}
-            className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] transition-colors ${holdingsOpen ? 'text-sidebar-primary' : 'text-sidebar-foreground/50 hover:text-sidebar-primary'}`}
+            className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] transition-colors p-2 touch-target ${holdingsOpen ? 'text-sidebar-primary' : 'text-sidebar-foreground/50 hover:text-sidebar-primary'}`}
           >
-            <Briefcase className={`h-3.5 w-3.5 ${holdingsOpen ? 'fill-current' : ''}`} />
-            Holdings
+            <Briefcase className={`h-4 w-4 ${holdingsOpen ? 'fill-current' : ''}`} />
+            <span className="hidden sm:inline">Holdings</span>
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-sidebar-border pt-5 mt-4 relative z-10 gap-3 sm:gap-0">
+
+      {/* Header metrics grid — 2 cols mobile, 3 cols tablet, 6 cols desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-sidebar-border pt-4 sm:pt-5 mt-4 relative z-10 gap-3">
         {data.headerMetrics.map((m, i) => (
-          <div key={i} className={`py-3 ${i < 5 ? 'sm:border-r border-sidebar-border sm:pr-5' : 'sm:pl-5'} ${i > 0 && i < 5 ? 'sm:pl-5' : ''}`}>
+          <div key={i} className="py-2 sm:py-3 lg:border-r lg:last:border-r-0 border-sidebar-border lg:px-4 first:lg:pl-0 last:lg:pr-0">
             <p className="font-mono text-[9px] tracking-[2px] text-sidebar-foreground/40 uppercase mb-1">{m.label}</p>
-            <p className="font-mono text-lg font-medium text-sidebar-foreground">{m.value}</p>
+            <p className="font-mono text-base sm:text-lg font-medium text-sidebar-foreground">{m.value}</p>
             <p className="text-[11px] text-sidebar-primary">{m.change}</p>
           </div>
         ))}

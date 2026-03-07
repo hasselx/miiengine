@@ -34,7 +34,7 @@
     --input: 30 20% 84%;
     --ring: 42 50% 54%;
 
-    --radius: 0px;
+    --radius: 0.375rem;
 
     /* Custom tokens */
     --ink: 225 33% 5%;
@@ -64,11 +64,26 @@
   * {
     @apply border-border;
   }
+  html {
+    /* Mobile-first: base 14px, scale up for larger screens */
+    font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (min-width: 640px) {
+    html { font-size: 14.5px; }
+  }
+  @media (min-width: 1024px) {
+    html { font-size: 15px; }
+  }
+  @media (min-width: 1280px) {
+    html { font-size: 15.5px; }
+  }
   body {
     @apply bg-background text-foreground;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 15.5px;
     line-height: 1.65;
+    overflow-x: hidden;
   }
 }
 
@@ -134,6 +149,11 @@
   .bg-base-light {
     background-color: hsl(var(--accent-bg));
   }
+  /* Touch-friendly tap targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 @keyframes fillBar {
@@ -153,6 +173,12 @@
   animation-play-state: paused;
 }
 
+/* Smooth scrolling for all devices */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media print {
   body { background: white !important; color: black !important; margin: 0; }
   [data-report-root] { break-inside: auto; }
@@ -161,7 +187,6 @@
 
   @page { margin: 0.5in; }
 
-  /* Print branding header */
   [data-report-root]::before {
     content: "MII ENGINE — MULTI-INSTITUTIONAL INTELLIGENCE ENGINE";
     display: block;
@@ -175,7 +200,6 @@
     margin-bottom: 16px;
   }
 
-  /* Print branding footer */
   [data-report-root]::after {
     content: "Confidential · MII Engine · miiengine.lovable.app · For informational purposes only";
     display: block;

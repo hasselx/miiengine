@@ -22,12 +22,12 @@ const EXAMPLES = [
 ];
 
 const VERDICTS = [
-  { label: "Strong Buy", color: "bg-[hsl(142,60%,35%)] text-white" },
-  { label: "Buy", color: "bg-[hsl(142,45%,45%)] text-white" },
-  { label: "Accumulate", color: "bg-[hsl(170,40%,40%)] text-white" },
-  { label: "Hold", color: "bg-[hsl(42,50%,54%)] text-foreground" },
-  { label: "Reduce", color: "bg-[hsl(25,70%,50%)] text-white" },
-  { label: "Sell", color: "bg-[hsl(0,60%,45%)] text-white" },
+  { label: "Strong Buy", color: "bg-[hsl(142,60%,35%)] text-[hsl(0,0%,100%)]" },
+  { label: "Buy", color: "bg-[hsl(142,45%,45%)] text-[hsl(0,0%,100%)]" },
+  { label: "Accumulate", color: "bg-[hsl(170,40%,40%)] text-[hsl(0,0%,100%)]" },
+  { label: "Hold", color: "bg-gold text-foreground" },
+  { label: "Reduce", color: "bg-[hsl(25,70%,50%)] text-[hsl(0,0%,100%)]" },
+  { label: "Sell", color: "bg-destructive text-destructive-foreground" },
 ];
 
 const FEATURES = [
@@ -64,22 +64,22 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-      {/* Top bar */}
-      <div className="flex justify-end px-6 py-4">
+      {/* Top bar — sticky on mobile */}
+      <div className="flex justify-end px-4 sm:px-6 py-3 sm:py-4 sticky top-0 bg-background/80 backdrop-blur-sm z-20">
         {user ? (
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/dashboard")} className="font-mono text-[11px] text-primary hover:underline flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5" />
-              My Account
+            <button onClick={() => navigate("/dashboard")} className="font-mono text-[11px] text-primary hover:underline flex items-center gap-1.5 p-2 touch-target">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">My Account</span>
             </button>
-            <button onClick={signOut} className="font-mono text-[11px] text-muted-foreground hover:text-foreground">Sign out</button>
+            <button onClick={signOut} className="font-mono text-[11px] text-muted-foreground hover:text-foreground p-2 touch-target">Sign out</button>
           </div>
         ) : (
           <button
             onClick={() => navigate("/auth")}
-            className="flex items-center gap-1.5 px-4 py-2 bg-sidebar text-sidebar-foreground font-mono text-[11px] tracking-[1px] uppercase hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-sidebar text-sidebar-foreground font-mono text-[11px] tracking-[1px] uppercase hover:opacity-90 transition-opacity rounded-md touch-target"
           >
-            <User className="h-3.5 w-3.5" />
+            <User className="h-4 w-4" />
             Sign In
           </button>
         )}
@@ -89,77 +89,77 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
       <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
         {/* Brand */}
         <div className="text-center mb-6 animate-fade-in">
-          <p className="font-mono text-[11px] tracking-[6px] uppercase text-primary mb-5">
+          <p className="font-mono text-[10px] sm:text-[11px] tracking-[4px] sm:tracking-[6px] uppercase text-primary mb-4 sm:mb-5">
             Multi-Institutional Intelligence Engine
           </p>
-          <h1 className="font-display text-6xl sm:text-7xl lg:text-[5.5rem] font-black text-foreground mb-5 tracking-tight leading-none">
+          <h1 className="font-display text-4xl sm:text-6xl lg:text-[5.5rem] font-black text-foreground mb-4 sm:mb-5 tracking-tight leading-none">
             MII Engine
           </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed px-2">
             Generate comprehensive, multi-factor stock analysis reports in seconds.
           </p>
         </div>
 
         {/* Verdict pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8 animate-fade-in" style={{ animationDelay: "0.05s" }}>
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8 animate-fade-in px-2" style={{ animationDelay: "0.05s" }}>
           {VERDICTS.map((v) => (
             <span
               key={v.label}
-              className={cn("px-3 py-1 rounded-full text-[11px] font-semibold font-mono tracking-wide", v.color)}
+              className={cn("px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-semibold font-mono tracking-wide", v.color)}
             >
               {v.label}
             </span>
           ))}
         </div>
 
-        {/* Feature Marquee — above search */}
-        <div className="w-screen mb-10 overflow-hidden animate-fade-in" style={{ animationDelay: "0.1s" }}>
+        {/* Feature Marquee */}
+        <div className="w-screen mb-8 sm:mb-10 overflow-hidden animate-fade-in" style={{ animationDelay: "0.1s" }}>
           <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10" />
-            <div className="flex animate-marquee gap-5">
+            <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-r from-background to-transparent z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-l from-background to-transparent z-10" />
+            <div className="flex animate-marquee gap-3 sm:gap-5">
               {marqueeItems.map((feat, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg whitespace-nowrap shrink-0"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-card border border-border rounded-lg whitespace-nowrap shrink-0"
                 >
                   <feat.icon className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">{feat.text}</span>
+                  <span className="text-xs sm:text-sm font-medium text-foreground">{feat.text}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Search form — single input, minimal */}
+        {/* Search form */}
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-lg animate-fade-in"
+          className="w-full max-w-lg px-2 animate-fade-in"
           style={{ animationDelay: "0.15s" }}
         >
           <div className="flex items-center bg-card border border-border rounded-lg shadow-lg overflow-hidden transition-all focus-within:border-primary focus-within:shadow-xl">
-            <div className="pl-5">
+            <div className="pl-4 sm:pl-5">
               <Search className="h-5 w-5 text-muted-foreground" />
             </div>
             <input
               placeholder="Enter stock or company name..."
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              className="flex-1 bg-transparent text-foreground text-lg font-medium outline-none placeholder:text-muted-foreground px-4 py-4"
+              className="flex-1 bg-transparent text-foreground text-base sm:text-lg font-medium outline-none placeholder:text-muted-foreground px-3 sm:px-4 py-3.5 sm:py-4"
               autoFocus
             />
             <button
               type="submit"
               disabled={isLoading || !company.trim()}
               className={cn(
-                "flex items-center gap-2 px-6 py-4 text-sm font-semibold tracking-[1.5px] uppercase transition-all",
+                "flex items-center gap-2 px-4 sm:px-6 py-3.5 sm:py-4 text-sm font-semibold tracking-[1.5px] uppercase transition-all touch-target",
                 "bg-primary text-primary-foreground hover:bg-primary/90",
                 "disabled:opacity-30 disabled:cursor-not-allowed"
               )}
             >
-              {isLoading ? "Analyzing…" : (
+              {isLoading ? "…" : (
                 <>
-                  Analyze
+                  <span className="hidden sm:inline">Analyze</span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
@@ -169,21 +169,19 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
         {/* Error */}
         {error && (
-          <p className="mt-4 text-sm text-destructive font-mono animate-fade-in">{error}</p>
+          <p className="mt-4 text-sm text-destructive font-mono animate-fade-in px-4 text-center">{error}</p>
         )}
 
         {/* Example tickers */}
-        <div className="mt-6 text-center animate-fade-in" style={{ animationDelay: "0.2s" }}>
+        <div className="mt-6 text-center animate-fade-in px-2" style={{ animationDelay: "0.2s" }}>
           <p className="text-[10px] font-mono tracking-[3px] uppercase text-muted-foreground mb-3">Try these</p>
           <div className="flex flex-wrap justify-center gap-2">
             {EXAMPLES.map((ex) => (
               <button
                 key={ex.label}
-                onClick={() => {
-                  setCompany(ex.company);
-                }}
+                onClick={() => setCompany(ex.company)}
                 disabled={isLoading}
-                className="px-3.5 py-1.5 text-xs font-mono border border-border text-muted-foreground hover:text-foreground hover:border-primary hover:bg-primary/5 rounded transition-all disabled:opacity-40"
+                className="px-3 py-2 text-xs font-mono border border-border text-muted-foreground hover:text-foreground hover:border-primary hover:bg-primary/5 rounded-md transition-all disabled:opacity-40 touch-target"
               >
                 {ex.label}
               </button>
@@ -194,15 +192,15 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
       {/* About / Features Section */}
       <div className="border-t border-border bg-card">
-        <div className="max-w-5xl mx-auto px-6 py-16">
-          <div className="grid md:grid-cols-2 gap-12 items-start">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-start">
             {/* About */}
             <div className="animate-fade-in">
               <p className="font-mono text-[10px] tracking-[4px] uppercase text-primary mb-3">About</p>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
                 What is MII Engine?
               </h2>
-              <p className="text-base text-muted-foreground leading-relaxed mb-6">
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-6">
                 MII Engine is a Multi-Institutional Intelligence platform that aggregates data from
                 multiple financial sources to deliver professional-grade equity research reports.
                 Our engine evaluates stocks across 10+ dimensions including fundamentals, technicals,
@@ -221,17 +219,17 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
             {/* Feature grid */}
             <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
               <p className="font-mono text-[10px] tracking-[4px] uppercase text-primary mb-3">Features</p>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-6">
+              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6">
                 What you get
               </h2>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {FEATURES.map((feat, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 px-4 py-3 bg-background border border-border rounded-lg hover:border-primary/40 transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-background border border-border rounded-lg hover:border-primary/40 transition-colors"
                   >
                     <feat.icon className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-sm font-medium text-foreground">{feat.text}</span>
+                    <span className="text-xs sm:text-sm font-medium text-foreground">{feat.text}</span>
                   </div>
                 ))}
               </div>
@@ -241,8 +239,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border px-6 py-6 text-center">
-        <p className="text-xs font-mono text-muted-foreground tracking-wide">
+      <div className="border-t border-border px-4 sm:px-6 py-6 text-center">
+        <p className="text-[10px] sm:text-xs font-mono text-muted-foreground tracking-wide">
           MII Engine · Multi-Institutional Intelligence · Built for serious investors
         </p>
       </div>

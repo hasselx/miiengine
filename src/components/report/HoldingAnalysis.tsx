@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Save, Bookmark } from "lucide-react";
+import { Save } from "lucide-react";
 import SectionWrapper from "./SectionWrapper";
 
 interface HoldingResult {
@@ -32,23 +32,18 @@ function computeHolding(
   quantity: number
 ): HoldingResult | null {
   if (!buyDate || buyPrice <= 0 || quantity <= 0) return null;
-
   const currentPrice = parseCurrencyValue(data.headerMetrics[0]?.value || '0');
   if (currentPrice <= 0) return null;
-
   const buyDateObj = new Date(buyDate);
   const now = new Date();
   const holdingDays = Math.floor((now.getTime() - buyDateObj.getTime()) / (1000 * 60 * 60 * 24));
-
   const investedValue = buyPrice * quantity;
   const currentValue = currentPrice * quantity;
   const pnl = currentValue - investedValue;
   const pnlPercent = ((currentValue - investedValue) / investedValue) * 100;
-
   const predictedPrice = parseCurrencyValue(data.expectedPrice);
   const predictedValue = predictedPrice * quantity;
   const predictedReturn = ((predictedPrice - buyPrice) / buyPrice) * 100;
-
   let verdict = '';
   let verdictColor = '';
   if (pnlPercent > 20) { verdict = 'BOOK PARTIAL PROFITS'; verdictColor = 'text-green-data'; }
@@ -56,19 +51,7 @@ function computeHolding(
   else if (pnlPercent > -5) { verdict = 'HOLD — NEAR BREAKEVEN'; verdictColor = 'text-gold'; }
   else if (pnlPercent > -15) { verdict = 'ACCUMULATE ON DIPS'; verdictColor = 'text-gold'; }
   else { verdict = 'AVERAGE DOWN OR REVIEW'; verdictColor = 'text-red-data'; }
-
-  return {
-    investedValue,
-    currentValue,
-    pnl,
-    pnlPercent,
-    holdingDays,
-    predictedPrice12M: predictedPrice,
-    predictedReturn,
-    predictedValue,
-    verdict,
-    verdictColor,
-  };
+  return { investedValue, currentValue, pnl, pnlPercent, holdingDays, predictedPrice12M: predictedPrice, predictedReturn, predictedValue, verdict, verdictColor };
 }
 
 const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
@@ -95,7 +78,6 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
       return;
     }
     if (!result) return;
-
     setSaving(true);
     try {
       const currentPrice = parseCurrencyValue(data.headerMetrics[0]?.value || '0');
@@ -123,8 +105,8 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
   return (
     <SectionWrapper num="⊕" title="My Holding Analysis">
       <div className="space-y-4">
-        {/* Input fields */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Input fields — stack on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground block mb-1.5">
               Buy Date
@@ -133,7 +115,7 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
               type="date"
               value={buyDate}
               onChange={(e) => setBuyDate(e.target.value)}
-              className="w-full bg-accent font-mono text-[12px] text-foreground px-3 py-2 border border-border focus:border-primary focus:outline-none"
+              className="w-full bg-accent font-mono text-[13px] text-foreground px-3 py-3 border border-border rounded-sm focus:border-primary focus:outline-none touch-target"
             />
           </div>
           <div>
@@ -145,7 +127,7 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
               placeholder="e.g. 500"
               value={buyPrice}
               onChange={(e) => setBuyPrice(e.target.value)}
-              className="w-full bg-accent font-mono text-[12px] text-foreground px-3 py-2 border border-border focus:border-primary focus:outline-none"
+              className="w-full bg-accent font-mono text-[13px] text-foreground px-3 py-3 border border-border rounded-sm focus:border-primary focus:outline-none touch-target"
             />
           </div>
           <div>
@@ -157,7 +139,7 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
               placeholder="e.g. 100"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              className="w-full bg-accent font-mono text-[12px] text-foreground px-3 py-2 border border-border focus:border-primary focus:outline-none"
+              className="w-full bg-accent font-mono text-[13px] text-foreground px-3 py-3 border border-border rounded-sm focus:border-primary focus:outline-none touch-target"
             />
           </div>
         </div>
@@ -165,16 +147,14 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
         <button
           onClick={handleAnalyze}
           disabled={!buyDate || !buyPrice || !quantity}
-          className="w-full bg-sidebar text-sidebar-foreground font-mono text-[11px] tracking-[2px] uppercase py-2.5 hover:bg-sidebar/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full bg-sidebar text-sidebar-foreground font-mono text-[12px] tracking-[2px] uppercase py-3 rounded-sm hover:bg-sidebar/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed touch-target"
         >
           Analyze My Position
         </button>
 
-        {/* Results */}
         {result && (
           <div className="space-y-3 pt-2">
-            {/* P&L Summary */}
-            <div className="grid grid-cols-2 gap-px bg-border">
+            <div className="grid grid-cols-2 gap-px bg-border rounded-sm overflow-hidden">
               <div className="bg-card p-3">
                 <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-1">Invested</p>
                 <p className="font-mono text-sm font-medium text-foreground">{currency}{result.investedValue.toLocaleString()}</p>
@@ -197,16 +177,14 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
               </div>
             </div>
 
-            {/* Holding Duration */}
-            <div className="bg-accent p-3">
+            <div className="bg-accent p-3 rounded-sm">
               <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-1">Holding Period</p>
               <p className="font-mono text-sm text-foreground">
                 {result.holdingDays} days ({(result.holdingDays / 30).toFixed(1)} months)
               </p>
             </div>
 
-            {/* Prediction */}
-            <div className="border-l-[3px] border-primary bg-accent p-3">
+            <div className="border-l-[3px] border-primary bg-accent p-3 rounded-sm">
               <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-1">
                 MII 12-Month Prediction
               </p>
@@ -221,8 +199,7 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
               </p>
             </div>
 
-            {/* Verdict */}
-            <div className="bg-sidebar p-3 text-center">
+            <div className="bg-sidebar p-3 text-center rounded-sm">
               <p className="font-mono text-[9px] tracking-[2px] uppercase text-sidebar-foreground/50 mb-1">
                 Position Recommendation
               </p>
@@ -231,13 +208,12 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
               </p>
             </div>
 
-            {/* Save button */}
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-mono text-[11px] tracking-[2px] uppercase py-2.5 hover:opacity-90 transition-opacity disabled:opacity-40"
+              className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-mono text-[12px] tracking-[2px] uppercase py-3 rounded-sm hover:opacity-90 transition-opacity disabled:opacity-40 touch-target"
             >
-              <Save className="h-3.5 w-3.5" />
+              <Save className="h-4 w-4" />
               {saving ? "Saving..." : user ? "Save to My Holdings" : "Sign in to Save"}
             </button>
           </div>
