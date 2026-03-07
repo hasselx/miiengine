@@ -81,17 +81,22 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
               {(!collapsed || isMobile) && <span className="truncate">{item.label}</span>}
             </button>
           ))}
-        </nav>
 
-        {/* Collapse toggle (desktop) */}
-        {!isMobile && (
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
-        )}
+          {/* Collapse toggle right after nav items */}
+          {!isMobile && (
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className={cn(
+                "flex items-center gap-3 w-full px-4 py-2.5 text-[13px] font-medium transition-colors text-sidebar-foreground/50 hover:text-sidebar-foreground",
+                collapsed && "justify-center px-0"
+              )}
+              title={collapsed ? "Expand" : "Collapse"}
+            >
+              {collapsed ? <ChevronRight className="h-4 w-4 shrink-0" /> : <ChevronLeft className="h-4 w-4 shrink-0" />}
+              {!collapsed && <span className="truncate">Collapse</span>}
+            </button>
+          )}
+        </nav>
       </aside>
 
       {/* Main area */}
