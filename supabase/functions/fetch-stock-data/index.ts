@@ -1,20 +1,13 @@
-import YahooFinance from "npm:yahoo-finance2";
-const yahooFinance = new YahooFinance();
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const TWELVE_DATA_BASE = 'https://api.twelvedata.com';
+const YAHOO_BASE = 'https://query1.finance.yahoo.com';
 
 function isIndianExchange(exchange?: string): boolean {
   return ['NSE', 'BSE'].includes((exchange || '').toUpperCase());
-}
-
-function getYahooSymbols(symbol: string, exchange?: string): string[] {
-  if (isIndianExchange(exchange)) return [`${symbol}.NS`, `${symbol}.BO`];
-  return [symbol];
 }
 
 // ─── Provider 1: Twelve Data ───
@@ -39,86 +32,127 @@ async function fetchFromTwelveData(symbol: string, exchange: string | undefined,
   return { quote, profile, statistics: stats, timeSeries: timeSeries.values || [] };
 }
 
-// ─── Provider 2: Yahoo Finance ───
+// ─── Provider 2: Yahoo Finance (direct REST API) ───
 async function fetchFromYahooFinance(symbol: string, exchange: string) {
-  const candidates = getYahooSymbols(symbol, exchange);
+  // Build candidate Yahoo symbols
+  const candidates: string[] = isIndianExchange(exchange)
+    ? [`${symbol}.NS`, `${symbol}.BO`]
+    : [symbol];
 
   let quoteData: any = null;
   let yahooSymbol = candidates[0];
 
+  // Try each candidate symbol via Yahoo's v8 quote endpoint
   for (const candidate of candidates) {
     try {
-      const rawQuote = await yahooFinance.quote(candidate);
-      const q = Array.isArray(rawQuote) ? rawQuote[0] : rawQuote;
-      if (q && q.regularMarketPrice) {
-        quoteData = q;
+      const url = `${YAHOO_BASE}/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d&includePrePost=false`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MIIEngine/1.0)' },
+      });
+      if (!res.ok) { await res.text(); continue; }
+      const json = await res.json();
+      const result = json?.chart?.result?.[0];
+      if (result && result.meta?.regularMarketPrice) {
+        quoteData = result;
         yahooSymbol = candidate;
         break;
       }
-    } catch { /* try next */ }
+    } catch { /* try next candidate */ }
   }
 
   if (!quoteData) {
-    throw new Error(`No quote data found for ${symbol} (tried: ${candidates.join(', ')})`);
+    throw new Error(`No data found for ${symbol} (tried: ${candidates.join(', ')})`);
   }
 
-  const summaryData = await yahooFinance.quoteSummary(yahooSymbol, {
-    modules: ['assetProfile', 'defaultKeyStatistics', 'financialData'],
-  }).catch(() => null);
+  const meta = quoteData.meta || {};
+  const indicators = quoteData.indicators?.quote?.[0] || {};
+  const timestamps = quoteData.timestamp || [];
 
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setFullYear(startDate.getFullYear() - 1);
+  // Try to get additional info via quoteSummary
+  let summaryProfile: any = {};
+  try {
+    const summaryUrl = `${YAHOO_BASE}/v10/finance/quoteSummary/${encodeURIComponent(yahooSymbol)}?modules=assetProfile,defaultKeyStatistics,financialData`;
+    const summaryRes = await fetch(summaryUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MIIEngine/1.0)' },
+    });
+    if (summaryRes.ok) {
+      const summaryJson = await summaryRes.json();
+      const r = summaryJson?.quoteSummary?.result?.[0];
+      summaryProfile = r?.assetProfile || {};
+    } else {
+      await summaryRes.text();
+    }
+  } catch { /* optional */ }
 
-  const historical = await yahooFinance.historical(yahooSymbol, {
-    period1: startDate, period2: endDate, interval: '1d',
-  }).catch(() => []);
+  // Also fetch the v6 quote for PE, EPS, market cap etc.
+  let v6Data: any = {};
+  try {
+    const v6Url = `${YAHOO_BASE}/v6/finance/quote?symbols=${encodeURIComponent(yahooSymbol)}`;
+    const v6Res = await fetch(v6Url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MIIEngine/1.0)' },
+    });
+    if (v6Res.ok) {
+      const v6Json = await v6Res.json();
+      v6Data = v6Json?.quoteResponse?.result?.[0] || {};
+    } else {
+      await v6Res.text();
+    }
+  } catch { /* optional */ }
 
-  const ap = summaryData?.assetProfile || {};
+  const price = meta.regularMarketPrice ?? 0;
+  const prevClose = meta.previousClose ?? meta.chartPreviousClose ?? 0;
+  const change = price - prevClose;
+  const pctChange = prevClose ? (change / prevClose) * 100 : 0;
 
   const quote = {
     symbol,
-    name: quoteData.longName || quoteData.shortName || quoteData.displayName || symbol,
-    exchange: exchange || quoteData.exchange || '',
-    close: quoteData.regularMarketPrice ?? 0,
-    price: quoteData.regularMarketPrice ?? 0,
-    previous_close: quoteData.regularMarketPreviousClose ?? 0,
-    change: quoteData.regularMarketChange ?? 0,
-    percent_change: quoteData.regularMarketChangePercent ?? 0,
-    volume: String(quoteData.regularMarketVolume ?? '0'),
-    average_volume: String(quoteData.averageDailyVolume3Month ?? 'N/A'),
-    pe: quoteData.trailingPE ?? 0,
-    eps: quoteData.epsTrailingTwelveMonths ?? 0,
+    name: v6Data.longName || v6Data.shortName || meta.symbol || symbol,
+    exchange: exchange || meta.exchangeName || '',
+    close: price,
+    price,
+    previous_close: prevClose,
+    change: parseFloat(change.toFixed(2)),
+    percent_change: parseFloat(pctChange.toFixed(2)),
+    volume: String(meta.regularMarketVolume ?? v6Data.regularMarketVolume ?? '0'),
+    average_volume: String(v6Data.averageDailyVolume3Month ?? 'N/A'),
+    pe: v6Data.trailingPE ?? 0,
+    eps: v6Data.epsTrailingTwelveMonths ?? 0,
     fifty_two_week: {
-      high: quoteData.fiftyTwoWeekHigh ?? 0,
-      low: quoteData.fiftyTwoWeekLow ?? 0,
+      high: meta.fiftyTwoWeekHigh ?? v6Data.fiftyTwoWeekHigh ?? 0,
+      low: meta.fiftyTwoWeekLow ?? v6Data.fiftyTwoWeekLow ?? 0,
     },
   };
 
   const profile = {
-    name: quoteData.longName || quoteData.shortName || symbol,
-    sector: ap.sector || 'N/A',
-    industry: ap.industry || 'N/A',
-    country: ap.country || (isIndianExchange(exchange) ? 'India' : 'N/A'),
-    employees: ap.fullTimeEmployees || 'N/A',
-    description: ap.longBusinessSummary || '',
+    name: quote.name,
+    sector: summaryProfile.sector || v6Data.sector || 'N/A',
+    industry: summaryProfile.industry || v6Data.industry || 'N/A',
+    country: summaryProfile.country || (isIndianExchange(exchange) ? 'India' : 'N/A'),
+    employees: summaryProfile.fullTimeEmployees || 'N/A',
+    description: summaryProfile.longBusinessSummary || '',
   };
 
   const statistics = {
-    valuations_metrics: { market_capitalization: quoteData.marketCap ?? 0 },
+    valuations_metrics: { market_capitalization: v6Data.marketCap ?? meta.marketCap ?? 0 },
   };
 
-  const timeSeries = (historical || []).slice(0, 250).map((item: any) => ({
-    datetime: item.date instanceof Date ? item.date.toISOString().split('T')[0] : String(item.date),
-    open: String(item.open ?? 0), high: String(item.high ?? 0),
-    low: String(item.low ?? 0), close: String(item.close ?? 0),
-    volume: String(item.volume ?? 0),
-  }));
+  // Build time series from chart data
+  const timeSeries = timestamps.map((ts: number, i: number) => {
+    const d = new Date(ts * 1000);
+    return {
+      datetime: d.toISOString().split('T')[0],
+      open: String(indicators.open?.[i] ?? 0),
+      high: String(indicators.high?.[i] ?? 0),
+      low: String(indicators.low?.[i] ?? 0),
+      close: String(indicators.close?.[i] ?? 0),
+      volume: String(indicators.volume?.[i] ?? 0),
+    };
+  });
 
   return { quote, profile, statistics, timeSeries };
 }
 
-// ─── Provider 3: Alpha Vantage (Indian stocks backup) ───
+// ─── Provider 3: Alpha Vantage ───
 const ALPHA_VANTAGE_BASE = 'https://www.alphavantage.co/query';
 
 async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: string) {
@@ -188,7 +222,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
 
   if (isIndianExchange(exchange)) {
     // Indian stocks: Yahoo Finance → Alpha Vantage
-    // 1. Yahoo Finance (no API key needed)
     try {
       console.log(`[Indian] Trying Yahoo Finance for ${symbol}`);
       return await fetchFromYahooFinance(symbol, exchange!);
@@ -198,7 +231,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       console.warn(`Yahoo Finance failed: ${msg}`);
     }
 
-    // 2. Alpha Vantage fallback
     const avKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
     if (avKey) {
       try {
@@ -212,7 +244,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
     }
   } else {
     // Global stocks: Twelve Data → Yahoo Finance
-    // 1. Twelve Data
     const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
     if (tdKey) {
       try {
@@ -225,7 +256,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       }
     }
 
-    // 2. Yahoo Finance fallback
     try {
       console.log(`[Global] Trying Yahoo Finance for ${symbol}`);
       return await fetchFromYahooFinance(symbol, exchange || '');
