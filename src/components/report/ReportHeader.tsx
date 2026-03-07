@@ -3,10 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, Download, FileText, FileCode } from "lucide-react";
+import { Bookmark, Download, FileText, FileCode, Briefcase } from "lucide-react";
 import { useState, useRef } from "react";
 
-const ReportHeader = ({ data }: { data: StockAnalysis }) => {
+const ReportHeader = ({ data, onToggleHoldings, holdingsOpen }: { data: StockAnalysis; onToggleHoldings?: () => void; holdingsOpen?: boolean }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
@@ -162,6 +162,13 @@ img,svg{max-width:100%;height:auto}
               </div>
             )}
           </div>
+          <button
+            onClick={onToggleHoldings}
+            className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] transition-colors ${holdingsOpen ? 'text-sidebar-primary' : 'text-sidebar-foreground/50 hover:text-sidebar-primary'}`}
+          >
+            <Briefcase className={`h-3.5 w-3.5 ${holdingsOpen ? 'fill-current' : ''}`} />
+            Holdings
+          </button>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-sidebar-border pt-5 mt-4 relative z-10 gap-3 sm:gap-0">
