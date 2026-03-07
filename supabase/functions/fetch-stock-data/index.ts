@@ -35,12 +35,18 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
   console.log('AV Daily Info:', dailyData['Information'] || 'none');
   console.log('AV Overview Info:', overviewData['Information'] || 'none');
 
-  // Check for API errors
-  if (quoteData['Error Message'] || quoteData['Note']) {
-    throw new Error(quoteData['Error Message'] || quoteData['Note'] || 'Alpha Vantage API error');
+  // Check for API errors or rate limits
+  if (quoteData['Information']) {
+    throw new Error('Alpha Vantage rate limit reached: ' + quoteData['Information']);
   }
-  if (dailyData['Error Message'] || dailyData['Note']) {
-    throw new Error(dailyData['Error Message'] || dailyData['Note'] || 'Alpha Vantage daily data error');
+  if (quoteData['Error Message']) {
+    throw new Error(quoteData['Error Message']);
+  }
+  if (dailyData['Error Message']) {
+    throw new Error(dailyData['Error Message']);
+  }
+  if (dailyData['Information']) {
+    console.warn('AV Daily rate limited, continuing with partial data');
   }
 
   const gq = quoteData['Global Quote'] || {};
