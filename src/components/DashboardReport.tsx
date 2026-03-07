@@ -14,6 +14,7 @@ import TechnicalSection from "./report/TechnicalSection";
 import MoatSection from "./report/MoatSection";
 import RiskMatrix from "./report/RiskMatrix";
 import FinalVerdict from "./report/FinalVerdict";
+import HoldingAnalysis from "./report/HoldingAnalysis";
 
 interface DashboardReportProps {
   data: StockAnalysis;
@@ -48,6 +49,11 @@ const DashboardReport = ({ data, onSearchOpen }: DashboardReportProps) => {
     >
       <ReportHeader data={data} />
       <ScoreBanner data={data} />
+
+      {/* Holding Analysis — below verdict */}
+      <div className="px-4 sm:px-8 pt-6 max-w-[1400px] mx-auto">
+        <HoldingAnalysis data={data} />
+      </div>
 
       <div className="px-4 sm:px-8 py-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 max-w-[1400px] mx-auto">
         {/* Main column */}
