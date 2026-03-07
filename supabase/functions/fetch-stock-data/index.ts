@@ -1,92 +1,90 @@
+import yahooFinance from "npm:yahoo-finance2";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const TWELVE_DATA_BASE = 'https://api.twelvedata.com';
-const ALPHA_VANTAGE_BASE = 'https://www.alphavantage.co/query';
 
 function isIndianExchange(exchange?: string): boolean {
   return ['NSE', 'BSE'].includes((exchange || '').toUpperCase());
 }
 
-async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: string) {
-  const avSymbol = `${symbol}.BSE`;
+function getYahooSymbol(symbol: string, exchange?: string): string {
+  if (isIndianExchange(exchange)) {
+    return `${symbol}.NS`;
+  }
+  return symbol;
+}
 
-  const [quoteRes, overviewRes, dailyRes] = await Promise.all([
-    fetch(`${ALPHA_VANTAGE_BASE}?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(avSymbol)}&apikey=${apiKey}`),
-    fetch(`${ALPHA_VANTAGE_BASE}?function=OVERVIEW&symbol=${encodeURIComponent(avSymbol)}&apikey=${apiKey}`),
-    fetch(`${ALPHA_VANTAGE_BASE}?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(avSymbol)}&outputsize=compact&apikey=${apiKey}`),
+async function fetchFromYahooFinance(symbol: string, exchange: string) {
+  const yahooSymbol = getYahooSymbol(symbol, exchange);
+
+  const [quoteData, summaryData] = await Promise.all([
+    yahooFinance.quote(yahooSymbol),
+    yahooFinance.quoteSummary(yahooSymbol, { modules: ['assetProfile', 'defaultKeyStatistics', 'financialData'] }).catch(() => null),
   ]);
 
-  const [quoteData, overviewData, dailyData] = await Promise.all([
-    quoteRes.json(),
-    overviewRes.json(),
-    dailyRes.json(),
-  ]);
+  // Fetch historical data
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setFullYear(startDate.getFullYear() - 1);
 
-  // Check for rate limits or errors
-  if (quoteData['Information']) {
-    throw new Error('Alpha Vantage API rate limit reached. Free tier allows 25 requests/day. Please try again later or upgrade your plan.');
-  }
-  if (quoteData['Error Message']) {
-    throw new Error(quoteData['Error Message']);
-  }
-  if (quoteData['Note']) {
-    throw new Error('Alpha Vantage API call frequency limit reached. Please wait and try again.');
-  }
+  const historical = await yahooFinance.historical(yahooSymbol, {
+    period1: startDate,
+    period2: endDate,
+    interval: '1d',
+  }).catch(() => []);
 
-  const gq = quoteData['Global Quote'] || {};
-  const ts = dailyData['Time Series (Daily)'] || {};
+  const profile = summaryData?.assetProfile || {};
+  const keyStats = summaryData?.defaultKeyStatistics || {};
+  const financialData = summaryData?.financialData || {};
 
-  // Transform Alpha Vantage data to match our expected format
   const quote = {
     symbol: symbol,
-    name: overviewData['Name'] || symbol,
-    exchange: exchange,
-    close: parseFloat(gq['05. price']) || 0,
-    price: parseFloat(gq['05. price']) || 0,
-    previous_close: parseFloat(gq['08. previous close']) || 0,
-    change: parseFloat(gq['09. change']) || 0,
-    percent_change: parseFloat((gq['10. change percent'] || '0').replace('%', '')) || 0,
-    volume: gq['06. volume'] || '0',
-    average_volume: overviewData['AverageVolume'] || 'N/A',
-    pe: parseFloat(overviewData['PERatio']) || 0,
-    eps: parseFloat(overviewData['EPS']) || 0,
+    name: quoteData.longName || quoteData.shortName || symbol,
+    exchange: exchange || quoteData.exchange || '',
+    close: quoteData.regularMarketPrice || 0,
+    price: quoteData.regularMarketPrice || 0,
+    previous_close: quoteData.regularMarketPreviousClose || 0,
+    change: quoteData.regularMarketChange || 0,
+    percent_change: quoteData.regularMarketChangePercent || 0,
+    volume: String(quoteData.regularMarketVolume || '0'),
+    average_volume: String(quoteData.averageDailyVolume3Month || 'N/A'),
+    pe: quoteData.trailingPE || 0,
+    eps: quoteData.epsTrailingTwelveMonths || 0,
     fifty_two_week: {
-      high: parseFloat(overviewData['52WeekHigh']) || 0,
-      low: parseFloat(overviewData['52WeekLow']) || 0,
+      high: quoteData.fiftyTwoWeekHigh || 0,
+      low: quoteData.fiftyTwoWeekLow || 0,
     },
   };
 
-  const profile = {
-    name: overviewData['Name'] || symbol,
-    sector: overviewData['Sector'] || 'N/A',
-    industry: overviewData['Industry'] || 'N/A',
-    country: overviewData['Country'] || 'India',
-    employees: overviewData['FullTimeEmployees'] || 'N/A',
-    description: overviewData['Description'] || '',
+  const profileData = {
+    name: quoteData.longName || quoteData.shortName || symbol,
+    sector: profile.sector || 'N/A',
+    industry: profile.industry || 'N/A',
+    country: profile.country || (isIndianExchange(exchange) ? 'India' : 'N/A'),
+    employees: profile.fullTimeEmployees || 'N/A',
+    description: profile.longBusinessSummary || '',
   };
 
   const statistics = {
     valuations_metrics: {
-      market_capitalization: parseFloat(overviewData['MarketCapitalization']) || 0,
+      market_capitalization: quoteData.marketCap || 0,
     },
   };
 
-  // Convert time series to array format
-  const timeSeries = Object.entries(ts)
-    .slice(0, 250)
-    .map(([date, values]: [string, any]) => ({
-      datetime: date,
-      open: values['1. open'],
-      high: values['2. high'],
-      low: values['3. low'],
-      close: values['4. close'],
-      volume: values['5. volume'],
-    }));
+  const timeSeries = (historical || []).slice(0, 250).map((item: any) => ({
+    datetime: item.date instanceof Date ? item.date.toISOString().split('T')[0] : String(item.date),
+    open: String(item.open || 0),
+    high: String(item.high || 0),
+    low: String(item.low || 0),
+    close: String(item.close || 0),
+    volume: String(item.volume || 0),
+  }));
 
-  return { quote, profile, statistics, timeSeries };
+  return { quote, profile: profileData, statistics, timeSeries };
 }
 
 async function fetchFromTwelveData(symbol: string, exchange: string | undefined, apiKey: string) {
@@ -134,21 +132,26 @@ Deno.serve(async (req) => {
     let result;
 
     if (isIndianExchange(exchange)) {
-      const avKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
-      if (!avKey) {
-        return new Response(JSON.stringify({ error: 'ALPHA_VANTAGE_API_KEY not configured' }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      // For Indian stocks, use Yahoo Finance directly (no API key needed)
+      try {
+        result = await fetchFromYahooFinance(symbol, exchange);
+      } catch (yahooError) {
+        console.error('Yahoo Finance error:', yahooError);
+        throw new Error(`Failed to fetch data for ${symbol}: ${yahooError instanceof Error ? yahooError.message : 'Unknown error'}`);
       }
-      result = await fetchFromAlphaVantage(symbol, exchange, avKey);
     } else {
+      // For other markets, try Twelve Data first, fall back to Yahoo Finance
       const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
-      if (!tdKey) {
-        return new Response(JSON.stringify({ error: 'TWELVE_DATA_API_KEY not configured' }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      if (tdKey) {
+        try {
+          result = await fetchFromTwelveData(symbol, exchange, tdKey);
+        } catch (tdError) {
+          console.warn('Twelve Data failed, falling back to Yahoo Finance:', tdError);
+          result = await fetchFromYahooFinance(symbol, exchange);
+        }
+      } else {
+        result = await fetchFromYahooFinance(symbol, exchange);
       }
-      result = await fetchFromTwelveData(symbol, exchange, tdKey);
     }
 
     return new Response(JSON.stringify(result), {
