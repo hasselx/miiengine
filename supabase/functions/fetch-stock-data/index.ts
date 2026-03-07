@@ -78,30 +78,36 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
   let yahooSymbol = candidates[0];
 
   for (const candidate of candidates) {
-    try {
-      const crumbParam = crumb ? `&crumb=${encodeURIComponent(crumb)}` : '';
-      const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d${crumbParam}`;
-      console.log(`Yahoo: trying ${candidate}`);
-      const res = await fetch(url, { headers });
-      console.log(`Yahoo ${candidate}: status ${res.status}`);
-      
-      if (!res.ok) {
-        const body = await res.text();
-        console.warn(`Yahoo ${candidate}: ${body.substring(0, 200)}`);
-        continue;
+    // Try multiple Yahoo domains/endpoints
+    const urls = [
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
+      `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
+    ];
+    
+    for (const url of urls) {
+      try {
+        console.log(`Yahoo: trying ${candidate} via ${url.includes('query1') ? 'query1' : 'query2'}`);
+        const res = await fetch(url, { headers });
+        console.log(`Yahoo ${candidate}: status ${res.status}`);
+        
+        if (!res.ok) {
+          await res.text();
+          continue;
+        }
+        
+        const json = await res.json();
+        const result = json?.chart?.result?.[0];
+        if (result && result.meta?.regularMarketPrice) {
+          chartResult = result;
+          yahooSymbol = candidate;
+          console.log(`Yahoo SUCCESS: ${candidate}, price=${result.meta.regularMarketPrice}`);
+          break;
+        }
+      } catch (e) {
+        console.warn(`Yahoo ${candidate} error: ${e}`);
       }
-      
-      const json = await res.json();
-      const result = json?.chart?.result?.[0];
-      if (result && result.meta?.regularMarketPrice) {
-        chartResult = result;
-        yahooSymbol = candidate;
-        console.log(`Yahoo ${candidate}: SUCCESS, price=${result.meta.regularMarketPrice}`);
-        break;
-      }
-    } catch (e) {
-      console.warn(`Yahoo ${candidate} error: ${e}`);
     }
+    if (chartResult) break;
   }
 
   if (!chartResult) {
