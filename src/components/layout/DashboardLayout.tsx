@@ -47,10 +47,10 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
         {/* Logo area */}
         <div className={cn("flex items-center h-14 border-b border-sidebar-border px-4", collapsed && !isMobile && "justify-center px-0")}>
           {(!collapsed || isMobile) && (
-            <span className="font-display text-lg font-bold text-sidebar-foreground tracking-tight truncate">StockIQ</span>
+            <span className="font-display text-lg font-bold text-sidebar-foreground tracking-tight truncate">MII Engine</span>
           )}
           {collapsed && !isMobile && (
-            <span className="font-display text-lg font-bold text-sidebar-foreground">S</span>
+            <span className="font-display text-lg font-bold text-sidebar-foreground">M</span>
           )}
         </div>
 
