@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { StockAnalysis } from "@/lib/stockData";
 import { fetchStockData, resolveSymbol } from "@/lib/stockApi";
 import { buildAnalysisFromRealData } from "@/lib/buildAnalysis";
@@ -8,11 +9,38 @@ import DashboardReport from "@/components/DashboardReport";
 import SearchModal from "@/components/SearchModal";
 import { toast } from "@/hooks/use-toast";
 
+interface SavedSearchState {
+  savedSearch: {
+    company_name: string;
+    ticker: string | null;
+    report_data: any;
+    searched_at: string;
+  };
+}
+
 const Index = () => {
   const [analysis, setAnalysis] = useState<StockAnalysis | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState<{ data: StockAnalysis; date: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Handle navigation from saved searches
+  useEffect(() => {
+    const state = location.state as SavedSearchState | null;
+    if (state?.savedSearch) {
+      const { company_name, report_data, searched_at } = state.savedSearch;
+      // Clear the state so refresh doesn't re-trigger
+      navigate("/", { replace: true, state: null });
+
+      if (report_data) {
+        setSavedSnapshot({ data: report_data as StockAnalysis, date: searched_at });
+      }
+      handleAnalyze(company_name);
+    }
+  }, [location.state]);
 
   const handleAnalyze = async (company: string) => {
     setIsLoading(true);
@@ -37,12 +65,13 @@ const Index = () => {
   if (analysis) {
     return (
       <>
-        <DashboardReport data={analysis} onSearchOpen={() => setSearchOpen(true)} />
+        <DashboardReport data={analysis} onSearchOpen={() => setSearchOpen(true)} savedSnapshot={savedSnapshot} />
         <SearchModal
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
           onAnalyze={(c) => {
             setSearchOpen(false);
+            setSavedSnapshot(null);
             handleAnalyze(c);
           }}
           isLoading={isLoading}
