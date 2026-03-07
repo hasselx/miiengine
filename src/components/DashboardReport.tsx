@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useCallback } from "react";
 import { StockAnalysis } from "@/lib/stockData";
 import DashboardLayout from "./layout/DashboardLayout";
 import ReportHeader from "./report/ReportHeader";
@@ -15,10 +15,12 @@ import MoatSection from "./report/MoatSection";
 import RiskMatrix from "./report/RiskMatrix";
 import FinalVerdict from "./report/FinalVerdict";
 import HoldingAnalysis from "./report/HoldingAnalysis";
+import ComparisonBanner from "./report/ComparisonBanner";
 
 interface DashboardReportProps {
   data: StockAnalysis;
   onSearchOpen: () => void;
+  savedSnapshot?: { data: StockAnalysis; date: string } | null;
 }
 
 const SECTION_IDS: Record<string, string> = {
