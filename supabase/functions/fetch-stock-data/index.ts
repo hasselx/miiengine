@@ -43,12 +43,17 @@ async function fetchFromTwelveData(symbol: string, exchange: string | undefined,
 async function fetchFromYahooFinance(symbol: string, exchange: string) {
   const yahooSymbol = getYahooSymbol(symbol, exchange);
 
-  const [quoteData, summaryData] = await Promise.all([
-    yahooFinance.quote(yahooSymbol),
-    yahooFinance.quoteSummary(yahooSymbol, {
-      modules: ['assetProfile', 'defaultKeyStatistics', 'financialData'],
-    }).catch(() => null),
-  ]);
+  // quote() in v3 can return an array or single object
+  const rawQuote = await yahooFinance.quote(yahooSymbol);
+  const quoteData = Array.isArray(rawQuote) ? rawQuote[0] : rawQuote;
+
+  if (!quoteData || !quoteData.regularMarketPrice) {
+    throw new Error(`No quote data found for ${yahooSymbol}`);
+  }
+
+  const summaryData = await yahooFinance.quoteSummary(yahooSymbol, {
+    modules: ['assetProfile', 'defaultKeyStatistics', 'financialData'],
+  }).catch(() => null);
 
   const endDate = new Date();
   const startDate = new Date();
@@ -62,20 +67,20 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
 
   const quote = {
     symbol,
-    name: quoteData.longName || quoteData.shortName || symbol,
+    name: quoteData.longName || quoteData.shortName || quoteData.displayName || symbol,
     exchange: exchange || quoteData.exchange || '',
-    close: quoteData.regularMarketPrice || 0,
-    price: quoteData.regularMarketPrice || 0,
-    previous_close: quoteData.regularMarketPreviousClose || 0,
-    change: quoteData.regularMarketChange || 0,
-    percent_change: quoteData.regularMarketChangePercent || 0,
-    volume: String(quoteData.regularMarketVolume || '0'),
-    average_volume: String(quoteData.averageDailyVolume3Month || 'N/A'),
-    pe: quoteData.trailingPE || 0,
-    eps: quoteData.epsTrailingTwelveMonths || 0,
+    close: quoteData.regularMarketPrice ?? 0,
+    price: quoteData.regularMarketPrice ?? 0,
+    previous_close: quoteData.regularMarketPreviousClose ?? 0,
+    change: quoteData.regularMarketChange ?? 0,
+    percent_change: quoteData.regularMarketChangePercent ?? 0,
+    volume: String(quoteData.regularMarketVolume ?? '0'),
+    average_volume: String(quoteData.averageDailyVolume3Month ?? 'N/A'),
+    pe: quoteData.trailingPE ?? 0,
+    eps: quoteData.epsTrailingTwelveMonths ?? 0,
     fifty_two_week: {
-      high: quoteData.fiftyTwoWeekHigh || 0,
-      low: quoteData.fiftyTwoWeekLow || 0,
+      high: quoteData.fiftyTwoWeekHigh ?? 0,
+      low: quoteData.fiftyTwoWeekLow ?? 0,
     },
   };
 
@@ -89,14 +94,14 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
   };
 
   const statistics = {
-    valuations_metrics: { market_capitalization: quoteData.marketCap || 0 },
+    valuations_metrics: { market_capitalization: quoteData.marketCap ?? 0 },
   };
 
   const timeSeries = (historical || []).slice(0, 250).map((item: any) => ({
     datetime: item.date instanceof Date ? item.date.toISOString().split('T')[0] : String(item.date),
-    open: String(item.open || 0), high: String(item.high || 0),
-    low: String(item.low || 0), close: String(item.close || 0),
-    volume: String(item.volume || 0),
+    open: String(item.open ?? 0), high: String(item.high ?? 0),
+    low: String(item.low ?? 0), close: String(item.close ?? 0),
+    volume: String(item.volume ?? 0),
   }));
 
   return { quote, profile, statistics, timeSeries };
