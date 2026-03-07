@@ -1,7 +1,9 @@
 import { ReactNode, useState } from "react";
-import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText } from "lucide-react";
+import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -27,6 +29,8 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -110,7 +114,25 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
             )}
           </div>
 
-          <ExpandableSearch onSearch={onSearchOpen} />
+          <div className="flex items-center gap-3">
+            <ExpandableSearch onSearch={onSearchOpen} />
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline truncate max-w-[120px]">{user.email}</span>
+                <button onClick={signOut} className="p-1.5 hover:bg-accent rounded transition-colors" title="Sign out">
+                  <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/auth")}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-sidebar-primary text-sidebar-primary-foreground font-mono text-[10px] tracking-[1px] uppercase hover:opacity-90 transition-opacity"
+              >
+                <User className="h-3 w-3" />
+                Sign In
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Content */}

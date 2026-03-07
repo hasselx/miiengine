@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Search, BarChart3, Shield, TrendingUp, Activity, Target, Layers, LineChart, Brain, Zap, ArrowRight, CheckCircle } from "lucide-react";
+import { Search, BarChart3, Shield, TrendingUp, Activity, Target, Layers, LineChart, Brain, Zap, ArrowRight, CheckCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
@@ -50,6 +52,8 @@ const HIGHLIGHTS = [
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   const [company, setCompany] = useState("");
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +64,26 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
+      {/* Top bar */}
+      <div className="flex justify-end px-6 py-4">
+        {user ? (
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[11px] text-muted-foreground">{user.email}</span>
+            <button onClick={signOut} className="font-mono text-[11px] text-primary hover:underline">Sign out</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate("/auth")}
+            className="flex items-center gap-1.5 px-4 py-2 bg-sidebar text-sidebar-foreground font-mono text-[11px] tracking-[1px] uppercase hover:opacity-90 transition-opacity"
+          >
+            <User className="h-3.5 w-3.5" />
+            Sign In
+          </button>
+        )}
+      </div>
+
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-16 pb-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
         {/* Brand */}
         <div className="text-center mb-6 animate-fade-in">
           <p className="font-mono text-[11px] tracking-[6px] uppercase text-primary mb-5">

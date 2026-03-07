@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { StockAnalysis } from "@/lib/stockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { Save, Bookmark } from "lucide-react";
 import SectionWrapper from "./SectionWrapper";
 
 interface HoldingResult {
@@ -71,14 +76,49 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
   const [buyPrice, setBuyPrice] = useState('');
   const [quantity, setQuantity] = useState('');
   const [result, setResult] = useState<HoldingResult | null>(null);
+  const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const rawVal = data.headerMetrics[0]?.value || '';
+  const currency = rawVal.match(/^[^\d\-\s]+/)?.[0] || '$';
 
   const handleAnalyze = () => {
     const res = computeHolding(data, buyDate, parseFloat(buyPrice), parseFloat(quantity));
     setResult(res);
   };
 
-  const rawVal = data.headerMetrics[0]?.value || '';
-  const currency = rawVal.match(/^[^\d\-\s]+/)?.[0] || '$';
+  const handleSave = async () => {
+    if (!user) {
+      toast({ title: "Sign in required", description: "Create an account to save your holdings." });
+      navigate("/auth");
+      return;
+    }
+    if (!result) return;
+
+    setSaving(true);
+    try {
+      const currentPrice = parseCurrencyValue(data.headerMetrics[0]?.value || '0');
+      const { error } = await supabase.from('holdings').insert({
+        user_id: user.id,
+        company_name: data.company,
+        ticker: data.subtitle?.split('·')[2]?.trim() || data.company,
+        buy_date: buyDate,
+        buy_price: parseFloat(buyPrice),
+        quantity: parseFloat(quantity),
+        currency,
+        current_price: currentPrice,
+        predicted_price: result.predictedPrice12M,
+        verdict: result.verdict,
+      });
+      if (error) throw error;
+      toast({ title: "Holding saved", description: `${data.company} position saved to your portfolio.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SectionWrapper num="⊕" title="My Holding Analysis">
@@ -98,11 +138,11 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
           </div>
           <div>
             <label className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground block mb-1.5">
-              Buy Price
+              Buy Price ({currency})
             </label>
             <input
               type="number"
-              placeholder={`e.g. 500`}
+              placeholder="e.g. 500"
               value={buyPrice}
               onChange={(e) => setBuyPrice(e.target.value)}
               className="w-full bg-accent font-mono text-[12px] text-foreground px-3 py-2 border border-border focus:border-primary focus:outline-none"
@@ -190,6 +230,16 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
                 {result.verdict}
               </p>
             </div>
+
+            {/* Save button */}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-mono text-[11px] tracking-[2px] uppercase py-2.5 hover:opacity-90 transition-opacity disabled:opacity-40"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {saving ? "Saving..." : user ? "Save to My Holdings" : "Sign in to Save"}
+            </button>
           </div>
         )}
       </div>
