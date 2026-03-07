@@ -25,6 +25,7 @@ const ReportHeader = ({ data }: { data: StockAnalysis }) => {
         ticker,
         total_score: data.totalScore,
         verdict: data.verdict,
+        report_data: data as any,
       });
       if (error) throw error;
       setSaved(true);
