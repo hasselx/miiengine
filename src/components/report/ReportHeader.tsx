@@ -12,15 +12,28 @@ const ReportHeader = ({ data }: { data: StockAnalysis }) => {
   const [saved, setSaved] = useState(false);
   const [showDownload, setShowDownload] = useState(false);
 
+  const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const brandHeader = `<div style="border-bottom:2px solid #c9a84c;padding:24px 32px;background:#0a0a0a;display:flex;justify-content:space-between;align-items:center">
+    <div><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase">Multi-Institutional Intelligence Engine</span>
+    <h1 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:#f5f0e8;margin:4px 0 0">${data.company}</h1></div>
+    <div style="text-align:right"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#f5f0e8;opacity:0.5">${now}</span>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-top:4px;background:rgba(201,168,76,0.15);padding:4px 12px">${data.verdictBadge || ''}</div></div></div>`;
+  const brandFooter = `<div style="border-top:2px solid #c9a84c;padding:16px 32px;background:#0a0a0a;display:flex;justify-content:space-between;align-items:center;margin-top:24px">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase">MII Engine — Confidential</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#f5f0e8;opacity:0.4">Generated ${now} · miiengine.lovable.app</span></div>
+    <div style="padding:12px 32px;background:#0a0a0a;font-family:'IBM Plex Mono',monospace;font-size:8px;color:#f5f0e8;opacity:0.3;line-height:1.6">${data.disclaimer || 'This report is for informational purposes only and does not constitute financial advice.'}</div>`;
+
   const downloadHtml = () => {
     const reportEl = document.querySelector('[data-report-root]');
     if (!reportEl) return;
     const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${data.company} — MII Report</title>
-<style>body{font-family:system-ui,sans-serif;background:#0a0a0a;color:#e5e5e5;margin:0;padding:20px}
+<html><head><meta charset="utf-8"><title>${data.company} — MII Engine Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:#0a0a0a;color:#e5e5e5;margin:0;padding:0}
 table{border-collapse:collapse;width:100%}td,th{padding:8px;border:1px solid #333;text-align:left;font-size:13px}
-h1,h2,h3{margin-top:1.5em}.text-green{color:#22c55e}.text-red{color:#ef4444}</style>
-</head><body>${reportEl.innerHTML}</body></html>`;
+h1,h2,h3{margin-top:1.5em;font-family:'Playfair Display',serif}.text-green{color:#22c55e}.text-red{color:#ef4444}
+@page{margin:0.5in}</style>
+</head><body>${brandHeader}${reportEl.innerHTML}${brandFooter}</body></html>`;
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

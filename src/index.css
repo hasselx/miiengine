@@ -154,8 +154,38 @@
 }
 
 @media print {
-  body { background: white !important; color: black !important; }
+  body { background: white !important; color: black !important; margin: 0; }
   [data-report-root] { break-inside: auto; }
   nav, button, .no-print { display: none !important; }
   * { color-adjust: exact; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  @page { margin: 0.5in; }
+
+  /* Print branding header */
+  [data-report-root]::before {
+    content: "MII ENGINE — MULTI-INSTITUTIONAL INTELLIGENCE ENGINE";
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-align: center;
+    color: #c9a84c;
+    border-bottom: 1.5px solid #c9a84c;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* Print branding footer */
+  [data-report-root]::after {
+    content: "Confidential · MII Engine · miiengine.lovable.app · For informational purposes only";
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 2px;
+    text-align: center;
+    color: #999;
+    border-top: 1.5px solid #c9a84c;
+    padding-top: 8px;
+    margin-top: 16px;
+  }
 }
