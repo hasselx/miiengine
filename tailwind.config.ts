@@ -12,8 +12,16 @@ export default {
         "2xl": "1400px",
       },
     },
+    fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      mono: ['JetBrains Mono', 'monospace'],
+    },
     extend: {
       colors: {
+        bull: "hsl(var(--bull))",
+        bear: "hsl(var(--bear))",
+        "data-accent": "hsl(var(--data-accent))",
+        "terminal-green": "hsl(var(--terminal-green))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
