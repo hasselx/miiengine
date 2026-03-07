@@ -98,6 +98,17 @@ export interface StockAnalysis {
   finalVerdictText: string;
   finalAction: string;
   finalFooter: { label: string; value: string }[];
+  priceExtremes: {
+    ath: number;
+    athChange: string;
+    atl: number;
+    atlChange: string;
+    yearHigh: number;
+    yearHighChange: string;
+    yearLow: number;
+    yearLowChange: string;
+    currency: string;
+  };
   watermark: string;
   disclaimer: string;
 }
