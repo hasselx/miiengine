@@ -52,6 +52,8 @@ const HIGHLIGHTS = [
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   const [company, setCompany] = useState("");
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
