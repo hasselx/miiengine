@@ -11,12 +11,15 @@ function isIndianExchange(exchange?: string): boolean {
 }
 
 async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: string) {
-  const avSymbol = `${symbol}.${exchange === 'BSE' ? 'BSE' : 'NSE'}`;
+  // Alpha Vantage uses BSE suffix for Indian stocks (NSE not directly supported for most endpoints)
+  const avSymbol = `${symbol}.BSE`;
+
+  console.log(`AV fetching symbol: ${avSymbol}`);
 
   const [quoteRes, overviewRes, dailyRes] = await Promise.all([
     fetch(`${ALPHA_VANTAGE_BASE}?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(avSymbol)}&apikey=${apiKey}`),
     fetch(`${ALPHA_VANTAGE_BASE}?function=OVERVIEW&symbol=${encodeURIComponent(avSymbol)}&apikey=${apiKey}`),
-    fetch(`${ALPHA_VANTAGE_BASE}?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(avSymbol)}&outputsize=full&apikey=${apiKey}`),
+    fetch(`${ALPHA_VANTAGE_BASE}?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(avSymbol)}&outputsize=compact&apikey=${apiKey}`),
   ]);
 
   const [quoteData, overviewData, dailyData] = await Promise.all([
