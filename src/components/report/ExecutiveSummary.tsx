@@ -13,8 +13,18 @@ const ExecutiveSummary = ({ data }: { data: StockAnalysis }) => (
 
     {/* 10-Model Research Abstract */}
     <div className="mt-5 sm:mt-6 border border-border rounded-sm overflow-hidden">
-      <div className="px-3 sm:px-4 py-2.5 bg-accent-area border-b border-border">
+      <div className="px-3 sm:px-4 py-2.5 bg-accent-area border-b border-border flex items-center gap-3">
         <p className="font-mono text-[10px] sm:text-[11px] tracking-[2px] uppercase text-muted-foreground font-semibold">10-Model Research Abstract</p>
+        {(() => {
+          const counts = data.modelSummaries.reduce((acc, m) => { acc[m.sentiment] = (acc[m.sentiment] || 0) + 1; return acc; }, {} as Record<string, number>);
+          return (
+            <span className="flex items-center gap-2 ml-auto">
+              {(counts.positive ?? 0) > 0 && <span className="flex items-center gap-1 font-mono text-[11px] font-semibold text-green-data">{counts.positive} <span className="w-2 h-2 rounded-full bg-green-data inline-block" /></span>}
+              {(counts.negative ?? 0) > 0 && <span className="flex items-center gap-1 font-mono text-[11px] font-semibold text-red-data">{counts.negative} <span className="w-2 h-2 rounded-full bg-red-data inline-block" /></span>}
+              {(counts.neutral ?? 0) > 0 && <span className="flex items-center gap-1 font-mono text-[11px] font-semibold text-gold">{counts.neutral} <span className="w-2 h-2 rounded-full bg-gold inline-block" /></span>}
+            </span>
+          );
+        })()}
       </div>
       <div className="divide-y divide-border">
         {data.modelSummaries.map((m, i) => (
