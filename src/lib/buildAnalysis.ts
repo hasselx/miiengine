@@ -373,6 +373,42 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { name: "Momentum Risk", level: pctChange < -3 ? "HIGH" : pctChange < 0 ? "MEDIUM" : "LOW", filled: pctChange < -3 ? 4 : pctChange < 0 ? 3 : 1 },
       { name: "Liquidity Risk", level: "LOW" as any, filled: 2 },
     ],
+    dividendMetrics: [
+      { label: "Dividend Yield", value: safe(statistics?.dividends_and_splits?.dividend_yield, 'N/A'), note: "Annual dividend yield", color: num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'green' as const : 'muted' as const },
+      { label: "Payout Ratio", value: safe(statistics?.dividends_and_splits?.payout_ratio, 'N/A'), note: pe > 0 ? `Earnings coverage: ${fmt(pe, 1)}x P/E` : 'N/A', color: 'muted' as const },
+      { label: "Ex-Dividend Date", value: safe(statistics?.dividends_and_splits?.ex_dividend_date, 'N/A'), note: "Most recent ex-date", color: 'muted' as const },
+      { label: "Dividend Sustainability", value: num(statistics?.dividends_and_splits?.dividend_yield) > 3 ? 'Strong' : num(statistics?.dividends_and_splits?.dividend_yield) > 1 ? 'Moderate' : 'Minimal', note: "Based on payout and earnings", color: num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'green' as const : 'gold' as const },
+    ],
+    dividendNote: `${companyName} ${num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'offers a meaningful dividend yield suitable for income strategies' : 'has minimal dividend yield — this is primarily a capital appreciation play rather than an income generator'}.`,
+    patternSignals: (() => {
+      const signals: { name: string; signal: string; confidence: number; type: 'bullish' | 'bearish' | 'neutral' }[] = [];
+      if (techs) {
+        // Mean reversion
+        const fromHigh = (price - high52) / high52;
+        signals.push({ name: "Mean Reversion", signal: fromHigh < -0.3 ? "Deep Discount" : fromHigh < -0.1 ? "Below Mean" : "Near Fair Value", confidence: Math.abs(fromHigh) > 0.2 ? 70 : 50, type: fromHigh < -0.2 ? "bullish" : "neutral" });
+        // Momentum
+        signals.push({ name: "Momentum Score", signal: techs.rsi > 60 ? "Positive" : techs.rsi < 40 ? "Negative" : "Neutral", confidence: Math.abs(techs.rsi - 50) + 50, type: techs.rsi > 60 ? "bullish" : techs.rsi < 40 ? "bearish" : "neutral" });
+        // SMA crossover
+        if (techs.sma50 && techs.sma200) {
+          const golden = techs.sma50 > techs.sma200;
+          signals.push({ name: "SMA Crossover", signal: golden ? "Golden Cross" : "Death Cross", confidence: golden ? 72 : 68, type: golden ? "bullish" : "bearish" });
+        }
+        // Volume pattern
+        signals.push({ name: "Volume Pattern", signal: techs.avgVol3 > 0 ? "Active Trading" : "Low Volume", confidence: 55, type: "neutral" });
+      } else {
+        signals.push({ name: "Pattern Analysis", signal: "Insufficient Data", confidence: 0, type: "neutral" });
+      }
+      return signals;
+    })(),
+    patternNote: techs ? `Quantitative pattern analysis based on ${timeSeries.length} data points. RSI at ${fmt(techs.rsi, 0)} with price ${((price - high52) / high52 * 100).toFixed(1)}% from 52-week high. ${techs.sma50 && techs.sma200 ? (techs.sma50 > techs.sma200 ? 'Golden cross detected — bullish signal.' : 'Death cross active — bearish pressure.') : ''}` : 'Insufficient historical data for pattern analysis.',
+    earningsBreakdown: [
+      { label: "Current Price", value: `${currency}${fmt(price)}`, change: `${pctSign}${fmt(pctChange)}% today`, sentiment: (pctChange >= 0 ? "positive" : "negative") as 'positive' | 'negative' },
+      { label: "P/E Ratio", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A', sentiment: (pe > 40 ? "negative" : pe > 20 ? "neutral" : "positive") as any },
+      { label: "EPS (TTM)", value: `${currency}${safe(quote?.eps, 'N/A')}`, sentiment: num(quote?.eps) > 0 ? "positive" : "negative" },
+      { label: "52W Performance", value: `${((price - low52) / low52 * 100).toFixed(1)}% from low`, change: `${((price - high52) / high52 * 100).toFixed(1)}% from high`, sentiment: price > (high52 + low52) / 2 ? "positive" : "negative" },
+      { label: "Volume vs Avg", value: safe(quote?.volume, 'N/A'), change: `Avg: ${safe(quote?.average_volume, 'N/A')}`, sentiment: "neutral" },
+    ],
+    earningsNote: `${companyName} reports earnings at ${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'} with EPS of ${currency}${safe(quote?.eps, 'N/A')}. ${pctChange >= 0 ? 'Positive price action today suggests market confidence.' : 'Negative price action today warrants monitoring.'} The stock is trading ${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its annual range.`,
     finalVerdict: v.verdict,
     finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedUpside}% upside).`,
     finalAction: `<strong>Recommendation:</strong> ${totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : totalScore >= 60 ? 'Accumulate on dips near ' + currency + entryLow + '–' + currency + entryHigh + '. Hold with 12-month view.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
