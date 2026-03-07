@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Search, BarChart3, Shield, TrendingUp, Activity, Target, Layers, LineChart, Brain, Zap, ArrowRight, CheckCircle } from "lucide-react";
+import { Search, BarChart3, Shield, TrendingUp, Activity, Target, Layers, LineChart, Brain, Zap, ArrowRight, CheckCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
