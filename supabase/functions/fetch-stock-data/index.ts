@@ -4,6 +4,113 @@ const corsHeaders = {
 };
 
 const TWELVE_DATA_BASE = 'https://api.twelvedata.com';
+const ALPHA_VANTAGE_BASE = 'https://www.alphavantage.co/query';
+
+function isIndianExchange(exchange?: string): boolean {
+  return ['NSE', 'BSE'].includes((exchange || '').toUpperCase());
+}
+
+async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: string) {
+  const avSymbol = `${symbol}.${exchange === 'BSE' ? 'BSE' : 'NSE'}`;
+
+  const [quoteRes, overviewRes, dailyRes] = await Promise.all([
+    fetch(`${ALPHA_VANTAGE_BASE}?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(avSymbol)}&apikey=${apiKey}`),
+    fetch(`${ALPHA_VANTAGE_BASE}?function=OVERVIEW&symbol=${encodeURIComponent(avSymbol)}&apikey=${apiKey}`),
+    fetch(`${ALPHA_VANTAGE_BASE}?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(avSymbol)}&outputsize=full&apikey=${apiKey}`),
+  ]);
+
+  const [quoteData, overviewData, dailyData] = await Promise.all([
+    quoteRes.json(),
+    overviewRes.json(),
+    dailyRes.json(),
+  ]);
+
+  // Check for API errors
+  if (quoteData['Error Message'] || quoteData['Note']) {
+    throw new Error(quoteData['Error Message'] || quoteData['Note'] || 'Alpha Vantage API error');
+  }
+
+  const gq = quoteData['Global Quote'] || {};
+  const ts = dailyData['Time Series (Daily)'] || {};
+
+  // Transform Alpha Vantage data to match our expected format
+  const quote = {
+    symbol: symbol,
+    name: overviewData['Name'] || symbol,
+    exchange: exchange,
+    close: parseFloat(gq['05. price']) || 0,
+    price: parseFloat(gq['05. price']) || 0,
+    previous_close: parseFloat(gq['08. previous close']) || 0,
+    change: parseFloat(gq['09. change']) || 0,
+    percent_change: parseFloat((gq['10. change percent'] || '0').replace('%', '')) || 0,
+    volume: gq['06. volume'] || '0',
+    average_volume: overviewData['AverageVolume'] || 'N/A',
+    pe: parseFloat(overviewData['PERatio']) || 0,
+    eps: parseFloat(overviewData['EPS']) || 0,
+    fifty_two_week: {
+      high: parseFloat(overviewData['52WeekHigh']) || 0,
+      low: parseFloat(overviewData['52WeekLow']) || 0,
+    },
+  };
+
+  const profile = {
+    name: overviewData['Name'] || symbol,
+    sector: overviewData['Sector'] || 'N/A',
+    industry: overviewData['Industry'] || 'N/A',
+    country: overviewData['Country'] || 'India',
+    employees: overviewData['FullTimeEmployees'] || 'N/A',
+    description: overviewData['Description'] || '',
+  };
+
+  const statistics = {
+    valuations_metrics: {
+      market_capitalization: parseFloat(overviewData['MarketCapitalization']) || 0,
+    },
+  };
+
+  // Convert time series to array format
+  const timeSeries = Object.entries(ts)
+    .slice(0, 250)
+    .map(([date, values]: [string, any]) => ({
+      datetime: date,
+      open: values['1. open'],
+      high: values['2. high'],
+      low: values['3. low'],
+      close: values['4. close'],
+      volume: values['5. volume'],
+    }));
+
+  return { quote, profile, statistics, timeSeries };
+}
+
+async function fetchFromTwelveData(symbol: string, exchange: string | undefined, apiKey: string) {
+  const symbolParam = exchange ? `${symbol}:${exchange}` : symbol;
+
+  const [quoteRes, profileRes, statsRes, timeSeriesRes] = await Promise.all([
+    fetch(`${TWELVE_DATA_BASE}/quote?symbol=${encodeURIComponent(symbolParam)}&apikey=${apiKey}`),
+    fetch(`${TWELVE_DATA_BASE}/profile?symbol=${encodeURIComponent(symbolParam)}&apikey=${apiKey}`),
+    fetch(`${TWELVE_DATA_BASE}/statistics?symbol=${encodeURIComponent(symbolParam)}&apikey=${apiKey}`),
+    fetch(`${TWELVE_DATA_BASE}/time_series?symbol=${encodeURIComponent(symbolParam)}&interval=1day&outputsize=250&apikey=${apiKey}`),
+  ]);
+
+  const [quote, profile, stats, timeSeries] = await Promise.all([
+    quoteRes.json(),
+    profileRes.json(),
+    statsRes.json(),
+    timeSeriesRes.json(),
+  ]);
+
+  if (quote.code && quote.code !== 200) {
+    throw new Error(quote.message || 'Failed to fetch stock data from Twelve Data');
+  }
+
+  return {
+    quote,
+    profile,
+    statistics: stats,
+    timeSeries: timeSeries.values || [],
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,13 +118,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('TWELVE_DATA_API_KEY');
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'TWELVE_DATA_API_KEY not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const { symbol, exchange } = await req.json();
     if (!symbol) {
       return new Response(JSON.stringify({ error: 'Symbol is required' }), {
@@ -25,36 +125,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    const symbolParam = exchange ? `${symbol}:${exchange}` : symbol;
+    let result;
 
-    // Fetch quote, profile, and statistics in parallel
-    const [quoteRes, profileRes, statsRes, timeSeriesRes] = await Promise.all([
-      fetch(`${TWELVE_DATA_BASE}/quote?symbol=${encodeURIComponent(symbolParam)}&apikey=${apiKey}`),
-      fetch(`${TWELVE_DATA_BASE}/profile?symbol=${encodeURIComponent(symbolParam)}&apikey=${apiKey}`),
-      fetch(`${TWELVE_DATA_BASE}/statistics?symbol=${encodeURIComponent(symbolParam)}&apikey=${apiKey}`),
-      fetch(`${TWELVE_DATA_BASE}/time_series?symbol=${encodeURIComponent(symbolParam)}&interval=1day&outputsize=250&apikey=${apiKey}`),
-    ]);
-
-    const [quote, profile, stats, timeSeries] = await Promise.all([
-      quoteRes.json(),
-      profileRes.json(),
-      statsRes.json(),
-      timeSeriesRes.json(),
-    ]);
-
-    // Check for API errors
-    if (quote.code && quote.code !== 200) {
-      return new Response(JSON.stringify({ error: quote.message || 'Failed to fetch stock data', code: quote.code }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (isIndianExchange(exchange)) {
+      const avKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
+      if (!avKey) {
+        return new Response(JSON.stringify({ error: 'ALPHA_VANTAGE_API_KEY not configured' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log(`Using Alpha Vantage for ${symbol}:${exchange}`);
+      result = await fetchFromAlphaVantage(symbol, exchange, avKey);
+    } else {
+      const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
+      if (!tdKey) {
+        return new Response(JSON.stringify({ error: 'TWELVE_DATA_API_KEY not configured' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log(`Using Twelve Data for ${symbol}:${exchange || 'default'}`);
+      result = await fetchFromTwelveData(symbol, exchange, tdKey);
     }
-
-    const result = {
-      quote,
-      profile,
-      statistics: stats,
-      timeSeries: timeSeries.values || [],
-    };
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
