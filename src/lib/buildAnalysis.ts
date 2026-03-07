@@ -385,9 +385,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       if (techs) {
         // Mean reversion
         const fromHigh = (price - high52) / high52;
-        signals.push({ name: "Mean Reversion", signal: fromHigh < -0.3 ? "Deep Discount" : fromHigh < -0.1 ? "Below Mean" : "Near Fair Value", confidence: Math.abs(fromHigh) > 0.2 ? 70 : 50, type: fromHigh < -0.2 ? "bullish" : "neutral" });
+        signals.push({ name: "Mean Reversion", signal: fromHigh < -0.3 ? "Deep Discount" : fromHigh < -0.1 ? "Below Mean" : "Near Fair Value", confidence: Math.round(Math.abs(fromHigh) > 0.2 ? 70 : 50), type: fromHigh < -0.2 ? "bullish" : "neutral" });
         // Momentum
-        signals.push({ name: "Momentum Score", signal: techs.rsi > 60 ? "Positive" : techs.rsi < 40 ? "Negative" : "Neutral", confidence: Math.abs(techs.rsi - 50) + 50, type: techs.rsi > 60 ? "bullish" : techs.rsi < 40 ? "bearish" : "neutral" });
+        signals.push({ name: "Momentum Score", signal: techs.rsi > 60 ? "Positive" : techs.rsi < 40 ? "Negative" : "Neutral", confidence: Math.round(Math.min(99, Math.abs(techs.rsi - 50) + 50)), type: techs.rsi > 60 ? "bullish" : techs.rsi < 40 ? "bearish" : "neutral" });
         // SMA crossover
         if (techs.sma50 && techs.sma200) {
           const golden = techs.sma50 > techs.sma200;
