@@ -90,6 +90,7 @@ export type Database = {
         Row: {
           company_name: string
           id: string
+          report_data: Json | null
           searched_at: string
           ticker: string | null
           total_score: number | null
@@ -99,6 +100,7 @@ export type Database = {
         Insert: {
           company_name: string
           id?: string
+          report_data?: Json | null
           searched_at?: string
           ticker?: string | null
           total_score?: number | null
@@ -108,6 +110,7 @@ export type Database = {
         Update: {
           company_name?: string
           id?: string
+          report_data?: Json | null
           searched_at?: string
           ticker?: string | null
           total_score?: number | null
