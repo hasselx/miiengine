@@ -77,9 +77,9 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
     throw new Error(`No data found for ${symbol} (tried: ${candidates.join(', ')})`);
   }
 
-  const meta = quoteData.meta || {};
-  const indicators = quoteData.indicators?.quote?.[0] || {};
-  const timestamps = quoteData.timestamp || [];
+  const meta = chartResult.meta || {};
+  const indicators = chartResult.indicators?.quote?.[0] || {};
+  const timestamps = chartResult.timestamp || [];
 
   // Try to get additional info via quoteSummary
   let summaryProfile: any = {};
