@@ -4,10 +4,28 @@ const corsHeaders = {
 };
 
 const TWELVE_DATA_BASE = 'https://api.twelvedata.com';
-const YAHOO_BASE = 'https://query1.finance.yahoo.com';
 
 function isIndianExchange(exchange?: string): boolean {
   return ['NSE', 'BSE'].includes((exchange || '').toUpperCase());
+}
+
+// ─── Yahoo Finance with crumb/cookie auth ───
+async function getYahooCrumb(): Promise<{ crumb: string; cookie: string }> {
+  // Step 1: Get consent cookie
+  const consentRes = await fetch('https://fc.yahoo.com/', { redirect: 'manual' });
+  await consentRes.text();
+  const setCookie = consentRes.headers.get('set-cookie') || '';
+
+  // Step 2: Get crumb
+  const crumbRes = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Cookie': setCookie,
+    },
+  });
+  const crumb = await crumbRes.text();
+
+  return { crumb, cookie: setCookie };
 }
 
 // ─── Provider 1: Twelve Data ───
@@ -32,85 +50,67 @@ async function fetchFromTwelveData(symbol: string, exchange: string | undefined,
   return { quote, profile, statistics: stats, timeSeries: timeSeries.values || [] };
 }
 
-// ─── Provider 2: Yahoo Finance (direct REST API) ───
+// ─── Provider 2: Yahoo Finance (REST with crumb auth) ───
 async function fetchFromYahooFinance(symbol: string, exchange: string) {
-  // Build candidate Yahoo symbols
   const candidates: string[] = isIndianExchange(exchange)
     ? [`${symbol}.NS`, `${symbol}.BO`]
     : [symbol];
+
+  // Get auth crumb
+  let crumb = '';
+  let cookie = '';
+  try {
+    const auth = await getYahooCrumb();
+    crumb = auth.crumb;
+    cookie = auth.cookie;
+    console.log(`Yahoo crumb obtained: ${crumb ? 'yes' : 'no'}`);
+  } catch (e) {
+    console.warn(`Failed to get Yahoo crumb: ${e}`);
+  }
+
+  const headers: Record<string, string> = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+  };
+  if (cookie) headers['Cookie'] = cookie;
 
   let chartResult: any = null;
   let yahooSymbol = candidates[0];
 
   for (const candidate of candidates) {
     try {
-      // Use v8 chart API - no auth required for basic data
-      const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d&includePrePost=false`;
-      console.log(`Yahoo Finance: trying ${url}`);
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-        },
-      });
-      console.log(`Yahoo Finance response for ${candidate}: ${res.status}`);
+      const crumbParam = crumb ? `&crumb=${encodeURIComponent(crumb)}` : '';
+      const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d${crumbParam}`;
+      console.log(`Yahoo: trying ${candidate}`);
+      const res = await fetch(url, { headers });
+      console.log(`Yahoo ${candidate}: status ${res.status}`);
+      
       if (!res.ok) {
         const body = await res.text();
-        console.warn(`Yahoo ${candidate} returned ${res.status}: ${body.substring(0, 200)}`);
+        console.warn(`Yahoo ${candidate}: ${body.substring(0, 200)}`);
         continue;
       }
+      
       const json = await res.json();
       const result = json?.chart?.result?.[0];
       if (result && result.meta?.regularMarketPrice) {
         chartResult = result;
         yahooSymbol = candidate;
+        console.log(`Yahoo ${candidate}: SUCCESS, price=${result.meta.regularMarketPrice}`);
         break;
-      } else {
-        console.warn(`Yahoo ${candidate}: no valid result in response`);
       }
     } catch (e) {
-      console.warn(`Yahoo ${candidate} exception: ${e}`);
+      console.warn(`Yahoo ${candidate} error: ${e}`);
     }
   }
 
   if (!chartResult) {
-    throw new Error(`No data found for ${symbol} (tried: ${candidates.join(', ')})`);
+    throw new Error(`No Yahoo data for ${symbol} (tried: ${candidates.join(', ')})`);
   }
 
   const meta = chartResult.meta || {};
   const indicators = chartResult.indicators?.quote?.[0] || {};
   const timestamps = chartResult.timestamp || [];
-
-  // Try to get additional info via quoteSummary
-  let summaryProfile: any = {};
-  try {
-    const summaryUrl = `${YAHOO_BASE}/v10/finance/quoteSummary/${encodeURIComponent(yahooSymbol)}?modules=assetProfile,defaultKeyStatistics,financialData`;
-    const summaryRes = await fetch(summaryUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MIIEngine/1.0)' },
-    });
-    if (summaryRes.ok) {
-      const summaryJson = await summaryRes.json();
-      const r = summaryJson?.quoteSummary?.result?.[0];
-      summaryProfile = r?.assetProfile || {};
-    } else {
-      await summaryRes.text();
-    }
-  } catch { /* optional */ }
-
-  // Also fetch the v6 quote for PE, EPS, market cap etc.
-  let v6Data: any = {};
-  try {
-    const v6Url = `${YAHOO_BASE}/v6/finance/quote?symbols=${encodeURIComponent(yahooSymbol)}`;
-    const v6Res = await fetch(v6Url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MIIEngine/1.0)' },
-    });
-    if (v6Res.ok) {
-      const v6Json = await v6Res.json();
-      v6Data = v6Json?.quoteResponse?.result?.[0] || {};
-    } else {
-      await v6Res.text();
-    }
-  } catch { /* optional */ }
 
   const price = meta.regularMarketPrice ?? 0;
   const prevClose = meta.previousClose ?? meta.chartPreviousClose ?? 0;
@@ -119,37 +119,36 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
 
   const quote = {
     symbol,
-    name: v6Data.longName || v6Data.shortName || meta.symbol || symbol,
+    name: meta.longName || meta.shortName || meta.symbol || symbol,
     exchange: exchange || meta.exchangeName || '',
     close: price,
     price,
     previous_close: prevClose,
     change: parseFloat(change.toFixed(2)),
     percent_change: parseFloat(pctChange.toFixed(2)),
-    volume: String(meta.regularMarketVolume ?? v6Data.regularMarketVolume ?? '0'),
-    average_volume: String(v6Data.averageDailyVolume3Month ?? 'N/A'),
-    pe: v6Data.trailingPE ?? 0,
-    eps: v6Data.epsTrailingTwelveMonths ?? 0,
+    volume: String(meta.regularMarketVolume ?? '0'),
+    average_volume: 'N/A',
+    pe: 0,
+    eps: 0,
     fifty_two_week: {
-      high: meta.fiftyTwoWeekHigh ?? v6Data.fiftyTwoWeekHigh ?? 0,
-      low: meta.fiftyTwoWeekLow ?? v6Data.fiftyTwoWeekLow ?? 0,
+      high: meta.fiftyTwoWeekHigh ?? 0,
+      low: meta.fiftyTwoWeekLow ?? 0,
     },
   };
 
   const profile = {
     name: quote.name,
-    sector: summaryProfile.sector || v6Data.sector || 'N/A',
-    industry: summaryProfile.industry || v6Data.industry || 'N/A',
-    country: summaryProfile.country || (isIndianExchange(exchange) ? 'India' : 'N/A'),
-    employees: summaryProfile.fullTimeEmployees || 'N/A',
-    description: summaryProfile.longBusinessSummary || '',
+    sector: 'N/A',
+    industry: 'N/A',
+    country: isIndianExchange(exchange) ? 'India' : 'N/A',
+    employees: 'N/A',
+    description: '',
   };
 
   const statistics = {
-    valuations_metrics: { market_capitalization: v6Data.marketCap ?? meta.marketCap ?? 0 },
+    valuations_metrics: { market_capitalization: 0 },
   };
 
-  // Build time series from chart data
   const timeSeries = timestamps.map((ts: number, i: number) => {
     const d = new Date(ts * 1000);
     return {
@@ -229,19 +228,18 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
   return { quote, profile, statistics, timeSeries };
 }
 
-// ─── Cascading fetch with automatic fallback ───
+// ─── Cascading fetch ───
 async function fetchWithFallbacks(symbol: string, exchange: string | undefined) {
   const errors: string[] = [];
 
   if (isIndianExchange(exchange)) {
-    // Indian stocks: Yahoo Finance → Alpha Vantage
     try {
       console.log(`[Indian] Trying Yahoo Finance for ${symbol}`);
       return await fetchFromYahooFinance(symbol, exchange!);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      errors.push(`Yahoo Finance: ${msg}`);
-      console.warn(`Yahoo Finance failed: ${msg}`);
+      errors.push(`Yahoo: ${msg}`);
+      console.warn(`Yahoo failed: ${msg}`);
     }
 
     const avKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
@@ -251,12 +249,11 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
         return await fetchFromAlphaVantage(symbol, exchange!, avKey);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        errors.push(`Alpha Vantage: ${msg}`);
+        errors.push(`AlphaVantage: ${msg}`);
         console.warn(`Alpha Vantage failed: ${msg}`);
       }
     }
   } else {
-    // Global stocks: Twelve Data → Yahoo Finance
     const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
     if (tdKey) {
       try {
@@ -264,7 +261,7 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
         return await fetchFromTwelveData(symbol, exchange, tdKey);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        errors.push(`Twelve Data: ${msg}`);
+        errors.push(`TwelveData: ${msg}`);
         console.warn(`Twelve Data failed: ${msg}`);
       }
     }
@@ -274,12 +271,12 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       return await fetchFromYahooFinance(symbol, exchange || '');
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      errors.push(`Yahoo Finance: ${msg}`);
-      console.warn(`Yahoo Finance failed: ${msg}`);
+      errors.push(`Yahoo: ${msg}`);
+      console.warn(`Yahoo failed: ${msg}`);
     }
   }
 
-  throw new Error(`All data providers failed for ${symbol}. Errors: ${errors.join(' | ')}`);
+  throw new Error(`All providers failed for ${symbol}. ${errors.join(' | ')}`);
 }
 
 // ─── Main handler ───
@@ -302,7 +299,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error fetching stock data:', error);
+    console.error('Error:', error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
