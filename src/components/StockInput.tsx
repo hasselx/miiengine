@@ -17,23 +17,23 @@ const StockInput = ({ onAnalyze, isLoading }: StockInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-2xl">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch gap-4 w-full max-w-3xl">
       <Input
         placeholder="Country (e.g., India)"
         value={country}
         onChange={(e) => setCountry(e.target.value)}
-        className="bg-card border-border font-mono text-xs tracking-wide placeholder:text-muted-foreground"
+        className="bg-card border-border font-mono text-sm tracking-wide placeholder:text-muted-foreground h-12 px-4 min-w-[200px]"
       />
       <Input
         placeholder="Company Name (e.g., Paras Defence)"
         value={company}
         onChange={(e) => setCompany(e.target.value)}
-        className="bg-card border-border font-mono text-xs tracking-wide placeholder:text-muted-foreground flex-1"
+        className="bg-card border-border font-mono text-sm tracking-wide placeholder:text-muted-foreground h-12 px-4 flex-[2]"
       />
       <Button
         type="submit"
         disabled={isLoading || !company.trim() || !country.trim()}
-        className="bg-gold text-ink font-mono text-[11px] font-semibold tracking-[2px] uppercase px-6 hover:bg-gold-light"
+        className="bg-gold text-ink font-mono text-[11px] font-semibold tracking-[2px] uppercase px-8 h-12 hover:bg-gold-light whitespace-nowrap"
       >
         {isLoading ? "ANALYZING..." : "ANALYZE"}
       </Button>
