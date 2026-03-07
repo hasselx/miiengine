@@ -77,7 +77,8 @@ const HoldingAnalysis = ({ data }: { data: StockAnalysis }) => {
     setResult(res);
   };
 
-  const currency = data.headerMetrics[0]?.value?.replace(/[0-9.,\-\s]/g, '') || '₹';
+  const rawVal = data.headerMetrics[0]?.value || '';
+  const currency = rawVal.match(/^[^\d\-\s]+/)?.[0] || '$';
 
   return (
     <SectionWrapper num="⊕" title="My Holding Analysis">
