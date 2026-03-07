@@ -44,6 +44,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
   }, []);
 
   return (
+    <div data-report-root>
     <DashboardLayout
       onSearchOpen={onSearchOpen}
       onSectionClick={scrollTo}
@@ -91,6 +92,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
         {data.disclaimer}
       </div>
     </DashboardLayout>
+    </div>
   );
 };
 

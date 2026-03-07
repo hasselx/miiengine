@@ -152,3 +152,10 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+@media print {
+  body { background: white !important; color: black !important; }
+  [data-report-root] { break-inside: auto; }
+  nav, button, .no-print { display: none !important; }
+  * { color-adjust: exact; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
