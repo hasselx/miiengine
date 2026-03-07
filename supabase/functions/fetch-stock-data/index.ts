@@ -31,7 +31,9 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
   console.log('AV Quote keys:', JSON.stringify(Object.keys(quoteData)));
   console.log('AV Global Quote:', JSON.stringify(quoteData['Global Quote'] || {}));
   console.log('AV Daily keys:', JSON.stringify(Object.keys(dailyData)));
-  console.log('AV Overview Name:', overviewData['Name'], 'Symbol:', overviewData['Symbol']);
+  console.log('AV Quote Info:', quoteData['Information'] || 'none');
+  console.log('AV Daily Info:', dailyData['Information'] || 'none');
+  console.log('AV Overview Info:', overviewData['Information'] || 'none');
 
   // Check for API errors
   if (quoteData['Error Message'] || quoteData['Note']) {
