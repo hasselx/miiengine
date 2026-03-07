@@ -39,28 +39,41 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
     ? [`${symbol}.NS`, `${symbol}.BO`]
     : [symbol];
 
-  let quoteData: any = null;
+  let chartResult: any = null;
   let yahooSymbol = candidates[0];
 
-  // Try each candidate symbol via Yahoo's v8 quote endpoint
   for (const candidate of candidates) {
     try {
-      const url = `${YAHOO_BASE}/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d&includePrePost=false`;
+      // Use v8 chart API - no auth required for basic data
+      const url = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d&includePrePost=false`;
+      console.log(`Yahoo Finance: trying ${url}`);
       const res = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MIIEngine/1.0)' },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+        },
       });
-      if (!res.ok) { await res.text(); continue; }
+      console.log(`Yahoo Finance response for ${candidate}: ${res.status}`);
+      if (!res.ok) {
+        const body = await res.text();
+        console.warn(`Yahoo ${candidate} returned ${res.status}: ${body.substring(0, 200)}`);
+        continue;
+      }
       const json = await res.json();
       const result = json?.chart?.result?.[0];
       if (result && result.meta?.regularMarketPrice) {
-        quoteData = result;
+        chartResult = result;
         yahooSymbol = candidate;
         break;
+      } else {
+        console.warn(`Yahoo ${candidate}: no valid result in response`);
       }
-    } catch { /* try next candidate */ }
+    } catch (e) {
+      console.warn(`Yahoo ${candidate} exception: ${e}`);
+    }
   }
 
-  if (!quoteData) {
+  if (!chartResult) {
     throw new Error(`No data found for ${symbol} (tried: ${candidates.join(', ')})`);
   }
 
