@@ -10,10 +10,10 @@ const PriceExtremes = ({ data }: Props) => {
   const c = p.currency;
 
   const items = [
-    { label: "All-Time High (ATH)", price: `${c}${p.ath.toFixed(2)}`, change: p.athChange, isNeg: parseFloat(p.athChange) < 0 },
-    { label: "All-Time Low (ATL)", price: `${c}${p.atl.toFixed(2)}`, change: p.atlChange, isNeg: false },
-    { label: `${new Date().getFullYear()} High`, price: `${c}${p.yearHigh.toFixed(2)}`, change: p.yearHighChange, isNeg: parseFloat(p.yearHighChange) < 0 },
-    { label: `${new Date().getFullYear()} Low`, price: `${c}${p.yearLow.toFixed(2)}`, change: p.yearLowChange, isNeg: false },
+    { label: "All-Time High (ATH)", date: p.athDate, price: `${c}${p.ath.toFixed(2)}`, change: p.athChange, isNeg: parseFloat(p.athChange) < 0 },
+    { label: "All-Time Low (ATL)", date: p.atlDate, price: `${c}${p.atl.toFixed(2)}`, change: p.atlChange, isNeg: false },
+    { label: `${new Date().getFullYear()} High`, date: p.yearHighDate, price: `${c}${p.yearHigh.toFixed(2)}`, change: p.yearHighChange, isNeg: parseFloat(p.yearHighChange) < 0 },
+    { label: `${new Date().getFullYear()} Low`, date: p.yearLowDate, price: `${c}${p.yearLow.toFixed(2)}`, change: p.yearLowChange, isNeg: false },
   ];
 
   return (
@@ -27,6 +27,9 @@ const PriceExtremes = ({ data }: Props) => {
             <div className="font-mono text-[10px] tracking-[1.5px] uppercase text-muted-foreground">
               {item.label}
             </div>
+            {item.date && (
+              <div className="font-mono text-[9px] text-muted-foreground/70">{item.date}</div>
+            )}
             <div className="font-mono text-lg font-bold text-foreground">
               {item.price}
             </div>

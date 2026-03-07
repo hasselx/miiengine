@@ -68,32 +68,42 @@ function computeTechnicals(timeSeries: any[]) {
   const high52 = Math.max(...yearData);
   const low52 = Math.min(...yearData);
 
-  // All-time high/low from all available data
-  const allHigh = Math.max(...closes);
-  const allLow = Math.min(...closes);
+  // All-time high/low from all available data with dates
+  const tsReversed = [...timeSeries].reverse(); // oldest to newest
+  let allHigh = closes[0], allLow = closes[0], allHighDate = '', allLowDate = '';
+  for (const d of tsReversed as any[]) {
+    const c = num(d.close);
+    const dt = d.datetime || d.date || '';
+    if (c >= allHigh) { allHigh = c; allHighDate = dt; }
+    if (c <= allLow) { allLow = c; allLowDate = dt; }
+  }
 
-  // Current year high/low
+  // Current year high/low with dates
   const now = new Date();
   const currentYear = now.getFullYear();
-  const tsReversed = [...timeSeries].reverse(); // oldest to newest
-  const currentYearCloses: number[] = [];
-  for (let i = 0; i < tsReversed.length; i++) {
-    const d = tsReversed[i] as any;
-    if (d.datetime || d.date) {
-      const dateStr = d.datetime || d.date;
-      if (new Date(dateStr).getFullYear() === currentYear) {
-        currentYearCloses.push(num(d.close));
-      }
+  let ytdHigh = -Infinity, ytdLow = Infinity, ytdHighDate = '', ytdLowDate = '';
+  for (const d of tsReversed as any[]) {
+    const dateStr = d.datetime || d.date || '';
+    if (new Date(dateStr).getFullYear() === currentYear) {
+      const c = num(d.close);
+      if (c >= ytdHigh) { ytdHigh = c; ytdHighDate = dateStr; }
+      if (c <= ytdLow) { ytdLow = c; ytdLowDate = dateStr; }
     }
   }
-  const ytdHigh = currentYearCloses.length > 0 ? Math.max(...currentYearCloses) : allHigh;
-  const ytdLow = currentYearCloses.length > 0 ? Math.min(...currentYearCloses) : allLow;
+  if (ytdHigh === -Infinity) { ytdHigh = allHigh; ytdHighDate = allHighDate; }
+  if (ytdLow === Infinity) { ytdLow = allLow; ytdLowDate = allLowDate; }
+
+  const fmtDate = (s: string) => {
+    if (!s) return '';
+    const d = new Date(s);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`;
+  };
 
   // Recent volume
   const volumes = timeSeries.slice(0, 3).map((d: any) => num(d.volume));
   const avgVol3 = volumes.reduce((a: number, b: number) => a + b, 0) / 3;
 
-  return { currentPrice, sma50, sma100, sma200, rsi, high52, low52, allHigh, allLow, ytdHigh, ytdLow, avgVol3 };
+  return { currentPrice, sma50, sma100, sma200, rsi, high52, low52, allHigh, allLow, allHighDate: fmtDate(allHighDate), allLowDate: fmtDate(allLowDate), ytdHigh, ytdLow, ytdHighDate: fmtDate(ytdHighDate), ytdLowDate: fmtDate(ytdLowDate), avgVol3 };
 }
 
 // Score calculation functions
@@ -347,12 +357,16 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     priceExtremes: {
       ath: techs?.allHigh || high52,
       athChange: `${(((price - (techs?.allHigh || high52)) / (techs?.allHigh || high52)) * 100).toFixed(1)}%`,
+      athDate: techs?.allHighDate || '',
       atl: techs?.allLow || low52,
       atlChange: `+${(((price - (techs?.allLow || low52)) / (techs?.allLow || low52)) * 100).toFixed(1)}%`,
+      atlDate: techs?.allLowDate || '',
       yearHigh: techs?.ytdHigh || high52,
       yearHighChange: `${(((price - (techs?.ytdHigh || high52)) / (techs?.ytdHigh || high52)) * 100).toFixed(1)}%`,
+      yearHighDate: techs?.ytdHighDate || '',
       yearLow: techs?.ytdLow || low52,
       yearLowChange: `+${(((price - (techs?.ytdLow || low52)) / (techs?.ytdLow || low52)) * 100).toFixed(1)}%`,
+      yearLowDate: techs?.ytdLowDate || '',
       currency,
     },
     watermark: `${companyName} · ${ticker} · Multi-Institutional Intelligence Engine · ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,

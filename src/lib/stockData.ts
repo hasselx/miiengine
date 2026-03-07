@@ -101,12 +101,16 @@ export interface StockAnalysis {
   priceExtremes: {
     ath: number;
     athChange: string;
+    athDate: string;
     atl: number;
     atlChange: string;
+    atlDate: string;
     yearHigh: number;
     yearHighChange: string;
+    yearHighDate: string;
     yearLow: number;
     yearLowChange: string;
+    yearLowDate: string;
     currency: string;
   };
   watermark: string;
@@ -252,8 +256,10 @@ export function getAnalysis(company: string, country: string): StockAnalysis {
       { label: "HORIZON", value: "12 Months" },
     ],
     priceExtremes: {
-      ath: 972, athChange: "-34.5%", atl: 405, atlChange: "+57.3%",
-      yearHigh: 972, yearHighChange: "-34.5%", yearLow: 580, yearLowChange: "+9.8%",
+      ath: 972, athChange: "-34.5%", athDate: "15/09/25",
+      atl: 405, atlChange: "+57.3%", atlDate: "22/03/23",
+      yearHigh: 972, yearHighChange: "-34.5%", yearHighDate: "10/01/26",
+      yearLow: 580, yearLowChange: "+9.8%", yearLowDate: "05/02/26",
       currency: "₹",
     },
     watermark: `${company} · ${country} · Multi-Institutional Intelligence Engine · March 2026`,
