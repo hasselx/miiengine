@@ -50,6 +50,11 @@ const DashboardReport = ({ data, onSearchOpen }: DashboardReportProps) => {
       <ReportHeader data={data} />
       <ScoreBanner data={data} />
 
+      {/* Holding Analysis — below verdict */}
+      <div className="px-4 sm:px-8 pt-6 max-w-[1400px] mx-auto">
+        <HoldingAnalysis data={data} />
+      </div>
+
       <div className="px-4 sm:px-8 py-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 max-w-[1400px] mx-auto">
         {/* Main column */}
         <div className="space-y-6">
