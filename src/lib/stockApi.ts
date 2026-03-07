@@ -18,11 +18,12 @@ export async function fetchStockData(symbol: string, exchange?: string): Promise
   return data as StockRawData;
 }
 
-// Map common country+company to Twelve Data symbols
+// Map common country+company aliases to symbols
 const SYMBOL_MAP: Record<string, { symbol: string; exchange: string }> = {
   // Indian stocks
   'paras defence': { symbol: 'PARAS', exchange: 'NSE' },
   'paras defence and space technologies': { symbol: 'PARAS', exchange: 'NSE' },
+  'parasdefen': { symbol: 'PARAS', exchange: 'NSE' },
   'paras': { symbol: 'PARAS', exchange: 'NSE' },
   'reliance': { symbol: 'RELIANCE', exchange: 'NSE' },
   'reliance industries': { symbol: 'RELIANCE', exchange: 'NSE' },
@@ -55,6 +56,11 @@ const SYMBOL_MAP: Record<string, { symbol: string; exchange: string }> = {
   'larsen': { symbol: 'LT', exchange: 'NSE' },
   'l&t': { symbol: 'LT', exchange: 'NSE' },
   'asian paints': { symbol: 'ASIANPAINT', exchange: 'NSE' },
+
+  // Commodities / futures
+  'brent crude': { symbol: 'BZ=F', exchange: 'NYM' },
+  'brentcrude': { symbol: 'BZ=F', exchange: 'NYM' },
+
   // US stocks
   'apple': { symbol: 'AAPL', exchange: 'NASDAQ' },
   'apple inc': { symbol: 'AAPL', exchange: 'NASDAQ' },
@@ -69,19 +75,61 @@ const SYMBOL_MAP: Record<string, { symbol: string; exchange: string }> = {
   'amd': { symbol: 'AMD', exchange: 'NASDAQ' },
 };
 
-export function resolveSymbol(company: string): { symbol: string; exchange: string; country: string } {
-  const key = company.toLowerCase().trim();
+function normalizeCompanyKey(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  if (SYMBOL_MAP[key]) {
-    const mapped = SYMBOL_MAP[key];
-    const country = ['NSE', 'BSE'].includes(mapped.exchange) ? 'India' : 
-                    ['LSE'].includes(mapped.exchange) ? 'UK' :
-                    ['TSE'].includes(mapped.exchange) ? 'Japan' :
-                    ['XETR'].includes(mapped.exchange) ? 'Germany' : 'US';
-    return { ...mapped, country };
+function inferCountry(exchange: string): string {
+  const ex = exchange.toUpperCase();
+  if (['NSE', 'BSE'].includes(ex)) return 'India';
+  if (['LSE'].includes(ex)) return 'UK';
+  if (['TSE'].includes(ex)) return 'Japan';
+  if (['XETR'].includes(ex)) return 'Germany';
+  return 'US';
+}
+
+function parseExplicitTicker(input: string): { symbol: string; exchange: string } | null {
+  const raw = input.toUpperCase().replace(/\s+/g, '');
+  if (!raw || !/^[A-Z0-9.=_-]{1,20}$/.test(raw)) return null;
+
+  if (raw.endsWith('.NS')) return { symbol: raw.replace(/\.NS$/, ''), exchange: 'NSE' };
+  if (raw.endsWith('.BO')) return { symbol: raw.replace(/\.BO$/, ''), exchange: 'BSE' };
+  if (raw.includes('=F')) return { symbol: raw, exchange: 'NYM' };
+
+  return { symbol: raw, exchange: 'NASDAQ' };
+}
+
+export function resolveSymbol(company: string): { symbol: string; exchange: string; country: string } {
+  const normalized = normalizeCompanyKey(company);
+
+  // 1) Exact alias match
+  const exact = SYMBOL_MAP[normalized];
+  if (exact) {
+    return { ...exact, country: inferCountry(exact.exchange) };
   }
 
-  // Default: treat as US stock, use name as symbol
-  const symbol = company.toUpperCase().replace(/\s+/g, '').replace(/[^A-Z]/g, '').slice(0, 10);
-  return { symbol, exchange: 'NASDAQ', country: 'US' };
+  // 2) Fuzzy alias match (handles inputs like "parasdefen")
+  const compactInput = normalized.replace(/\s+/g, '');
+  for (const [alias, mapped] of Object.entries(SYMBOL_MAP)) {
+    const compactAlias = alias.replace(/\s+/g, '');
+    if (compactAlias.length >= 4 && (compactInput.includes(compactAlias) || compactAlias.includes(compactInput))) {
+      return { ...mapped, country: inferCountry(mapped.exchange) };
+    }
+  }
+
+  // 3) User typed a ticker directly (supports .NS/.BO and =F)
+  const parsed = parseExplicitTicker(company);
+  if (parsed) {
+    return { ...parsed, country: inferCountry(parsed.exchange) };
+  }
+
+  // 4) Final fallback
+  const symbol = company.toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9.=_-]/g, '').slice(0, 20);
+  return { symbol: symbol || 'AAPL', exchange: 'NASDAQ', country: 'US' };
 }
