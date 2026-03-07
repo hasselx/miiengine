@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { StockAnalysis } from "@/lib/stockData";
 import DashboardLayout from "./layout/DashboardLayout";
 import ReportHeader from "./report/ReportHeader";
@@ -37,6 +37,8 @@ const SECTION_IDS: Record<string, string> = {
 };
 
 const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportProps) => {
+  const [holdingsOpen, setHoldingsOpen] = useState(false);
+
   const scrollTo = useCallback((section: string) => {
     const id = SECTION_IDS[section];
     if (id) {
@@ -51,16 +53,27 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
       onSectionClick={scrollTo}
       companyName={data.company}
     >
-      <ReportHeader data={data} />
+      <ReportHeader
+        data={data}
+        onToggleHoldings={() => setHoldingsOpen(prev => !prev)}
+        holdingsOpen={holdingsOpen}
+      />
       {savedSnapshot && (
         <ComparisonBanner savedData={savedSnapshot.data} currentData={data} savedDate={savedSnapshot.date} />
       )}
       <ScoreBanner data={data} />
 
-      {/* Holding Analysis — below verdict */}
+      {/* Price Extremes — prominent position below score */}
       <div className="px-4 sm:px-8 pt-6 max-w-[1400px] mx-auto">
-        <HoldingAnalysis data={data} />
+        <PriceExtremes data={data} />
       </div>
+
+      {/* Holding Analysis — togglable */}
+      {holdingsOpen && (
+        <div className="px-4 sm:px-8 pt-6 max-w-[1400px] mx-auto">
+          <HoldingAnalysis data={data} />
+        </div>
+      )}
 
       <div className="px-4 sm:px-8 py-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 max-w-[1400px] mx-auto">
         {/* Main column */}
@@ -71,7 +84,6 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-valuation"><DCFValuation data={data} /></div>
           <div id="section-price"><PriceProjectionSection data={data} /></div>
           <div id="section-macro"><MacroSection data={data} /></div>
-          <PriceExtremes data={data} />
         </div>
 
         {/* Sidebar column */}
