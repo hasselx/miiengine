@@ -12,9 +12,9 @@ function isIndianExchange(exchange?: string): boolean {
   return ['NSE', 'BSE'].includes((exchange || '').toUpperCase());
 }
 
-function getYahooSymbol(symbol: string, exchange?: string): string {
-  if (isIndianExchange(exchange)) return `${symbol}.NS`;
-  return symbol;
+function getYahooSymbols(symbol: string, exchange?: string): string[] {
+  if (isIndianExchange(exchange)) return [`${symbol}.NS`, `${symbol}.BO`];
+  return [symbol];
 }
 
 // ─── Provider 1: Twelve Data ───
@@ -41,14 +41,25 @@ async function fetchFromTwelveData(symbol: string, exchange: string | undefined,
 
 // ─── Provider 2: Yahoo Finance ───
 async function fetchFromYahooFinance(symbol: string, exchange: string) {
-  const yahooSymbol = getYahooSymbol(symbol, exchange);
+  const candidates = getYahooSymbols(symbol, exchange);
 
-  // quote() in v3 can return an array or single object
-  const rawQuote = await yahooFinance.quote(yahooSymbol);
-  const quoteData = Array.isArray(rawQuote) ? rawQuote[0] : rawQuote;
+  let quoteData: any = null;
+  let yahooSymbol = candidates[0];
 
-  if (!quoteData || !quoteData.regularMarketPrice) {
-    throw new Error(`No quote data found for ${yahooSymbol}`);
+  for (const candidate of candidates) {
+    try {
+      const rawQuote = await yahooFinance.quote(candidate);
+      const q = Array.isArray(rawQuote) ? rawQuote[0] : rawQuote;
+      if (q && q.regularMarketPrice) {
+        quoteData = q;
+        yahooSymbol = candidate;
+        break;
+      }
+    } catch { /* try next */ }
+  }
+
+  if (!quoteData) {
+    throw new Error(`No quote data found for ${symbol} (tried: ${candidates.join(', ')})`);
   }
 
   const summaryData = await yahooFinance.quoteSummary(yahooSymbol, {
