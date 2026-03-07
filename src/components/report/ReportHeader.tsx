@@ -26,14 +26,55 @@ const ReportHeader = ({ data }: { data: StockAnalysis }) => {
   const downloadHtml = () => {
     const reportEl = document.querySelector('[data-report-root]');
     if (!reportEl) return;
+
+    // Clone and clean: remove nav, buttons, interactive elements
+    const clone = reportEl.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('button, nav, .no-print, [data-sidebar]').forEach(el => el.remove());
+
+    // Grab computed styles from the live DOM and inline them
+    const inlineStyles = (source: Element, target: Element) => {
+      const computed = window.getComputedStyle(source);
+      const important = [
+        'color','background-color','background','font-family','font-size','font-weight',
+        'letter-spacing','text-transform','line-height','padding','margin','border',
+        'border-top','border-bottom','border-left','border-right','border-radius',
+        'display','flex-direction','justify-content','align-items','gap','grid-template-columns',
+        'width','max-width','min-width','text-align','opacity','box-shadow','overflow',
+        'white-space','word-break','flex','flex-wrap','flex-grow','flex-shrink',
+        'position','top','right','bottom','left'
+      ];
+      let style = '';
+      for (const prop of important) {
+        const val = computed.getPropertyValue(prop);
+        if (val && val !== '' && val !== 'none' && val !== 'normal' && val !== 'auto' && val !== '0px') {
+          style += `${prop}:${val};`;
+        }
+      }
+      (target as HTMLElement).setAttribute('style', style);
+
+      const sourceChildren = source.children;
+      const targetChildren = target.children;
+      for (let i = 0; i < sourceChildren.length && i < targetChildren.length; i++) {
+        inlineStyles(sourceChildren[i], targetChildren[i]);
+      }
+    };
+
+    inlineStyles(reportEl, clone);
+
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${data.company} — MII Engine Report</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:#0a0a0a;color:#e5e5e5;margin:0;padding:0}
-table{border-collapse:collapse;width:100%}td,th{padding:8px;border:1px solid #333;text-align:left;font-size:13px}
-h1,h2,h3{margin-top:1.5em;font-family:'Playfair Display',serif}.text-green{color:#22c55e}.text-red{color:#ef4444}
-@page{margin:0.5in}</style>
-</head><body>${brandHeader}${reportEl.innerHTML}${brandFooter}</body></html>`;
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:#0a0a0a;color:#e5e5e5;margin:0;padding:0}
+table{border-collapse:collapse;width:100%}
+td,th{padding:8px 12px;border:1px solid #333;text-align:left;font-size:13px}
+h1,h2,h3{font-family:'Playfair Display',serif}
+img,svg{max-width:100%;height:auto}
+@page{margin:0.5in}
+@media print{body{background:white!important;color:black!important}}
+</style>
+</head><body>${brandHeader}<div style="max-width:1400px;margin:0 auto">${clone.innerHTML}</div>${brandFooter}</body></html>`;
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
