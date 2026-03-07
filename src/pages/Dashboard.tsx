@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut, Sun, Moon } from "lucide-react";
 
 interface SavedSearch {
   id: string;
@@ -32,6 +33,7 @@ interface Holding {
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [searches, setSearches] = useState<SavedSearch[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -102,13 +104,23 @@ const Dashboard = () => {
               </h1>
             </div>
           </div>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] uppercase text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Sign Out
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Dark mode toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-md hover:bg-sidebar-accent transition-colors text-sidebar-foreground/50 hover:text-sidebar-primary"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={signOut}
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] uppercase text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign Out
+            </button>
+          </div>
         </div>
 
         {/* Portfolio summary */}
