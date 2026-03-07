@@ -186,6 +186,18 @@ export function getAnalysis(company: string, country: string): StockAnalysis {
       `Financially, the company delivered an exceptional FY25 — revenue up <strong>43% YoY to ₹413 Cr</strong> and net profit doubling (+90%) to ₹71.4 Cr — supported by a multi-year tailwind in India's Atmanirbhar Bharat defence indigenisation drive. The current order book stands at <strong>~₹1,000 Cr</strong> with a pipeline of ₹2,000–3,000 Cr expected over 18–24 months.`,
       `However, from a conservative investor's standpoint, the stock warrants caution: <strong>P/E at 77x vs sector 59x</strong> prices in significant growth already; Q3 FY26 EBITDA margins compressed to 24.7% vs 25.7% YoY due to low-margin engineering orders mixing into revenue; net profits sequentially fell 11.8%; and technical charts show the stock is still <strong>~31% below its 52-week high</strong> of ₹972 with meaningful overhead resistance. A decisive accumulation zone exists between <strong>₹580–620</strong>.`,
     ],
+    modelSummaries: [
+      { num: "01", model: "Stock Screener", firm: "Goldman Sachs", abstract: "P/E at 77x premium; strong growth; modest ROE; near zero-debt. Score: 13/20.", sentiment: "neutral" },
+      { num: "02", model: "DCF Valuation", firm: "Morgan Stanley", abstract: "DCF implies overvaluation; growth priced in at 77x P/E. Score: 8/15.", sentiment: "negative" },
+      { num: "03", model: "Risk Analysis", firm: "Bridgewater", abstract: "Very low D/E 0.08; govt revenue concentration risk. Score: 7/10.", sentiment: "neutral" },
+      { num: "04", model: "Earnings Breakdown", firm: "JPMorgan", abstract: "Revenue +43% YoY; net profit +90% YoY; Q3 margin pressure. Score: 6/10.", sentiment: "positive" },
+      { num: "05", model: "Portfolio Construction", firm: "BlackRock", abstract: "Expected upside 16.2%; R/R ratio 1:3.2. Accumulate on dips.", sentiment: "neutral" },
+      { num: "06", model: "Technical Analysis", firm: "Citadel", abstract: "Below 100/200 DMA; RSI neutral; support ₹632. Score: 8/15.", sentiment: "neutral" },
+      { num: "07", model: "Dividend Strategy", firm: "Harvard Endowment", abstract: "Yield 0.07%; capital appreciation focus. Not an income play.", sentiment: "neutral" },
+      { num: "08", model: "Competitive Advantage", firm: "Bain & Company", abstract: "ISRO exclusivity; high switching costs; niche IP. Score: 8/10.", sentiment: "positive" },
+      { num: "09", model: "Pattern Finder", firm: "Renaissance", abstract: "Falling wedge breakout pending; accumulation signals detected.", sentiment: "positive" },
+      { num: "10", model: "Macro Impact", firm: "McKinsey", abstract: "Defence budget tailwind; AoN approvals ₹3.3L Cr. Score: 9/10.", sentiment: "positive" },
+    ],
     tags: [
       { label: "Defence Indigenisation Play", highlighted: true },
       { label: "ISRO Exclusive Supplier", highlighted: true },
