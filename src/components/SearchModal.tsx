@@ -5,21 +5,20 @@ import { cn } from "@/lib/utils";
 interface SearchModalProps {
   open: boolean;
   onClose: () => void;
-  onAnalyze: (company: string, country: string) => void;
+  onAnalyze: (company: string) => void;
   isLoading: boolean;
 }
 
 const EXAMPLES = [
-  { company: "Apple", country: "US", label: "AAPL" },
-  { company: "Microsoft", country: "US", label: "MSFT" },
-  { company: "Tesla", country: "US", label: "TSLA" },
-  { company: "Reliance", country: "India", label: "RELIANCE" },
-  { company: "Infosys", country: "India", label: "INFY" },
+  { company: "Apple", label: "AAPL" },
+  { company: "Microsoft", label: "MSFT" },
+  { company: "Tesla", label: "TSLA" },
+  { company: "Reliance", label: "RELIANCE" },
+  { company: "Infosys", label: "INFY" },
 ];
 
 const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) => {
   const [company, setCompany] = useState("");
-  const [country, setCountry] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,7 +26,6 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
       setCompany("");
-      setCountry("");
     }
   }, [open]);
 
@@ -41,14 +39,14 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (company.trim() && country.trim()) {
-      onAnalyze(company.trim(), country.trim());
+    if (company.trim()) {
+      onAnalyze(company.trim());
       onClose();
     }
   };
 
   const handleExample = (ex: typeof EXAMPLES[0]) => {
-    onAnalyze(ex.company, ex.country);
+    onAnalyze(ex.company);
     onClose();
   };
 
@@ -63,7 +61,7 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
             <Search className="h-5 w-5 text-muted-foreground shrink-0" />
             <input
               ref={inputRef}
-              placeholder="Company name (e.g., Apple)"
+              placeholder="Stock or company name..."
               value={company}
               onChange={(e) => setCompany(e.target.value)}
               className="flex-1 bg-transparent text-foreground text-lg font-medium outline-none placeholder:text-muted-foreground"
@@ -73,16 +71,9 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
             </button>
           </div>
 
-          <input
-            placeholder="Country (e.g., US, India)"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className="w-full bg-accent/50 text-foreground text-sm outline-none placeholder:text-muted-foreground px-3 py-2.5 rounded mb-4 border border-border focus:border-primary transition-colors"
-          />
-
           <button
             type="submit"
-            disabled={isLoading || !company.trim() || !country.trim()}
+            disabled={isLoading || !company.trim()}
             className={cn(
               "w-full py-2.5 rounded text-sm font-semibold tracking-wider uppercase transition-colors",
               "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -92,7 +83,6 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
           </button>
         </form>
 
-        {/* Quick examples */}
         <div className="border-t border-border px-5 py-3">
           <p className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground mb-2">Quick access</p>
           <div className="flex flex-wrap gap-2">

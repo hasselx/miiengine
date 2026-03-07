@@ -14,12 +14,12 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const handleAnalyze = async (company: string, country: string) => {
+  const handleAnalyze = async (company: string) => {
     setIsLoading(true);
     setError(null);
     setAnalysis(null);
     try {
-      const { symbol, exchange } = resolveSymbol(company, country);
+      const { symbol, exchange, country } = resolveSymbol(company);
       const rawData = await fetchStockData(symbol, exchange);
       const report = buildAnalysisFromRealData(rawData, company, country, exchange);
       setAnalysis(report);
@@ -32,7 +32,6 @@ const Index = () => {
     }
   };
 
-  // Home → Loading → Dashboard flow
   if (isLoading) return <LoadingState />;
 
   if (analysis) {
@@ -42,9 +41,9 @@ const Index = () => {
         <SearchModal
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
-          onAnalyze={(c, co) => {
+          onAnalyze={(c) => {
             setSearchOpen(false);
-            handleAnalyze(c, co);
+            handleAnalyze(c);
           }}
           isLoading={isLoading}
         />

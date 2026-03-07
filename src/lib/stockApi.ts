@@ -40,28 +40,19 @@ const SYMBOL_MAP: Record<string, { symbol: string; exchange: string }> = {
   'nvidia': { symbol: 'NVDA', exchange: 'NASDAQ' },
 };
 
-export function resolveSymbol(company: string, country: string): { symbol: string; exchange: string } {
+export function resolveSymbol(company: string): { symbol: string; exchange: string; country: string } {
   const key = company.toLowerCase().trim();
 
-  if (SYMBOL_MAP[key]) return SYMBOL_MAP[key];
+  if (SYMBOL_MAP[key]) {
+    const mapped = SYMBOL_MAP[key];
+    const country = ['NSE', 'BSE'].includes(mapped.exchange) ? 'India' : 
+                    ['LSE'].includes(mapped.exchange) ? 'UK' :
+                    ['TSE'].includes(mapped.exchange) ? 'Japan' :
+                    ['XETR'].includes(mapped.exchange) ? 'Germany' : 'US';
+    return { ...mapped, country };
+  }
 
-  // Try to guess exchange from country
-  const countryExchange: Record<string, string> = {
-    'india': 'NSE',
-    'united states': 'NASDAQ',
-    'us': 'NASDAQ',
-    'usa': 'NASDAQ',
-    'uk': 'LSE',
-    'united kingdom': 'LSE',
-    'japan': 'TSE',
-    'germany': 'XETR',
-    'china': 'SSE',
-  };
-
-  const exchange = countryExchange[country.toLowerCase().trim()] || '';
-
-  // Use company name as symbol guess (uppercase, no spaces)
+  // Default: treat as US stock, use name as symbol
   const symbol = company.toUpperCase().replace(/\s+/g, '').replace(/[^A-Z]/g, '').slice(0, 10);
-
-  return { symbol, exchange };
+  return { symbol, exchange: 'NASDAQ', country: 'US' };
 }
