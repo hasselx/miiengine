@@ -11,10 +11,7 @@ function isIndianExchange(exchange?: string): boolean {
 }
 
 async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: string) {
-  // Alpha Vantage uses BSE suffix for Indian stocks (NSE not directly supported for most endpoints)
   const avSymbol = `${symbol}.BSE`;
-
-  console.log(`AV fetching symbol: ${avSymbol}`);
 
   const [quoteRes, overviewRes, dailyRes] = await Promise.all([
     fetch(`${ALPHA_VANTAGE_BASE}?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(avSymbol)}&apikey=${apiKey}`),
@@ -28,25 +25,15 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
     dailyRes.json(),
   ]);
 
-  console.log('AV Quote keys:', JSON.stringify(Object.keys(quoteData)));
-  console.log('AV Global Quote:', JSON.stringify(quoteData['Global Quote'] || {}));
-  console.log('AV Daily keys:', JSON.stringify(Object.keys(dailyData)));
-  console.log('AV Quote Info:', quoteData['Information'] || 'none');
-  console.log('AV Daily Info:', dailyData['Information'] || 'none');
-  console.log('AV Overview Info:', overviewData['Information'] || 'none');
-
-  // Check for API errors or rate limits
+  // Check for rate limits or errors
   if (quoteData['Information']) {
-    throw new Error('Alpha Vantage rate limit reached: ' + quoteData['Information']);
+    throw new Error('Alpha Vantage API rate limit reached. Free tier allows 25 requests/day. Please try again later or upgrade your plan.');
   }
   if (quoteData['Error Message']) {
     throw new Error(quoteData['Error Message']);
   }
-  if (dailyData['Error Message']) {
-    throw new Error(dailyData['Error Message']);
-  }
-  if (dailyData['Information']) {
-    console.warn('AV Daily rate limited, continuing with partial data');
+  if (quoteData['Note']) {
+    throw new Error('Alpha Vantage API call frequency limit reached. Please wait and try again.');
   }
 
   const gq = quoteData['Global Quote'] || {};
@@ -153,7 +140,6 @@ Deno.serve(async (req) => {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      console.log(`Using Alpha Vantage for ${symbol}:${exchange}`);
       result = await fetchFromAlphaVantage(symbol, exchange, avKey);
     } else {
       const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
@@ -162,7 +148,6 @@ Deno.serve(async (req) => {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      console.log(`Using Twelve Data for ${symbol}:${exchange || 'default'}`);
       result = await fetchFromTwelveData(symbol, exchange, tdKey);
     }
 
