@@ -68,8 +68,11 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
       <div className="flex justify-end px-6 py-4">
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[11px] text-muted-foreground">{user.email}</span>
-            <button onClick={signOut} className="font-mono text-[11px] text-primary hover:underline">Sign out</button>
+            <button onClick={() => navigate("/dashboard")} className="font-mono text-[11px] text-primary hover:underline flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" />
+              My Account
+            </button>
+            <button onClick={signOut} className="font-mono text-[11px] text-muted-foreground hover:text-foreground">Sign out</button>
           </div>
         ) : (
           <button
