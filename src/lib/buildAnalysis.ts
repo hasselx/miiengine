@@ -25,10 +25,37 @@ function fmtLarge(val: number): string {
 }
 
 function getCurrency(exchange: string): string {
-  if (['NSE', 'BSE'].includes(exchange)) return '₹';
-  if (['LSE'].includes(exchange)) return '£';
-  if (['TSE'].includes(exchange)) return '¥';
+  const ex = (exchange || '').toUpperCase();
+  if (['NSE', 'BSE', 'NSE/BSE', 'NATIONAL STOCK EXCHANGE OF INDIA'].includes(ex)) return '₹';
+  if (['LSE', 'LON', 'LONDON STOCK EXCHANGE'].includes(ex)) return '£';
+  if (['TSE', 'JPX', 'TOKYO STOCK EXCHANGE'].includes(ex)) return '¥';
+  if (['XETR', 'FRA', 'ETR', 'EURONEXT'].includes(ex)) return '€';
+  if (['HKEX', 'HKG'].includes(ex)) return 'HK$';
+  if (['KRX', 'KOSDAQ'].includes(ex)) return '₩';
+  if (['SSE', 'SZSE'].includes(ex)) return '¥';
+  if (['ASX'].includes(ex)) return 'A$';
+  if (['TSX'].includes(ex)) return 'C$';
   return '$';
+}
+
+function getCurrencyFromData(quote: any, exchange: string): string {
+  // Try currency field from API first
+  const cur = (quote?.currency || '').toUpperCase();
+  if (cur === 'INR') return '₹';
+  if (cur === 'GBP' || cur === 'GBX') return '£';
+  if (cur === 'JPY') return '¥';
+  if (cur === 'EUR') return '€';
+  if (cur === 'HKD') return 'HK$';
+  if (cur === 'KRW') return '₩';
+  if (cur === 'CNY' || cur === 'CNH') return '¥';
+  if (cur === 'AUD') return 'A$';
+  if (cur === 'CAD') return 'C$';
+  if (cur === 'USD') return '$';
+  // Try exchange from API response
+  const apiExchange = (quote?.exchange || '').toUpperCase();
+  if (apiExchange) return getCurrency(apiExchange);
+  // Fallback to provided exchange
+  return getCurrency(exchange);
 }
 
 // Compute technical indicators from time series
