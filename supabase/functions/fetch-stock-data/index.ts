@@ -248,6 +248,20 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       console.warn(`Yahoo failed: ${msg}`);
     }
 
+    // 2. Twelve Data (works for Indian stocks too)
+    const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
+    if (tdKey) {
+      try {
+        console.log(`[Indian] Trying Twelve Data for ${symbol}`);
+        return await fetchFromTwelveData(symbol, exchange, tdKey);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`TwelveData: ${msg}`);
+        console.warn(`Twelve Data failed: ${msg}`);
+      }
+    }
+
+    // 3. Alpha Vantage
     const avKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
     if (avKey) {
       try {
@@ -260,6 +274,7 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       }
     }
   } else {
+    // Global: Twelve Data → Yahoo Finance
     const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
     if (tdKey) {
       try {
