@@ -56,6 +56,27 @@ export interface MacroItem {
   sentimentLabel: string;
 }
 
+export interface DividendMetric {
+  label: string;
+  value: string;
+  note: string;
+  color: 'green' | 'red' | 'gold' | 'muted';
+}
+
+export interface PatternSignal {
+  name: string;
+  signal: string;
+  confidence: number;
+  type: 'bullish' | 'bearish' | 'neutral';
+}
+
+export interface EarningsItem {
+  label: string;
+  value: string;
+  change?: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+}
+
 export interface HeaderMetric {
   label: string;
   value: string;
@@ -94,6 +115,12 @@ export interface StockAnalysis {
   technicalNote: string;
   moatItems: MoatItem[];
   riskItems: RiskItem[];
+  dividendMetrics: DividendMetric[];
+  dividendNote: string;
+  patternSignals: PatternSignal[];
+  patternNote: string;
+  earningsBreakdown: EarningsItem[];
+  earningsNote: string;
   finalVerdict: string;
   finalVerdictText: string;
   finalAction: string;
