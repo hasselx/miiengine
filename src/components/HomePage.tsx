@@ -14,7 +14,7 @@ const EXAMPLES = [
   { company: "Tesla", label: "TSLA" },
   { company: "Reliance", label: "RELIANCE" },
   { company: "Infosys", label: "INFY" },
-  { company: "Tata Motors", label: "TATAMOTORS" },
+  { company: "HDFC Bank", label: "HDFCBANK" },
   { company: "Nvidia", label: "NVDA" },
   { company: "Amazon", label: "AMZN" },
 ];
