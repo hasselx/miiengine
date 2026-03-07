@@ -83,6 +83,14 @@ export interface HeaderMetric {
   change: string;
 }
 
+export interface ModelSummary {
+  num: string;
+  model: string;
+  firm: string;
+  abstract: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+}
+
 export interface StockAnalysis {
   company: string;
   subtitle: string;
@@ -95,6 +103,7 @@ export interface StockAnalysis {
   scoreRange: string;
   scores: ScoreCategory[];
   executiveSummary: string[];
+  modelSummaries: ModelSummary[];
   tags: { label: string; highlighted: boolean }[];
   fundamentalMetrics: MetricCard[];
   fundamentalNote: string;
