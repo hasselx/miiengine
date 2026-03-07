@@ -295,6 +295,18 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       `From a valuation perspective, the stock trades at <strong>${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'}</strong>. The 52-week range of ${currency}${fmt(high52, 0)} to ${currency}${fmt(low52, 0)} suggests the stock is <strong>${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its annual range</strong>.`,
       `Our multi-factor analysis yields a total score of <strong>${totalScore}/100</strong>, resulting in a <strong>${v.verdict}</strong> recommendation. The expected 12-month price target is <strong>${currency}${expectedPrice}</strong>, representing a <strong>${expectedUpside}% expected return</strong> from current levels.`,
     ],
+    modelSummaries: [
+      { num: "01", model: "Stock Screener", firm: "Goldman Sachs", abstract: `P/E at ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}, ${pctChange >= 0 ? 'positive' : 'negative'} momentum. Fundamental score: ${fund.score}/20.`, sentiment: fund.score >= 14 ? "positive" : fund.score >= 10 ? "neutral" : "negative" },
+      { num: "02", model: "DCF Valuation", firm: "Morgan Stanley", abstract: `Intrinsic value range ${currency}${bearPrice}–${currency}${bullPrice}. Current price ${price > basePrice ? 'above' : 'below'} base estimate of ${currency}${basePrice}.`, sentiment: price <= basePrice ? "positive" : "negative" },
+      { num: "03", model: "Risk Analysis", firm: "Bridgewater", abstract: `${pe > 40 ? 'High valuation risk' : 'Moderate risk profile'}. 52W range spread: ${((high52 - low52) / low52 * 100).toFixed(0)}%. Risk score: ${risk.score}/10.`, sentiment: risk.score >= 7 ? "positive" : risk.score >= 5 ? "neutral" : "negative" },
+      { num: "04", model: "Earnings Breakdown", firm: "JPMorgan", abstract: `EPS: ${currency}${safe(quote?.eps, 'N/A')}. ${pctChange >= 0 ? 'Positive price action' : 'Negative momentum'} today at ${pctSign}${fmt(pctChange)}%.`, sentiment: pctChange >= 0 ? "positive" : "negative" },
+      { num: "05", model: "Portfolio Construction", firm: "BlackRock", abstract: `Expected return: ${expectedUpside}%. Risk/Reward: ${rrRatio}. ${totalScore >= 70 ? 'Portfolio-worthy' : 'Position sizing caution advised'}.`, sentiment: totalScore >= 70 ? "positive" : "neutral" },
+      { num: "06", model: "Technical Analysis", firm: "Citadel", abstract: `${techs ? `RSI: ${fmt(techs.rsi, 0)}. ${price > (techs.sma200 || 0) ? 'Above' : 'Below'} 200 DMA. ${price > (techs.sma50 || 0) ? 'Short-term bullish' : 'Short-term bearish'}.` : 'Insufficient data.'}`, sentiment: tech.score >= 10 ? "positive" : tech.score >= 7 ? "neutral" : "negative" },
+      { num: "07", model: "Dividend Strategy", firm: "Harvard Endowment", abstract: `Yield: ${safe(statistics?.dividends_and_splits?.dividend_yield, 'N/A')}. ${num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'Income-grade yield' : 'Capital appreciation focus'}.`, sentiment: num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? "positive" : "neutral" },
+      { num: "08", model: "Competitive Advantage", firm: "Bain & Company", abstract: `Moat score: ${moat.score}/10. Sector: ${sector}. ${moat.score >= 7 ? 'Strong competitive position' : 'Moderate competitive standing'}.`, sentiment: moat.score >= 7 ? "positive" : "neutral" },
+      { num: "09", model: "Pattern Finder", firm: "Renaissance", abstract: `${techs ? `${techs.sma50 && techs.sma200 ? (techs.sma50 > techs.sma200 ? 'Golden cross — bullish' : 'Death cross — bearish') : 'SMA data limited'}. Price ${((price - high52) / high52 * 100).toFixed(1)}% from 52W high.` : 'Insufficient data.'}`, sentiment: techs?.sma50 && techs?.sma200 && techs.sma50 > techs.sma200 ? "positive" : "negative" },
+      { num: "10", model: "Macro Impact", firm: "McKinsey", abstract: `${pctChange >= 0 ? 'Positive' : 'Negative'} market sentiment. ${pe > 40 ? 'Premium valuation in current cycle' : 'Reasonable valuation for macro environment'}. Macro score: ${macro.score}/10.`, sentiment: macro.score >= 7 ? "positive" : "neutral" },
+    ],
     tags: [
       { label: sector, highlighted: true },
       { label: safe(profile?.country || country), highlighted: true },
@@ -385,9 +397,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       if (techs) {
         // Mean reversion
         const fromHigh = (price - high52) / high52;
-        signals.push({ name: "Mean Reversion", signal: fromHigh < -0.3 ? "Deep Discount" : fromHigh < -0.1 ? "Below Mean" : "Near Fair Value", confidence: Math.abs(fromHigh) > 0.2 ? 70 : 50, type: fromHigh < -0.2 ? "bullish" : "neutral" });
+        signals.push({ name: "Mean Reversion", signal: fromHigh < -0.3 ? "Deep Discount" : fromHigh < -0.1 ? "Below Mean" : "Near Fair Value", confidence: Math.round(Math.abs(fromHigh) > 0.2 ? 70 : 50), type: fromHigh < -0.2 ? "bullish" : "neutral" });
         // Momentum
-        signals.push({ name: "Momentum Score", signal: techs.rsi > 60 ? "Positive" : techs.rsi < 40 ? "Negative" : "Neutral", confidence: Math.abs(techs.rsi - 50) + 50, type: techs.rsi > 60 ? "bullish" : techs.rsi < 40 ? "bearish" : "neutral" });
+        signals.push({ name: "Momentum Score", signal: techs.rsi > 60 ? "Positive" : techs.rsi < 40 ? "Negative" : "Neutral", confidence: Math.round(Math.min(99, Math.abs(techs.rsi - 50) + 50)), type: techs.rsi > 60 ? "bullish" : techs.rsi < 40 ? "bearish" : "neutral" });
         // SMA crossover
         if (techs.sma50 && techs.sma200) {
           const golden = techs.sma50 > techs.sma200;

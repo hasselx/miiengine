@@ -8,15 +8,15 @@ const PatternFinder = ({ data }: { data: StockAnalysis }) => (
   <SectionWrapper num="10" title="Renaissance — Pattern Finder">
     <div className="divide-y divide-border">
       {data.patternSignals.map((p, i) => (
-        <div key={i} className="flex items-center gap-2.5 py-2.5">
-          <span className="text-[13px] font-medium flex-1">{p.name}</span>
-          <span className={`font-mono text-[12px] ${typeColor[p.type]}`}>{p.signal}</span>
-          <div className="w-16">
-            <div className="h-1.5 bg-border rounded-sm overflow-hidden">
-              <div className={`h-full rounded-sm ${typeBg[p.type]} ${p.type === 'bullish' ? 'bg-green-data' : p.type === 'bearish' ? 'bg-red-data' : 'bg-gold'}`} style={{ width: `${p.confidence}%` }} />
+        <div key={i} className="flex items-center gap-3 py-3">
+          <span className="text-[14px] font-medium w-24 shrink-0">{p.name}</span>
+          <span className={`font-mono text-[12px] shrink-0 w-20 ${typeColor[p.type]}`}>{p.signal}</span>
+          <div className="flex-1 min-w-0">
+            <div className="h-2 bg-border rounded-sm overflow-hidden">
+              <div className={`h-full rounded-sm ${p.type === 'bullish' ? 'bg-green-data' : p.type === 'bearish' ? 'bg-red-data' : 'bg-gold'}`} style={{ width: `${Math.round(p.confidence)}%` }} />
             </div>
           </div>
-          <span className="font-mono text-[11px] text-muted-foreground w-10 text-right">{p.confidence}%</span>
+          <span className="font-mono text-[12px] text-muted-foreground w-12 text-right shrink-0">{Math.round(p.confidence)}%</span>
         </div>
       ))}
     </div>
