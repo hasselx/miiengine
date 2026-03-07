@@ -274,7 +274,7 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       }
     }
   } else {
-    // Global: Twelve Data → Yahoo Finance
+    // Global: Twelve Data → Yahoo Finance → try as Indian stock
     const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
     if (tdKey) {
       try {
@@ -294,6 +294,18 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       const msg = e instanceof Error ? e.message : String(e);
       errors.push(`Yahoo: ${msg}`);
       console.warn(`Yahoo failed: ${msg}`);
+    }
+
+    // Last resort: try as Indian stock (NSE) via Yahoo
+    if (!isIndianExchange(exchange)) {
+      try {
+        console.log(`[Fallback] Trying as Indian stock (NSE) for ${symbol}`);
+        return await fetchFromYahooFinance(symbol, 'NSE');
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`Yahoo-NSE: ${msg}`);
+        console.warn(`Yahoo NSE fallback failed: ${msg}`);
+      }
     }
   }
 
