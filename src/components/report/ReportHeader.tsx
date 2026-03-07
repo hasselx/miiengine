@@ -6,7 +6,7 @@ const ReportHeader = ({ data }: { data: StockAnalysis }) => (
     <div className="flex justify-between items-start mb-8 relative z-10">
       <div>
         <p className="font-mono text-[10px] tracking-[3px] text-gold uppercase mb-1.5">Multi-Institutional Intelligence Engine</p>
-        <h1 className="font-display text-[48px] font-black leading-none mb-1.5 tracking-tight">{data.company}</h1>
+        <h1 className="font-display text-3xl sm:text-[48px] font-black leading-none mb-1.5 tracking-tight">{data.company}</h1>
         <p className="text-[13px] text-[#aaa] font-light tracking-wide">{data.subtitle}</p>
         <p className="font-mono text-[10px] tracking-[2px] text-[#666] uppercase mt-2">{data.reportType}</p>
       </div>
@@ -14,12 +14,12 @@ const ReportHeader = ({ data }: { data: StockAnalysis }) => (
         {data.verdictBadge}
       </div>
     </div>
-    <div className="grid grid-cols-6 border-t border-[#333] pt-5 mt-4 relative z-10">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-sidebar-border pt-5 mt-4 relative z-10 gap-3 sm:gap-0">
       {data.headerMetrics.map((m, i) => (
-        <div key={i} className={`py-3 ${i < 5 ? 'border-r border-[#333] pr-5' : 'pl-5'} ${i > 0 && i < 5 ? 'pl-5' : ''}`}>
-          <p className="font-mono text-[9px] tracking-[2px] text-[#666] uppercase mb-1">{m.label}</p>
-          <p className="font-mono text-lg font-medium text-cream">{m.value}</p>
-          <p className="text-[11px] text-gold">{m.change}</p>
+        <div key={i} className={`py-3 ${i < 5 ? 'sm:border-r border-sidebar-border sm:pr-5' : 'sm:pl-5'} ${i > 0 && i < 5 ? 'sm:pl-5' : ''}`}>
+          <p className="font-mono text-[9px] tracking-[2px] text-sidebar-foreground/40 uppercase mb-1">{m.label}</p>
+          <p className="font-mono text-lg font-medium text-sidebar-foreground">{m.value}</p>
+          <p className="text-[11px] text-sidebar-primary">{m.change}</p>
         </div>
       ))}
     </div>
