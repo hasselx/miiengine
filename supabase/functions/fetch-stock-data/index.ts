@@ -25,9 +25,17 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
     dailyRes.json(),
   ]);
 
+  console.log('AV Quote keys:', JSON.stringify(Object.keys(quoteData)));
+  console.log('AV Global Quote:', JSON.stringify(quoteData['Global Quote'] || {}));
+  console.log('AV Daily keys:', JSON.stringify(Object.keys(dailyData)));
+  console.log('AV Overview Name:', overviewData['Name'], 'Symbol:', overviewData['Symbol']);
+
   // Check for API errors
   if (quoteData['Error Message'] || quoteData['Note']) {
     throw new Error(quoteData['Error Message'] || quoteData['Note'] || 'Alpha Vantage API error');
+  }
+  if (dailyData['Error Message'] || dailyData['Note']) {
+    throw new Error(dailyData['Error Message'] || dailyData['Note'] || 'Alpha Vantage daily data error');
   }
 
   const gq = quoteData['Global Quote'] || {};
