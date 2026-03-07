@@ -16,6 +16,7 @@ import RiskMatrix from "./report/RiskMatrix";
 import FinalVerdict from "./report/FinalVerdict";
 import HoldingAnalysis from "./report/HoldingAnalysis";
 import ComparisonBanner from "./report/ComparisonBanner";
+import PriceExtremes from "./report/PriceExtremes";
 
 interface DashboardReportProps {
   data: StockAnalysis;
@@ -70,6 +71,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-valuation"><DCFValuation data={data} /></div>
           <div id="section-price"><PriceProjectionSection data={data} /></div>
           <div id="section-macro"><MacroSection data={data} /></div>
+          <PriceExtremes data={data} />
         </div>
 
         {/* Sidebar column */}
