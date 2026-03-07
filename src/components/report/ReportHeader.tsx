@@ -83,6 +83,31 @@ h1,h2,h3{margin-top:1.5em}.text-green{color:#22c55e}.text-red{color:#ef4444}</st
             <Bookmark className={`h-3.5 w-3.5 ${saved ? 'fill-current' : ''}`} />
             {saved ? "Saved" : "Save Search"}
           </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowDownload(!showDownload)}
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </button>
+            {showDownload && (
+              <div className="absolute right-0 top-full mt-1 bg-sidebar border border-sidebar-border rounded shadow-lg z-50 min-w-[140px]">
+                <button
+                  onClick={downloadPdf}
+                  className="flex items-center gap-2 w-full px-3 py-2 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                >
+                  <FileText className="h-3 w-3" /> Save as PDF
+                </button>
+                <button
+                  onClick={downloadHtml}
+                  className="flex items-center gap-2 w-full px-3 py-2 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                >
+                  <FileCode className="h-3 w-3" /> Save as HTML
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-sidebar-border pt-5 mt-4 relative z-10 gap-3 sm:gap-0">
