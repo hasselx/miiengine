@@ -14,6 +14,7 @@ import TechnicalSection from "./report/TechnicalSection";
 import MoatSection from "./report/MoatSection";
 import RiskMatrix from "./report/RiskMatrix";
 import FinalVerdict from "./report/FinalVerdict";
+import HoldingAnalysis from "./report/HoldingAnalysis";
 
 interface DashboardReportProps {
   data: StockAnalysis;
