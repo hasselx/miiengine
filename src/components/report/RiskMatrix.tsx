@@ -9,7 +9,7 @@ const RiskMatrix = ({ data }: { data: StockAnalysis }) => (
     <div className="divide-y divide-border">
       {data.riskItems.map((r, i) => (
         <div key={i} className="flex items-center gap-2.5 py-2.5">
-          <span className="text-[12px] flex-1">{r.name}</span>
+          <span className="text-[13px] flex-1">{r.name}</span>
           <div className="flex gap-1">
             {Array.from({ length: 5 }).map((_, j) => (
               <div key={j} className={`w-2 h-2 rounded-full ${j < r.filled ? dotColor[r.level] : 'bg-border'}`} />

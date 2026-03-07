@@ -67,8 +67,8 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 15.5px;
+    line-height: 1.65;
   }
 }
 
