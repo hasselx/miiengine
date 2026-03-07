@@ -195,8 +195,14 @@
   .bg-bull-light {
     background-color: hsl(142 40% 96%);
   }
+  .dark .bg-bull-light {
+    background-color: hsl(142 30% 12%);
+  }
   .bg-bear-light {
     background-color: hsl(0 50% 97%);
+  }
+  .dark .bg-bear-light {
+    background-color: hsl(0 30% 12%);
   }
   .bg-base-light {
     background-color: hsl(var(--accent-bg));
