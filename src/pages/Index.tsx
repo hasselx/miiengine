@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { getAnalysis, StockAnalysis } from "@/lib/stockData";
+import { StockAnalysis } from "@/lib/stockData";
+import { fetchStockData, resolveSymbol } from "@/lib/stockApi";
+import { buildAnalysisFromRealData } from "@/lib/buildAnalysis";
 import StockInput from "@/components/StockInput";
 import ReportHeader from "@/components/report/ReportHeader";
 import ScoreBanner from "@/components/report/ScoreBanner";
@@ -14,17 +16,28 @@ import TechnicalSection from "@/components/report/TechnicalSection";
 import MoatSection from "@/components/report/MoatSection";
 import RiskMatrix from "@/components/report/RiskMatrix";
 import FinalVerdict from "@/components/report/FinalVerdict";
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [analysis, setAnalysis] = useState<StockAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAnalyze = (company: string, country: string) => {
+  const handleAnalyze = async (company: string, country: string) => {
     setIsLoading(true);
-    setTimeout(() => {
-      setAnalysis(getAnalysis(company, country));
+    setError(null);
+    try {
+      const { symbol, exchange } = resolveSymbol(company, country);
+      const rawData = await fetchStockData(symbol, exchange);
+      const report = buildAnalysisFromRealData(rawData, company, country, exchange);
+      setAnalysis(report);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to fetch stock data';
+      setError(msg);
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -35,10 +48,13 @@ const Index = () => {
             <p className="font-mono text-[10px] tracking-[3px] uppercase text-gold mb-4">Multi-Institutional Intelligence Engine</p>
             <h1 className="font-display text-5xl font-black text-ink mb-3">Stock Analysis</h1>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Institutional equity research combining methodologies from Goldman Sachs, Bridgewater, BlackRock, and Renaissance Technologies.
+              Real-time institutional equity research powered by Twelve Data. Enter a country and company to generate a comprehensive multi-factor analysis.
             </p>
           </div>
           <StockInput onAnalyze={handleAnalyze} isLoading={isLoading} />
+          {error && (
+            <p className="mt-4 text-sm text-red-data font-mono">{error}</p>
+          )}
         </div>
       )}
 
@@ -46,7 +62,7 @@ const Index = () => {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-16 h-1 bg-gold mx-auto mb-4" style={{ animation: 'fillBar 1.5s ease-out infinite' }} />
-            <p className="font-mono text-[10px] tracking-[3px] uppercase text-muted-foreground">Running multi-factor analysis...</p>
+            <p className="font-mono text-[10px] tracking-[3px] uppercase text-muted-foreground">Fetching real-time data & running analysis...</p>
           </div>
         </div>
       )}
@@ -56,7 +72,7 @@ const Index = () => {
           <ReportHeader data={analysis} />
           <ScoreBanner data={analysis} />
 
-          <div className="px-[60px] py-10 grid grid-cols-[1fr_340px] gap-8 max-w-[1400px] mx-auto">
+          <div className="px-4 sm:px-[60px] py-10 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 max-w-[1400px] mx-auto">
             {/* Left Column */}
             <div className="space-y-6">
               <ExecutiveSummary data={analysis} />
@@ -78,17 +94,17 @@ const Index = () => {
           </div>
 
           {/* Watermark */}
-          <div className="text-center py-3 px-[60px] font-mono text-[9px] tracking-[3px] text-muted-foreground uppercase">
+          <div className="text-center py-3 px-4 sm:px-[60px] font-mono text-[9px] tracking-[3px] text-muted-foreground uppercase">
             {analysis.watermark}
           </div>
 
           {/* Disclaimer */}
-          <div className="bg-ink px-[60px] py-5 font-mono text-[10px] leading-relaxed text-muted-foreground">
+          <div className="bg-ink px-4 sm:px-[60px] py-5 font-mono text-[10px] leading-relaxed text-muted-foreground">
             {analysis.disclaimer}
           </div>
 
           {/* Analyze another */}
-          <div className="bg-background px-[60px] py-8">
+          <div className="bg-background px-4 sm:px-[60px] py-8 flex justify-center">
             <StockInput onAnalyze={(c, co) => { setAnalysis(null); handleAnalyze(c, co); }} isLoading={isLoading} />
           </div>
         </div>
