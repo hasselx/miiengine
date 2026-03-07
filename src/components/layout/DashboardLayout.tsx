@@ -1,5 +1,5 @@
 import { ReactNode, useState } from "react";
-import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut } from "lucide-react";
+import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,25 +36,40 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
     <div className="min-h-screen bg-background flex">
       {/* Mobile overlay */}
       {isMobile && mobileOpen && (
-        <div className="fixed inset-0 bg-foreground/40 z-40" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-40" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — sliding drawer on mobile */}
       <aside
         className={cn(
-          "bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border transition-all duration-300 z-50",
+          "bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border z-50",
           isMobile
-            ? cn("fixed inset-y-0 left-0", mobileOpen ? "w-[240px]" : "w-0 overflow-hidden")
-            : collapsed ? "w-[60px]" : "w-[220px]"
+            ? cn(
+                "fixed inset-y-0 left-0 w-[280px] transition-transform duration-300 ease-in-out",
+                mobileOpen ? "translate-x-0" : "-translate-x-full"
+              )
+            : cn(
+                "sticky top-0 h-screen transition-all duration-300",
+                collapsed ? "w-[60px]" : "w-[220px]"
+              )
         )}
       >
         {/* Logo area */}
-        <div className={cn("flex items-center h-14 border-b border-sidebar-border px-4", collapsed && !isMobile && "justify-center px-0")}>
+        <div className={cn(
+          "flex items-center h-14 border-b border-sidebar-border px-4 shrink-0",
+          collapsed && !isMobile && "justify-center px-0"
+        )}>
           {(!collapsed || isMobile) && (
             <span className="font-display text-lg font-bold text-sidebar-foreground tracking-tight truncate">MII Engine</span>
           )}
           {collapsed && !isMobile && (
             <span className="font-display text-lg font-bold text-sidebar-foreground">M</span>
+          )}
+          {/* Close button on mobile */}
+          {isMobile && (
+            <button onClick={() => setMobileOpen(false)} className="ml-auto p-2 text-sidebar-foreground/50 hover:text-sidebar-foreground">
+              <X className="h-5 w-5" />
+            </button>
           )}
         </div>
 
@@ -68,8 +83,8 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
                 if (isMobile) setMobileOpen(false);
               }}
               className={cn(
-                "flex items-center gap-3 w-full px-4 py-2.5 text-[13px] font-medium transition-colors",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                "flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-colors touch-target",
+                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent",
                 activeSection === item.id
                   ? "bg-sidebar-accent text-sidebar-primary border-r-2 border-sidebar-primary"
                   : "text-sidebar-foreground/70",
@@ -82,12 +97,12 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
             </button>
           ))}
 
-          {/* Collapse toggle right after nav items */}
+          {/* Collapse toggle right after nav items (desktop only) */}
           {!isMobile && (
             <button
               onClick={() => setCollapsed(!collapsed)}
               className={cn(
-                "flex items-center gap-3 w-full px-4 py-2.5 text-[13px] font-medium transition-colors text-sidebar-foreground/50 hover:text-sidebar-foreground",
+                "flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-colors text-sidebar-foreground/50 hover:text-sidebar-foreground",
                 collapsed && "justify-center px-0"
               )}
               title={collapsed ? "Expand" : "Collapse"}
@@ -101,42 +116,50 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top header bar */}
-        <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 sm:px-6 shrink-0">
-          <div className="flex items-center gap-3">
+        {/* Sticky top header bar */}
+        <header className="h-14 bg-card border-b border-border flex items-center justify-between px-3 sm:px-6 shrink-0 sticky top-0 z-30">
+          <div className="flex items-center gap-2 min-w-0">
             {isMobile && (
               <button
                 onClick={() => setMobileOpen(true)}
-                className="p-1.5 hover:bg-accent rounded transition-colors"
+                className="p-2 hover:bg-accent rounded-md transition-colors touch-target"
+                aria-label="Open menu"
               >
-                <BarChart3 className="h-5 w-5 text-foreground" />
+                <Menu className="h-5 w-5 text-foreground" />
               </button>
             )}
             {companyName && (
-              <h2 className="font-mono text-xs tracking-widest uppercase text-muted-foreground truncate">
-                {companyName} — Analysis Report
+              <h2 className="font-mono text-[10px] sm:text-xs tracking-widest uppercase text-muted-foreground truncate">
+                {companyName}
               </h2>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <ExpandableSearch onSearch={onSearchOpen} />
+          <div className="flex items-center gap-2">
+            {/* Search — icon only on mobile, expanded on desktop */}
+            <button
+              onClick={onSearchOpen}
+              className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors text-xs font-mono touch-target"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden sm:inline">Search stock…</span>
+            </button>
             {user ? (
-              <div className="flex items-center gap-2">
-                <button onClick={() => navigate("/dashboard")} className="p-1.5 hover:bg-accent rounded transition-colors" title="My Account">
-                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+              <div className="flex items-center gap-1">
+                <button onClick={() => navigate("/dashboard")} className="p-2 hover:bg-accent rounded-md transition-colors touch-target" title="My Account">
+                  <User className="h-4 w-4 text-muted-foreground" />
                 </button>
-                <button onClick={signOut} className="p-1.5 hover:bg-accent rounded transition-colors" title="Sign out">
-                  <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
+                <button onClick={signOut} className="p-2 hover:bg-accent rounded-md transition-colors touch-target" title="Sign out">
+                  <LogOut className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => navigate("/auth")}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-sidebar-primary text-sidebar-primary-foreground font-mono text-[10px] tracking-[1px] uppercase hover:opacity-90 transition-opacity"
+                className="flex items-center gap-1.5 px-3 py-2 bg-sidebar-primary text-sidebar-primary-foreground font-mono text-[10px] tracking-[1px] uppercase hover:opacity-90 transition-opacity rounded-md touch-target"
               >
-                <User className="h-3 w-3" />
-                Sign In
+                <User className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Sign In</span>
               </button>
             )}
           </div>
@@ -150,18 +173,5 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
     </div>
   );
 };
-
-/* Expandable search icon in the header */
-function ExpandableSearch({ onSearch }: { onSearch: () => void }) {
-  return (
-    <button
-      onClick={onSearch}
-      className="flex items-center gap-2 px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors text-xs font-mono"
-    >
-      <Search className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">Search stock…</span>
-    </button>
-  );
-}
 
 export default DashboardLayout;

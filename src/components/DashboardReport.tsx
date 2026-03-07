@@ -66,21 +66,22 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
       )}
       <ScoreBanner data={data} />
 
-      {/* Price Extremes — prominent position below score */}
-      <div className="px-4 sm:px-8 pt-6 max-w-[1400px] mx-auto">
+      {/* Price Extremes */}
+      <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 max-w-[1400px] mx-auto">
         <PriceExtremes data={data} />
       </div>
 
       {/* Holding Analysis — togglable */}
       {holdingsOpen && (
-        <div className="px-4 sm:px-8 pt-6 max-w-[1400px] mx-auto">
+        <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 max-w-[1400px] mx-auto">
           <HoldingAnalysis data={data} />
         </div>
       )}
 
-      <div className="px-4 sm:px-8 py-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 max-w-[1400px] mx-auto">
+      {/* Main content grid: single column mobile, 2-col tablet sidebar layout on lg */}
+      <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 sm:gap-5 lg:gap-6 max-w-[1400px] mx-auto">
         {/* Main column */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-5 lg:space-y-6 min-w-0">
           <div id="section-summary"><ExecutiveSummary data={data} /></div>
           <div id="section-scores"><ScoreMatrix data={data} /></div>
           <div id="section-fundamentals"><FundamentalAnalysis data={data} /></div>
@@ -91,8 +92,8 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-dividend"><DividendStrategy data={data} /></div>
         </div>
 
-        {/* Sidebar column */}
-        <div className="space-y-5">
+        {/* Sidebar column — stacks below main on mobile */}
+        <div className="space-y-4 sm:space-y-5">
           <TradingPlanSection data={data} />
           <div id="section-technical"><TechnicalSection data={data} /></div>
           <div id="section-moat"><MoatSection data={data} /></div>
@@ -103,12 +104,12 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
       </div>
 
       {/* Watermark */}
-      <div className="text-center py-3 px-4 sm:px-8 font-mono text-[9px] tracking-[3px] text-muted-foreground uppercase">
+      <div className="text-center py-3 px-3 sm:px-8 font-mono text-[9px] tracking-[3px] text-muted-foreground uppercase">
         {data.watermark}
       </div>
 
       {/* Disclaimer */}
-      <div className="bg-sidebar px-4 sm:px-8 py-5 font-mono text-[10px] leading-relaxed text-sidebar-foreground/50">
+      <div className="bg-sidebar px-3 sm:px-8 py-5 font-mono text-[10px] leading-relaxed text-sidebar-foreground/50">
         {data.disclaimer}
       </div>
     </DashboardLayout>

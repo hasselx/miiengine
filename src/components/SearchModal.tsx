@@ -53,10 +53,10 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] sm:pt-[15vh] px-3 sm:px-4">
       <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg bg-card border border-border rounded-lg shadow-2xl animate-fade-in">
-        <form onSubmit={handleSubmit} className="p-5">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5">
           <div className="flex items-center gap-3 mb-4">
             <Search className="h-5 w-5 text-muted-foreground shrink-0" />
             <input
@@ -64,10 +64,10 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
               placeholder="Stock or company name..."
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              className="flex-1 bg-transparent text-foreground text-lg font-medium outline-none placeholder:text-muted-foreground"
+              className="flex-1 bg-transparent text-foreground text-base sm:text-lg font-medium outline-none placeholder:text-muted-foreground"
             />
-            <button type="button" onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
+            <button type="button" onClick={onClose} className="p-2 text-muted-foreground hover:text-foreground touch-target">
+              <X className="h-5 w-5" />
             </button>
           </div>
 
@@ -75,7 +75,7 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
             type="submit"
             disabled={isLoading || !company.trim()}
             className={cn(
-              "w-full py-2.5 rounded text-sm font-semibold tracking-wider uppercase transition-colors",
+              "w-full py-3 rounded-md text-sm font-semibold tracking-wider uppercase transition-colors touch-target",
               "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
@@ -83,7 +83,7 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
           </button>
         </form>
 
-        <div className="border-t border-border px-5 py-3">
+        <div className="border-t border-border px-4 sm:px-5 py-3">
           <p className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground mb-2">Quick access</p>
           <div className="flex flex-wrap gap-2">
             {EXAMPLES.map((ex) => (
@@ -91,7 +91,7 @@ const SearchModal = ({ open, onClose, onAnalyze, isLoading }: SearchModalProps) 
                 key={ex.label}
                 onClick={() => handleExample(ex)}
                 disabled={isLoading}
-                className="px-3 py-1 text-xs font-mono bg-accent text-accent-foreground rounded hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-40"
+                className="px-3 py-2 text-xs font-mono bg-accent text-accent-foreground rounded-md hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-40 touch-target"
               >
                 {ex.label}
               </button>

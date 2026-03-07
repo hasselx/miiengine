@@ -3,8 +3,9 @@ import SectionWrapper from "./SectionWrapper";
 
 const DCFValuation = ({ data }: { data: StockAnalysis }) => (
   <SectionWrapper num="04" title="Intrinsic Valuation — DCF Model" score="8 / 15">
-    <div className="grid grid-cols-2 gap-5 mb-4">
-      <div>
+    {/* Assumptions + Revenue — stack on mobile */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-4">
+      <div className="overflow-x-auto">
         <p className="font-mono text-[10px] text-muted-foreground tracking-[2px] uppercase mb-2.5">DCF Assumptions</p>
         <table className="w-full font-mono text-[11px] border-collapse">
           <tbody>
@@ -17,8 +18,8 @@ const DCFValuation = ({ data }: { data: StockAnalysis }) => (
           </tbody>
         </table>
       </div>
-      <div>
-        <p className="font-mono text-[10px] text-muted-foreground tracking-[2px] uppercase mb-2.5">Revenue Projections (₹ Cr)</p>
+      <div className="overflow-x-auto">
+        <p className="font-mono text-[10px] text-muted-foreground tracking-[2px] uppercase mb-2.5">Revenue Projections</p>
         <table className="w-full font-mono text-[11px] border-collapse">
           <tbody>
             {data.revenueProjections.map((r, i) => (
@@ -32,8 +33,8 @@ const DCFValuation = ({ data }: { data: StockAnalysis }) => (
       </div>
     </div>
 
-    {/* DCF Scenarios */}
-    <div className="grid grid-cols-3 gap-px bg-border">
+    {/* DCF Scenarios — stack on mobile */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-border rounded-sm overflow-hidden">
       {data.dcfScenarios.map((s) => {
         const bg = s.type === 'bear' ? 'bg-bear-light' : s.type === 'bull' ? 'bg-bull-light' : 'bg-accent-area';
         const labelColor = s.type === 'bear' ? 'text-red-dark' : s.type === 'bull' ? 'text-green-dark' : 'text-gold';
@@ -41,14 +42,14 @@ const DCFValuation = ({ data }: { data: StockAnalysis }) => (
         return (
           <div key={s.type} className={`${bg} p-4 text-center`}>
             <p className={`font-mono text-[9px] tracking-[2px] uppercase mb-2 ${labelColor}`}>{s.label}</p>
-            <p className={`font-display text-[28px] font-bold mb-1 ${priceColor}`}>{s.price}</p>
+            <p className={`font-display text-2xl sm:text-[28px] font-bold mb-1 ${priceColor}`}>{s.price}</p>
             <p className="text-[11px] text-muted-foreground">{s.note}</p>
           </div>
         );
       })}
     </div>
 
-    <div className="mt-3 text-[12px] text-[#555] p-3 border-l-[3px] border-gold bg-accent-area leading-[1.7]">
+    <div className="mt-3 text-[12px] text-muted-foreground p-3 border-l-[3px] border-gold bg-accent-area leading-[1.7] rounded-sm">
       <strong>Valuation Summary:</strong> {data.valuationNote}
     </div>
   </SectionWrapper>
