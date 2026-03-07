@@ -92,6 +92,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
         {data.disclaimer}
       </div>
     </DashboardLayout>
+    </div>
   );
 };
 
