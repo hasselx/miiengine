@@ -10,6 +10,32 @@ const ReportHeader = ({ data }: { data: StockAnalysis }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
+  const [showDownload, setShowDownload] = useState(false);
+
+  const downloadHtml = () => {
+    const reportEl = document.querySelector('[data-report-root]');
+    if (!reportEl) return;
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${data.company} — MII Report</title>
+<style>body{font-family:system-ui,sans-serif;background:#0a0a0a;color:#e5e5e5;margin:0;padding:20px}
+table{border-collapse:collapse;width:100%}td,th{padding:8px;border:1px solid #333;text-align:left;font-size:13px}
+h1,h2,h3{margin-top:1.5em}.text-green{color:#22c55e}.text-red{color:#ef4444}</style>
+</head><body>${reportEl.innerHTML}</body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${data.company.replace(/\s+/g, '_')}_MII_Report.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowDownload(false);
+    toast({ title: "Downloaded", description: "HTML report saved." });
+  };
+
+  const downloadPdf = () => {
+    setShowDownload(false);
+    window.print();
+  };
 
   const handleSaveSearch = async () => {
     if (!user) {
