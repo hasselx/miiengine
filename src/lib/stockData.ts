@@ -56,6 +56,27 @@ export interface MacroItem {
   sentimentLabel: string;
 }
 
+export interface DividendMetric {
+  label: string;
+  value: string;
+  note: string;
+  color: 'green' | 'red' | 'gold' | 'muted';
+}
+
+export interface PatternSignal {
+  name: string;
+  signal: string;
+  confidence: number;
+  type: 'bullish' | 'bearish' | 'neutral';
+}
+
+export interface EarningsItem {
+  label: string;
+  value: string;
+  change?: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+}
+
 export interface HeaderMetric {
   label: string;
   value: string;
@@ -94,6 +115,12 @@ export interface StockAnalysis {
   technicalNote: string;
   moatItems: MoatItem[];
   riskItems: RiskItem[];
+  dividendMetrics: DividendMetric[];
+  dividendNote: string;
+  patternSignals: PatternSignal[];
+  patternNote: string;
+  earningsBreakdown: EarningsItem[];
+  earningsNote: string;
   finalVerdict: string;
   finalVerdictText: string;
   finalAction: string;
@@ -247,6 +274,28 @@ export function getAnalysis(company: string, country: string): StockAnalysis {
       { name: "Execution / Margin Risk", level: "MEDIUM", filled: 3 },
       { name: "Liquidity Risk", level: "LOW", filled: 2 },
     ],
+    dividendMetrics: [
+      { label: "Dividend Yield", value: "0.07%", note: "₹0.50/share annually", color: "muted" },
+      { label: "Payout Ratio", value: "5.9%", note: "Growth reinvestment focused", color: "gold" },
+      { label: "Dividend CAGR (3Y)", value: "N/A", note: "Irregular dividend history", color: "muted" },
+      { label: "Yield on Cost (5Y)", value: "0.12%", note: "Minimal income generation", color: "muted" },
+    ],
+    dividendNote: "Paras Defence prioritises growth reinvestment over dividend payouts. With a negligible 0.07% yield and irregular history, this is not a dividend income play. Harvard Endowment methodology would classify this as a pure capital appreciation candidate.",
+    patternSignals: [
+      { name: "Falling Wedge", signal: "Breakout Pending", confidence: 72, type: "bullish" },
+      { name: "Volume Divergence", signal: "Accumulation Detected", confidence: 65, type: "bullish" },
+      { name: "Mean Reversion", signal: "Below 200 DMA", confidence: 58, type: "neutral" },
+      { name: "Momentum Oscillation", signal: "Recovery Phase", confidence: 61, type: "neutral" },
+    ],
+    patternNote: "Renaissance-style pattern analysis detects a potential falling wedge breakout with institutional accumulation signals. Confidence levels are moderate — wait for volume confirmation above ₹688.",
+    earningsBreakdown: [
+      { label: "Revenue (FY25)", value: "₹413 Cr", change: "+43% YoY", sentiment: "positive" },
+      { label: "Net Profit (FY25)", value: "₹71.4 Cr", change: "+90% YoY", sentiment: "positive" },
+      { label: "EBITDA Margin (Q3)", value: "24.7%", change: "−1% QoQ", sentiment: "negative" },
+      { label: "EPS (TTM)", value: "₹8.42", change: "+67% YoY", sentiment: "positive" },
+      { label: "Order Book", value: "~₹1,000 Cr", change: "Pipeline: ₹2,000–3,000 Cr", sentiment: "positive" },
+    ],
+    earningsNote: "JPMorgan-level earnings decomposition shows exceptional top-line growth but emerging margin pressure in Q3 FY26. The revenue mix shift toward lower-margin defence engineering orders is a near-term concern, though the robust order pipeline provides strong medium-term visibility.",
     finalVerdict: "Hold / Accumulate",
     finalVerdictText: `${company} is a <strong>high-quality structural compounder</strong> in India's defence indigenisation theme. For a conservative investor, the current price of ₹637 offers modest 16% expected upside with asymmetric downside risk at 77x P/E.`,
     finalAction: "<strong>Recommended action:</strong> Initiate a partial (30%) position now; build the remaining position aggressively in the ₹580–620 zone. Hold with a 12–18 month view.",

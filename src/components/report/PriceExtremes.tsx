@@ -24,11 +24,11 @@ const PriceExtremes = ({ data }: Props) => {
             key={item.label}
             className="bg-accent-area border border-border rounded px-4 py-3 text-center space-y-1"
           >
-            <div className="font-mono text-[10px] tracking-[1.5px] uppercase text-muted-foreground">
+            <div className="font-mono text-[11px] tracking-[1.5px] uppercase text-muted-foreground">
               {item.label}
             </div>
             {item.date && (
-              <div className="font-mono text-[9px] text-muted-foreground/70">{item.date}</div>
+              <div className="font-mono text-[10px] text-muted-foreground/70">{item.date}</div>
             )}
             <div className="font-mono text-lg font-bold text-foreground">
               {item.price}
@@ -38,7 +38,7 @@ const PriceExtremes = ({ data }: Props) => {
                 item.isNeg ? "text-red-400" : "text-emerald-400"
               }`}
             >
-              {item.change} vs CMP
+              {item.change} from CMP
             </div>
           </div>
         ))}

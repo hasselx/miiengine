@@ -16,8 +16,8 @@ const ScoreMatrix = ({ data }: { data: StockAnalysis }) => {
           {data.scores.map((s) => (
             <tr key={s.step} className="border-b border-border last:border-b-0">
               <td className="py-2.5 w-[45%]">
-                <p className="text-[13px] font-semibold text-ink">Step {s.step} — {s.name}</p>
-                <p className="text-[11px] text-muted-foreground">{s.subtitle}</p>
+               <p className="text-[14px] font-semibold text-ink">Step {s.step} — {s.name}</p>
+                <p className="text-[12px] text-muted-foreground">{s.subtitle}</p>
               </td>
               <td className="font-mono text-[11px] text-muted-foreground text-center w-[15%]">{s.weight}</td>
               <td className="w-[25%] px-3">

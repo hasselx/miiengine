@@ -17,6 +17,9 @@ import FinalVerdict from "./report/FinalVerdict";
 import HoldingAnalysis from "./report/HoldingAnalysis";
 import ComparisonBanner from "./report/ComparisonBanner";
 import PriceExtremes from "./report/PriceExtremes";
+import EarningsBreakdown from "./report/EarningsBreakdown";
+import DividendStrategy from "./report/DividendStrategy";
+import PatternFinder from "./report/PatternFinder";
 
 interface DashboardReportProps {
   data: StockAnalysis;
@@ -81,9 +84,11 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-summary"><ExecutiveSummary data={data} /></div>
           <div id="section-scores"><ScoreMatrix data={data} /></div>
           <div id="section-fundamentals"><FundamentalAnalysis data={data} /></div>
+          <div id="section-earnings"><EarningsBreakdown data={data} /></div>
           <div id="section-valuation"><DCFValuation data={data} /></div>
           <div id="section-price"><PriceProjectionSection data={data} /></div>
           <div id="section-macro"><MacroSection data={data} /></div>
+          <div id="section-dividend"><DividendStrategy data={data} /></div>
         </div>
 
         {/* Sidebar column */}
@@ -91,6 +96,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <TradingPlanSection data={data} />
           <div id="section-technical"><TechnicalSection data={data} /></div>
           <div id="section-moat"><MoatSection data={data} /></div>
+          <div id="section-pattern"><PatternFinder data={data} /></div>
           <div id="section-risk"><RiskMatrix data={data} /></div>
           <FinalVerdict data={data} />
         </div>

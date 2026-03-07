@@ -8,12 +8,12 @@ const TechnicalSection = ({ data }: { data: StockAnalysis }) => (
     <div className="divide-y divide-border">
       {data.technicalSignals.map((s, i) => (
         <div key={i} className="flex items-center gap-2.5 py-2.5">
-          <span className="text-[12px] flex-1">{s.name}</span>
-          <span className={`font-mono text-[11px] ${statusColor[s.status]}`}>{s.value}</span>
+          <span className="text-[13px] flex-1">{s.name}</span>
+          <span className={`font-mono text-[12px] ${statusColor[s.status]}`}>{s.value}</span>
         </div>
       ))}
     </div>
-    <div className="mt-3 p-2.5 bg-accent-area text-[11px] text-[#555] border-l-[3px] border-gold">
+    <div className="mt-3 p-2.5 bg-accent-area text-[12px] text-muted-foreground border-l-[3px] border-gold">
       {data.technicalNote}
     </div>
   </SectionWrapper>
