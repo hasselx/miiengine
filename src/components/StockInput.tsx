@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface StockInputProps {
   onAnalyze: (company: string, country: string) => void;
@@ -14,27 +13,28 @@ const StockInput = ({ onAnalyze, isLoading }: StockInputProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (company.trim() && country.trim()) {
-      onAnalyze(company.trim(), country.trim());
-    }
+    if (company.trim() && country.trim()) onAnalyze(company.trim(), country.trim());
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-2xl mx-auto">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-2xl">
       <Input
-        placeholder="Country (e.g., United States)"
+        placeholder="Country (e.g., India)"
         value={country}
         onChange={(e) => setCountry(e.target.value)}
-        className="bg-secondary border-border font-mono text-sm placeholder:text-muted-foreground"
+        className="bg-card border-border font-mono text-xs tracking-wide placeholder:text-muted-foreground"
       />
       <Input
-        placeholder="Company Name (e.g., Apple Inc.)"
+        placeholder="Company Name (e.g., Paras Defence)"
         value={company}
         onChange={(e) => setCompany(e.target.value)}
-        className="bg-secondary border-border font-mono text-sm placeholder:text-muted-foreground flex-1"
+        className="bg-card border-border font-mono text-xs tracking-wide placeholder:text-muted-foreground flex-1"
       />
-      <Button type="submit" disabled={isLoading || !company.trim() || !country.trim()} className="gap-2 font-mono text-sm font-semibold shrink-0">
-        <Search className="w-4 h-4" />
+      <Button
+        type="submit"
+        disabled={isLoading || !company.trim() || !country.trim()}
+        className="bg-gold text-ink font-mono text-[11px] font-semibold tracking-[2px] uppercase px-6 hover:bg-gold-light"
+      >
         {isLoading ? "ANALYZING..." : "ANALYZE"}
       </Button>
     </form>
