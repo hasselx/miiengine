@@ -14,7 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      holdings: {
+        Row: {
+          buy_date: string
+          buy_price: number
+          company_name: string
+          created_at: string
+          currency: string | null
+          current_price: number | null
+          id: string
+          predicted_price: number | null
+          quantity: number
+          ticker: string | null
+          updated_at: string
+          user_id: string
+          verdict: string | null
+        }
+        Insert: {
+          buy_date: string
+          buy_price: number
+          company_name: string
+          created_at?: string
+          currency?: string | null
+          current_price?: number | null
+          id?: string
+          predicted_price?: number | null
+          quantity: number
+          ticker?: string | null
+          updated_at?: string
+          user_id: string
+          verdict?: string | null
+        }
+        Update: {
+          buy_date?: string
+          buy_price?: number
+          company_name?: string
+          created_at?: string
+          currency?: string | null
+          current_price?: number | null
+          id?: string
+          predicted_price?: number | null
+          quantity?: number
+          ticker?: string | null
+          updated_at?: string
+          user_id?: string
+          verdict?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_searches: {
+        Row: {
+          company_name: string
+          id: string
+          searched_at: string
+          ticker: string | null
+          total_score: number | null
+          user_id: string
+          verdict: string | null
+        }
+        Insert: {
+          company_name: string
+          id?: string
+          searched_at?: string
+          ticker?: string | null
+          total_score?: number | null
+          user_id: string
+          verdict?: string | null
+        }
+        Update: {
+          company_name?: string
+          id?: string
+          searched_at?: string
+          ticker?: string | null
+          total_score?: number | null
+          user_id?: string
+          verdict?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
