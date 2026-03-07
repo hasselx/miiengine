@@ -2,59 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
 @layer base {
   :root {
-    --background: 220 20% 6%;
-    --foreground: 45 10% 90%;
+    --background: 36 33% 95%;
+    --foreground: 225 33% 5%;
 
-    --card: 220 18% 10%;
-    --card-foreground: 45 10% 90%;
+    --card: 0 0% 100%;
+    --card-foreground: 225 33% 5%;
 
-    --popover: 220 18% 10%;
-    --popover-foreground: 45 10% 90%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 33% 5%;
 
-    --primary: 45 90% 55%;
-    --primary-foreground: 220 20% 6%;
+    --primary: 42 50% 54%;
+    --primary-foreground: 225 33% 5%;
 
-    --secondary: 220 15% 16%;
-    --secondary-foreground: 45 10% 85%;
+    --secondary: 36 25% 95%;
+    --secondary-foreground: 225 33% 5%;
 
-    --muted: 220 15% 14%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 30 12% 84%;
+    --muted-foreground: 30 7% 50%;
 
-    --accent: 45 80% 50%;
-    --accent-foreground: 220 20% 6%;
+    --accent: 36 25% 95%;
+    --accent-foreground: 225 33% 5%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 60% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 16%;
-    --ring: 45 90% 55%;
+    --border: 30 20% 84%;
+    --input: 30 20% 84%;
+    --ring: 42 50% 54%;
 
-    --radius: 0.25rem;
+    --radius: 0px;
 
     /* Custom tokens */
-    --bull: 142 71% 45%;
-    --bear: 0 72% 51%;
-    --neutral: 45 90% 55%;
-    --chart-line: 45 90% 55%;
-    --score-high: 142 71% 45%;
-    --score-mid: 45 90% 55%;
-    --score-low: 0 72% 51%;
-    --terminal-green: 142 71% 45%;
-    --data-accent: 200 80% 55%;
+    --ink: 225 33% 5%;
+    --gold: 42 50% 54%;
+    --gold-light: 42 65% 67%;
+    --cream: 36 33% 95%;
+    --cream-light: 36 30% 97%;
+    --green: 155 43% 30%;
+    --green-light: 155 35% 42%;
+    --red: 358 65% 37%;
+    --red-light: 18 86% 41%;
+    --blue: 213 50% 23%;
+    --accent-bg: 36 30% 97%;
 
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 45 10% 85%;
-    --sidebar-primary: 45 90% 55%;
-    --sidebar-primary-foreground: 220 20% 6%;
-    --sidebar-accent: 220 15% 14%;
-    --sidebar-accent-foreground: 45 10% 85%;
-    --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 45 90% 55%;
+    --sidebar-background: 225 33% 5%;
+    --sidebar-foreground: 36 33% 95%;
+    --sidebar-primary: 42 50% 54%;
+    --sidebar-primary-foreground: 225 33% 5%;
+    --sidebar-accent: 225 20% 12%;
+    --sidebar-accent-foreground: 36 33% 95%;
+    --sidebar-border: 225 10% 20%;
+    --sidebar-ring: 42 50% 54%;
   }
 }
 
@@ -63,45 +65,77 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
   }
 }
 
 @layer utilities {
+  .font-display {
+    font-family: 'Playfair Display', serif;
+  }
   .font-mono-data {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
   }
-  .text-bull {
-    color: hsl(var(--bull));
+  .text-ink {
+    color: hsl(var(--ink));
   }
-  .text-bear {
-    color: hsl(var(--bear));
+  .bg-ink {
+    background-color: hsl(var(--ink));
   }
-  .text-neutral-data {
-    color: hsl(var(--neutral));
+  .text-gold {
+    color: hsl(var(--gold));
   }
-  .bg-bull {
-    background-color: hsl(var(--bull));
+  .bg-gold {
+    background-color: hsl(var(--gold));
   }
-  .bg-bear {
-    background-color: hsl(var(--bear));
+  .text-cream {
+    color: hsl(var(--cream));
   }
-  .bg-neutral-data {
-    background-color: hsl(var(--neutral));
+  .bg-cream {
+    background-color: hsl(var(--cream));
   }
-  .text-data-accent {
-    color: hsl(var(--data-accent));
+  .bg-cream-light {
+    background-color: hsl(var(--cream-light));
   }
-  .text-terminal {
-    color: hsl(var(--terminal-green));
+  .text-green-data {
+    color: hsl(var(--green-light));
   }
-  .glow-primary {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.15), 0 0 40px hsl(var(--primary) / 0.05);
+  .bg-green-data {
+    background-color: hsl(var(--green-light));
   }
-  .border-glow {
-    border-color: hsl(var(--primary) / 0.3);
+  .text-red-data {
+    color: hsl(var(--red-light));
   }
-  .score-gradient {
-    background: linear-gradient(90deg, hsl(var(--bear)), hsl(var(--neutral)), hsl(var(--bull)));
+  .bg-red-data {
+    background-color: hsl(var(--red-light));
   }
+  .text-green-dark {
+    color: hsl(var(--green));
+  }
+  .text-red-dark {
+    color: hsl(var(--red));
+  }
+  .bg-accent-area {
+    background-color: hsl(var(--accent-bg));
+  }
+  .gold-line {
+    height: 1px;
+    background: linear-gradient(to right, hsl(var(--gold)), transparent);
+  }
+  .bg-bull-light {
+    background-color: hsl(142 40% 96%);
+  }
+  .bg-bear-light {
+    background-color: hsl(0 50% 97%);
+  }
+  .bg-base-light {
+    background-color: hsl(var(--accent-bg));
+  }
+}
+
+@keyframes fillBar {
+  from { width: 0% }
 }
