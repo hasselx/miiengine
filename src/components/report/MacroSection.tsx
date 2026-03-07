@@ -14,8 +14,8 @@ const MacroSection = ({ data }: { data: StockAnalysis }) => (
         <div key={i} className="flex items-center gap-3 py-2.5">
           <span className="text-lg">{m.icon}</span>
           <div className="flex-1">
-            <p className="text-[12px] font-semibold mb-0.5">{m.title}</p>
-            <p className="text-[11px] text-muted-foreground">{m.detail}</p>
+            <p className="text-[13px] font-semibold mb-0.5">{m.title}</p>
+            <p className="text-[12px] text-muted-foreground">{m.detail}</p>
           </div>
           <span className={`font-mono text-[11px] px-2 py-0.5 font-medium ${sentimentStyle[m.sentiment]}`}>
             {m.sentimentLabel}
