@@ -12,6 +12,7 @@ interface SavedSearch {
   total_score: number | null;
   verdict: string | null;
   searched_at: string;
+  report_data: any;
 }
 
 interface Holding {
@@ -163,7 +164,11 @@ const Dashboard = () => {
               <EmptyState icon={Search} title="No saved searches" description="Search for a stock and click the bookmark icon to save it here." />
             ) : (
               searches.map((s) => (
-                <div key={s.id} className="bg-card border border-border p-4 flex items-center justify-between gap-4">
+                <div
+                  key={s.id}
+                  className="bg-card border border-border p-4 flex items-center justify-between gap-4 cursor-pointer hover:border-primary/40 transition-colors"
+                  onClick={() => navigate("/", { state: { savedSearch: s } })}
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
                       <h3 className="font-display text-lg font-bold text-foreground truncate">{s.company_name}</h3>
@@ -181,7 +186,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                   </div>
-                  <button onClick={() => deleteSearch(s.id)} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
+                  <button onClick={(e) => { e.stopPropagation(); deleteSearch(s.id); }} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
