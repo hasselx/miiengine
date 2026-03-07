@@ -118,7 +118,9 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
             <ExpandableSearch onSearch={onSearchOpen} />
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline truncate max-w-[120px]">{user.email}</span>
+                <button onClick={() => navigate("/dashboard")} className="p-1.5 hover:bg-accent rounded transition-colors" title="My Account">
+                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
                 <button onClick={signOut} className="p-1.5 hover:bg-accent rounded transition-colors" title="Sign out">
                   <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
