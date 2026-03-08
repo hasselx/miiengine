@@ -454,7 +454,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: safe(profile?.country || country), highlighted: true },
       { label: pe > 40 ? 'Premium Valuation' : pe > 20 ? 'Fair Valuation' : 'Value', highlighted: false },
       { label: pctChange > 0 ? 'Positive Momentum' : 'Negative Momentum', highlighted: false },
-      { label: v.verdict, highlighted: false },
+      { label: verdict, highlighted: false },
     ],
     fundamentalMetrics: (() => {
       const metrics: any[] = [
