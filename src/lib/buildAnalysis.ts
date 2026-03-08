@@ -1100,6 +1100,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
 
       return catalysts;
     })(),
+    peerComparison: null, // populated asynchronously after initial render
     finalVerdict: verdict,
     finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with a 12-month target price of ${currency}${targetPrice} (${targetReturnStr} ${targetReturnLabel.toLowerCase()}). Market regime: <strong>${marketRegime.regime}</strong>.`,
     finalAction: `<strong>Recommendation:</strong> ${isBuyVerdict ? 'Initiate position within ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Targets: ' + currency + t1 + ' / ' + currency + t2 + '.' : targetReturnPct >= 0 ? 'Hold existing positions. Current price near fair value.' : 'Reduce exposure. Wait for pullback to ' + currency + optEntryLow + '–' + currency + optEntryHigh + ' for better risk-reward.'}`,

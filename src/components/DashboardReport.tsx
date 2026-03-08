@@ -37,6 +37,7 @@ import RecommendationStack from "./report/RecommendationStack";
 import ConfidenceMeter from "./report/ConfidenceMeter";
 import PriceDistribution from "./report/PriceDistribution";
 import FactorContributionChart from "./report/FactorContributionChart";
+import PeerComparison from "./report/PeerComparison";
 
 interface DashboardReportProps {
   data: StockAnalysis;
