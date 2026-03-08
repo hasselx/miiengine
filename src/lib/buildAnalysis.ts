@@ -267,7 +267,18 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const rawScores = [fund.score, val.score, moat.score, momentum.score, tech.score, quant.score, risk.score, macro.score];
   const maxScores = [20, 15, 10, 10, 15, 10, 10, 10];
   const weightedScores = rawScores.map((s, i) => Math.min(maxScores[i], Math.round(s * weights[i])));
-  const totalScore = weightedScores.reduce((a, b) => a + b, 0);
+  let totalScore = weightedScores.reduce((a, b) => a + b, 0);
+
+  // === Momentum Bias Correction ===
+  // If technical score is strong but fundamentals are weak, penalize
+  const techPct = (weightedScores[4] / maxScores[4]) * 100;
+  const fundPct = (weightedScores[0] / maxScores[0]) * 100;
+  if (techPct > 80 && fundPct < 50) {
+    totalScore = Math.round(totalScore * 0.88); // reduce by ~12%
+  }
+
+  // === Valuation Guardrail ===
+  // Prevent inflated scores when price is well above fair value
 
   const getScoreVerdict = (s: number) => {
     if (s >= 90) return { badge: "⬛ STRONG BUY", range: "90–100 = STRONG BUY" };
