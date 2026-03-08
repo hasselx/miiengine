@@ -1,4 +1,4 @@
-import { StockAnalysis } from "@/lib/stockData";
+import { StockAnalysis, INVESTMENT_STYLES } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
