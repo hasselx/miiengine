@@ -464,7 +464,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   // For Buy recs: zone includes/slightly below CMP using nearest support
   // For Hold/Reduce: zone is a lower entry range
   const support1 = techs ? Math.round(Math.min(price, low52 + (price - low52) * 0.7)) : Math.round(price * 0.95);
-  const isBuyVerdict = verdict === 'Strong Buy' || verdict === 'Buy';
+  const isBuyVerdict = verdict === 'Strong Buy' || verdict === 'Buy' || verdict === 'Accumulate';
   const accZoneLow = isBuyVerdict ? Math.round(Math.min(price * 0.97, support1)) : Math.round(fvMid * 0.94);
   const accZoneHigh = isBuyVerdict ? Math.round(price * 1.02) : Math.round(fvMid * 1.0);
   const showAccZone = true; // Always show — entry guidance is always useful
