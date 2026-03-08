@@ -233,7 +233,8 @@ const GlobalHeatmap = ({ inline }: { inline?: boolean }) => {
     const measure = () => {
       const width = el.clientWidth;
       if (width > 0) {
-        const h = Math.max(340, Math.min(width * 0.55, 560));
+        // More compact height ratio for better space efficiency
+        const h = Math.max(300, Math.min(width * 0.5, 480));
         setContainerSize({ w: width, h });
       }
     };
