@@ -2,3 +2,9 @@ project_id = "sbdaxjcaohltcrcjqqrm"
 
 [functions.fetch-stock-data]
 verify_jwt = false
+
+[functions.fetch-market-indices]
+verify_jwt = false
+
+[functions.fetch-sector-performance]
+verify_jwt = false

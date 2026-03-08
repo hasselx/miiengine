@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GlobalHeatmap from "@/components/GlobalHeatmap";
+import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
@@ -173,8 +174,10 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
       </div>
 
-      {/* Global Market Heatmap */}
       <GlobalHeatmap />
+
+      {/* Global Sector Performance Tracker */}
+      <SectorPerformanceTracker />
 
       {/* About / Features Section */}
       <div className="border-t border-border bg-card">
