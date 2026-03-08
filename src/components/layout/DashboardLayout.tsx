@@ -1,5 +1,5 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
-import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen, Brain, FlaskConical, DollarSign, Zap, Building2, PieChart, ArrowUpDown, Globe } from "lucide-react";
+import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen, Brain, FlaskConical, DollarSign, Zap, Building2, PieChart, ArrowUpDown, Globe, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -170,6 +170,14 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Home button */}
+            <button
+              onClick={() => navigate("/")}
+              className="p-2 hover:bg-accent rounded-md transition-colors touch-target"
+              title="Back to Home"
+            >
+              <Home className="h-4 w-4 text-muted-foreground" />
+            </button>
             {/* Search — icon only on mobile, expanded on desktop */}
             <button
               onClick={onSearchOpen}
