@@ -103,6 +103,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
             <RiskMeter data={data} />
             <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
           </div>
+          <FinalVerdict data={data} />
         </div>
       </div>
 
