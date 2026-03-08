@@ -210,6 +210,9 @@ export interface StockAnalysis {
   ratingChangeTriggers: { upgrades: string[]; downgrades: string[] };
   factorExposure: { name: string; score: number }[];
   marketRegime: { regime: 'Bull Market' | 'Bear Market' | 'Sideways Market'; signals: string[]; adjustment: string };
+  decisionStack: { factor: string; signal: 'Bullish' | 'Bearish' | 'Neutral' | 'Adjustment'; detail: string }[];
+  factorContributions: { name: string; contribution: number }[];
+  priceDistribution: { bear: { price: string; probability: number; drivers: string[] }; base: { price: string; probability: number; drivers: string[] }; bull: { price: string; probability: number; drivers: string[] }; expectedPrice: string };
   catalystTimeline: { date: string; event: string; category: 'earnings' | 'corporate' | 'industry' | 'product' | 'macro'; impact: 'High' | 'Moderate' | 'Low' }[];
   finalVerdict: string;
   finalVerdictText: string;
