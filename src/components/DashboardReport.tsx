@@ -32,6 +32,7 @@ import SectorRotation from "./report/SectorRotation";
 import BacktestSimulator from "./report/BacktestSimulator";
 import AIStockSummary from "./report/AIStockSummary";
 import FactorExposure from "./report/FactorExposure";
+import CatalystTimeline from "./report/CatalystTimeline";
 
 interface DashboardReportProps {
   data: StockAnalysis;
