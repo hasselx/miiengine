@@ -308,10 +308,13 @@ const GlobalHeatmap = ({ inline }: { inline?: boolean }) => {
   const avgChange = indices.reduce((s, i) => s + i.changePct, 0) / indices.length;
   const positiveCount = indices.filter((i) => i.changePct > 0).length;
 
+  const wrapperClass = inline ? "" : "border-t border-border bg-card";
+  const innerClass = inline ? "" : "max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14";
+
   return (
     <>
-      <div className="border-t border-border bg-card">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+      <div className={wrapperClass}>
+        <div className={innerClass}>
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
