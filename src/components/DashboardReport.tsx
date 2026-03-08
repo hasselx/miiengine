@@ -38,6 +38,7 @@ import ConfidenceMeter from "./report/ConfidenceMeter";
 import PriceDistribution from "./report/PriceDistribution";
 import FactorContributionChart from "./report/FactorContributionChart";
 import PeerComparison from "./report/PeerComparison";
+import CapitalFlowMap from "./report/CapitalFlowMap";
 
 interface DashboardReportProps {
   data: StockAnalysis;
@@ -68,6 +69,7 @@ const SECTION_IDS: Record<string, string> = {
   sentiment: "section-sentiment",
   macro: "section-macro",
   "sector-rotation": "section-sector-rotation",
+  "capital-flows": "section-capital-flows",
   correlation: "section-correlation",
   moat: "section-moat",
   "factor-exposure": "section-factor-exposure",
@@ -165,6 +167,8 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-macro"><MacroSection data={data} /></div>
           {/* 20 */}
           <div id="section-sector-rotation"><SectorRotation data={data} /></div>
+          {/* Capital Flows */}
+          <div id="section-capital-flows"><CapitalFlowMap currentSector={data.tags?.[0]?.label} /></div>
           {/* 21 */}
           <div id="section-correlation"><CorrelationAnalyzer data={data} /></div>
           {/* 22 */}

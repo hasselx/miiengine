@@ -1,5 +1,5 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
-import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen, Brain, FlaskConical, DollarSign, Zap, Building2, PieChart, ArrowUpDown, Globe, Home, Triangle, Gauge, TrendingDown, Crosshair } from "lucide-react";
+import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen, Brain, FlaskConical, DollarSign, Zap, Building2, PieChart, ArrowUpDown, Globe, Home, Triangle, Gauge, TrendingDown, Crosshair, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +37,7 @@ const NAV_ITEMS = [
   { id: "sentiment", label: "Market Sentiment", icon: Globe },
   { id: "macro", label: "Macro & Tailwinds", icon: Activity },
   { id: "sector-rotation", label: "Sector Rotation", icon: PieChart },
+  { id: "capital-flows", label: "Capital Flows", icon: Workflow },
   { id: "correlation", label: "Correlation", icon: ArrowUpDown },
   { id: "moat", label: "Competitive Moat", icon: Shield },
   { id: "factor-exposure", label: "Factor Exposure", icon: Gauge },
