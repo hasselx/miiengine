@@ -270,12 +270,12 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const totalScore = weightedScores.reduce((a, b) => a + b, 0);
 
   const getScoreVerdict = (s: number) => {
-    if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", range: "90–100 = EXCEPTIONAL" };
-    if (s >= 80) return { badge: "⬛ STRONG BUY", range: "80–89 = STRONG BUY" };
-    if (s >= 70) return { badge: "⬛ BUY", range: "70–79 = BUY" };
-    if (s >= 60) return { badge: "⬛ HOLD / ACCUMULATE", range: "60–69 = HOLD" };
-    if (s >= 50) return { badge: "⬛ WEAK HOLD", range: "50–59 = WEAK HOLD" };
-    return { badge: "⬛ AVOID", range: "Below 50 = AVOID" };
+    if (s >= 90) return { badge: "⬛ STRONG BUY", range: "90–100 = STRONG BUY" };
+    if (s >= 75) return { badge: "⬛ BUY", range: "75–89 = BUY" };
+    if (s >= 60) return { badge: "⬛ ACCUMULATE", range: "60–74 = ACCUMULATE" };
+    if (s >= 45) return { badge: "⬛ HOLD", range: "45–59 = HOLD" };
+    if (s >= 30) return { badge: "⬛ REDUCE", range: "30–44 = REDUCE" };
+    return { badge: "⬛ SELL", range: "Below 30 = SELL" };
   };
   const v = getScoreVerdict(totalScore);
 
@@ -449,21 +449,22 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const targetReturnStr = `${targetIsUpside ? '+' : '-'}${targetReturnAbs}%`;
   const targetReturnLabel = targetIsUpside ? "Expected Upside" : "Expected Downside";
 
-  // === Recommendation based on expected return thresholds ===
-  const getValuationVerdict = (retPct: number): string => {
-    if (retPct > 15) return "Strong Buy";
-    if (retPct > 8) return "Buy";
-    if (retPct >= 0) return "Hold";
-    if (retPct >= -8) return "Hold / Reduce";
-    return "Reduce / Sell";
+  // === Recommendation based on score thresholds ===
+  const getScoreBasedVerdict = (score: number): string => {
+    if (score >= 90) return "Strong Buy";
+    if (score >= 75) return "Buy";
+    if (score >= 60) return "Accumulate";
+    if (score >= 45) return "Hold";
+    if (score >= 30) return "Reduce";
+    return "Sell";
   };
-  const verdict = getValuationVerdict(targetReturnPct);
+  const verdict = getScoreBasedVerdict(totalScore);
 
   // === Accumulation Zone: relative to CMP ===
   // For Buy recs: zone includes/slightly below CMP using nearest support
   // For Hold/Reduce: zone is a lower entry range
   const support1 = techs ? Math.round(Math.min(price, low52 + (price - low52) * 0.7)) : Math.round(price * 0.95);
-  const isBuyVerdict = verdict === 'Strong Buy' || verdict === 'Buy';
+  const isBuyVerdict = verdict === 'Strong Buy' || verdict === 'Buy' || verdict === 'Accumulate';
   const accZoneLow = isBuyVerdict ? Math.round(Math.min(price * 0.97, support1)) : Math.round(fvMid * 0.94);
   const accZoneHigh = isBuyVerdict ? Math.round(price * 1.02) : Math.round(fvMid * 1.0);
   const showAccZone = true; // Always show — entry guidance is always useful
@@ -474,7 +475,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const optEntryHigh = Math.round(price);
   const optEntryBasis = techs ? "Based on nearest support levels and recent price structure" : "Based on estimated support range";
 
-  // Model confidence — capped at 85%
+  // Model confidence — capped at 85%, adjusted for volatility and sector risk
   const confidenceFactors: string[] = [];
   let confidenceScore = 50;
   if (earningsHist.length >= 3) { confidenceScore += 10; confidenceFactors.push("Earnings history available"); }
@@ -486,6 +487,18 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   if (fin?.targetMeanPrice) { confidenceScore += 10; confidenceFactors.push("Analyst targets available"); }
   if (debtToEquity != null) confidenceScore += 3;
   if (returnOnEquity != null) confidenceScore += 2;
+
+  // Sector/volatility confidence penalty
+  const sectorLower = sector.toLowerCase();
+  const isHighVolSector = ['financial services', 'banks', 'financial', 'banking'].some(s => sectorLower.includes(s))
+    || (debtToEquity != null && debtToEquity > 200)
+    || beta > 1.5
+    || vol52 > 0.6;
+  if (isHighVolSector) {
+    confidenceScore -= 8;
+    confidenceFactors.push("High-volatility sector reduces confidence");
+  }
+
   // Cap at 85% per spec
   confidenceScore = Math.min(85, Math.max(40, confidenceScore));
   const confidenceLevel: 'Low' | 'Moderate' | 'High' = confidenceScore >= 70 ? 'High' : confidenceScore >= 55 ? 'Moderate' : 'Low';
@@ -506,13 +519,34 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const agreementLevel: 'Low' | 'Moderate' | 'High' = (bullCount >= 3 || bearCount >= 3) ? 'High' : (bullCount >= 2 || bearCount >= 2) ? 'Moderate' : 'Low';
   if (agreementLevel === 'High') confidenceScore = Math.min(95, confidenceScore + 5);
 
-  // Key drivers
+  // Key drivers — sector-aware
   const keyDrivers: string[] = [];
-  if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth expectations" : "Revenue contraction risk");
-  if (pe > 0) keyDrivers.push(pe > 30 ? "Valuation premium vs sector" : "Reasonable valuation");
+  const isBanking = ['financial services', 'banks', 'financial', 'banking'].some(s => sectorLower.includes(s));
+  const isTech = ['technology', 'software', 'internet', 'semiconductor'].some(s => sectorLower.includes(s));
+  const isIndustrial = ['industrials', 'manufacturing', 'industrial', 'materials', 'basic materials'].some(s => sectorLower.includes(s));
+
+  if (isBanking) {
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Loan growth and interest income expansion" : "Declining interest income");
+    if (profitMargins != null) keyDrivers.push(profitMargins > 0.15 ? "Strong net interest margin" : "Net interest margin under pressure");
+    if (debtToEquity != null) keyDrivers.push("Capital adequacy and asset quality");
+    keyDrivers.push("NPA trends and provisioning outlook");
+  } else if (isTech) {
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0.15 ? "Strong earnings growth trajectory" : revenueGrowth > 0 ? "Moderate growth momentum" : "Revenue growth stalling");
+    if (profitMargins != null) keyDrivers.push(profitMargins > 0.20 ? "Margin expansion from scale" : "Margin pressure from R&D intensity");
+    keyDrivers.push("Cloud / product adoption trends");
+    if (pe > 30) keyDrivers.push("Premium valuation — growth expectations priced in");
+  } else if (isIndustrial) {
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth from order backlog" : "Declining order pipeline");
+    if (profitMargins != null) keyDrivers.push(profitMargins > 0.10 ? "Healthy operating margins" : "Margin compression from input costs");
+    keyDrivers.push("Sector demand and capex cycle outlook");
+  } else {
+    // Generic drivers
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth expectations" : "Revenue contraction risk");
+    if (pe > 0) keyDrivers.push(pe > 30 ? "Valuation premium vs sector" : "Reasonable valuation");
+    if (profitMargins != null && profitMargins < 0.08) keyDrivers.push("Margin compression risk");
+    else if (profitMargins != null && profitMargins > 0.15) keyDrivers.push("Strong profit margins");
+  }
   if (pctChange > 2 || pctChange < -2) keyDrivers.push("Sector rotation trends");
-  if (profitMargins != null && profitMargins < 0.08) keyDrivers.push("Margin compression risk");
-  else if (profitMargins != null && profitMargins > 0.15) keyDrivers.push("Strong profit margins");
   if (beta > 1.3) keyDrivers.push("High beta amplifies market moves");
   if (keyDrivers.length === 0) keyDrivers.push("Limited fundamental drivers available");
   const finalKeyDrivers = keyDrivers.slice(0, 4);
