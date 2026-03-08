@@ -43,7 +43,6 @@ const NAV_ITEMS = [
   { id: "dividend", label: "Dividends", icon: PieChart },
   { id: "backtest", label: "Backtest Simulator", icon: FlaskConical },
 ];
-];
 
 const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen, companyName }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
