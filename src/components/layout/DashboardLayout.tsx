@@ -174,6 +174,12 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
                       onClick={() => { navigate("/dashboard"); setAccountMenuOpen(false); }}
                       className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     >
+                      <User className="h-3.5 w-3.5" /> Account
+                    </button>
+                    <button
+                      onClick={() => { navigate("/dashboard"); setAccountMenuOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
                       <BookOpen className="h-3.5 w-3.5" /> Saved Searches
                     </button>
                     <button

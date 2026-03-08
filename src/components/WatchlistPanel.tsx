@@ -53,7 +53,6 @@ const WatchlistPanel = ({ open, onClose }: { open: boolean; onClose: () => void 
   const [triggered, setTriggered] = useState<TriggeredAlert[]>([]);
   const [loading, setLoading] = useState(false);
   const [addTicker, setAddTicker] = useState("");
-  const [addName, setAddName] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [alertForm, setAlertForm] = useState<{ watchlistId: string; type: string; threshold: string } | null>(null);
   const [expandedAlerts, setExpandedAlerts] = useState<string | null>(null);
@@ -140,20 +139,24 @@ const WatchlistPanel = ({ open, onClose }: { open: boolean; onClose: () => void 
 
   // Add stock
   const handleAdd = async () => {
-    if (!user || !addTicker.trim() || !addName.trim()) return;
+    if (!user || !addTicker.trim()) return;
+    const val = addTicker.trim();
+    const isUpperTicker = val === val.toUpperCase() && val.length <= 6 && !val.includes(" ");
+    const ticker = isUpperTicker ? val : val.toUpperCase().replace(/\s+/g, "").slice(0, 10);
+    const companyName = val;
+
     const { error } = await supabase.from("watchlist").insert({
       user_id: user.id,
-      ticker: addTicker.trim().toUpperCase(),
-      company_name: addName.trim(),
+      ticker,
+      company_name: companyName,
     });
     if (error) {
       toast({ title: "Error", description: error.message.includes("duplicate") ? "Already in watchlist" : error.message, variant: "destructive" });
     } else {
       setAddTicker("");
-      setAddName("");
       setShowAddForm(false);
       fetchWatchlist();
-      toast({ title: "Added", description: `${addTicker.trim().toUpperCase()} added to watchlist` });
+      toast({ title: "Added", description: `${ticker} added to watchlist` });
     }
   };
 
@@ -238,24 +241,20 @@ const WatchlistPanel = ({ open, onClose }: { open: boolean; onClose: () => void 
           <>
             {/* Add Stock */}
             <div className="px-4 py-3 border-b border-border">
-              {showAddForm ? (
+            {showAddForm ? (
                 <div className="space-y-2">
                   <input
-                    placeholder="Ticker (e.g. AAPL)"
+                    placeholder="Ticker or company name (e.g. AAPL or Apple)"
                     value={addTicker}
                     onChange={(e) => setAddTicker(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                     className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
-                  />
-                  <input
-                    placeholder="Company Name"
-                    value={addName}
-                    onChange={(e) => setAddName(e.target.value)}
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
+                    autoFocus
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={handleAdd}
-                      disabled={!addTicker.trim() || !addName.trim()}
+                      disabled={!addTicker.trim()}
                       className="flex-1 bg-primary text-primary-foreground text-xs font-mono py-2 rounded-md hover:bg-primary/90 disabled:opacity-40"
                     >
                       Add to Watchlist
