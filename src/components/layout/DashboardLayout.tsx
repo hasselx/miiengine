@@ -49,7 +49,7 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
                 mobileOpen ? "translate-x-0" : "-translate-x-full"
               )
             : cn(
-                "sticky top-0 h-screen transition-all duration-300",
+                "sticky top-8 h-[calc(100vh-2rem)] transition-all duration-300",
                 collapsed ? "w-[60px]" : "w-[220px]"
               )
         )}
