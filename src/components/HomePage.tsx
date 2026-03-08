@@ -225,10 +225,18 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border px-4 sm:px-6 py-6 text-center">
+      <div className="border-t border-border px-4 sm:px-6 py-6 text-center space-y-2">
         <p className="text-[10px] sm:text-xs font-mono text-muted-foreground tracking-wide">
           MII Engine · Multi-Institutional Intelligence · Built for serious investors
         </p>
+        <a
+          href="https://www.heypage.online/hasselx?referrer=MIIEngine&type=redirect"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block text-[10px] sm:text-xs font-mono text-primary hover:text-primary/80 tracking-wide transition-colors"
+        >
+          Contact Us
+        </a>
       </div>
     </div>
   );
