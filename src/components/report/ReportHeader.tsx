@@ -147,20 +147,17 @@ img,svg{max-width:100%;height:auto}
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
           <div className={`font-mono text-[10px] sm:text-[11px] font-semibold tracking-[2px] px-3 sm:px-4 py-1.5 sm:py-2 uppercase rounded mr-1 text-white ${
             (() => {
-              const v = data.verdictBadge?.toLowerCase() || '';
-              if (v.includes('strong buy')) return 'bg-[hsl(142,60%,25%)]';
-              if (v.includes('strong sell')) return 'bg-[hsl(0,70%,35%)]';
-              if (v.includes('buy') && v.includes('accumulate')) return 'bg-[hsl(152,50%,32%)]';
-              if (v.includes('hold') && v.includes('accumulate')) return 'bg-[hsl(160,40%,36%)]';
-              if (v.includes('buy')) return 'bg-[hsl(142,45%,38%)]';
-              if (v.includes('accumulate')) return 'bg-[hsl(170,40%,36%)]';
-              if (v.includes('hold')) return 'bg-[hsl(45,60%,42%)]';
-              if (v.includes('reduce')) return 'bg-[hsl(20,70%,42%)]';
-              if (v.includes('sell')) return 'bg-[hsl(0,65%,40%)]';
+              const v = data.verdict?.toLowerCase() || '';
+              if (v === 'strong buy') return 'bg-[hsl(142,60%,25%)]';
+              if (v === 'buy') return 'bg-[hsl(142,45%,38%)]';
+              if (v === 'accumulate') return 'bg-[hsl(170,40%,36%)]';
+              if (v === 'hold') return 'bg-[hsl(45,60%,42%)]';
+              if (v === 'reduce') return 'bg-[hsl(20,70%,42%)]';
+              if (v === 'sell') return 'bg-[hsl(0,65%,40%)]';
               return 'bg-sidebar-primary text-sidebar-primary-foreground';
             })()
           }`}>
-            {data.verdictBadge}
+            {data.verdict}
           </div>
           <div className="flex items-center gap-0.5 bg-sidebar-accent/30 border border-sidebar-border rounded-lg p-0.5">
             <button
