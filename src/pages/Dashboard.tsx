@@ -297,4 +297,202 @@ function EmptyState({ icon: Icon, title, description }: { icon: any; title: stri
   );
 }
 
+/* ── Watchlist Tab (inline in Dashboard) ── */
+interface WatchlistAlert {
+  id: string;
+  watchlist_id: string;
+  alert_type: string;
+  threshold: number | null;
+  is_active: boolean;
+}
+
+interface WatchlistEntry {
+  id: string;
+  ticker: string;
+  company_name: string;
+  exchange: string | null;
+  added_at: string;
+}
+
+const ALERT_TYPES = [
+  { value: "price_above", label: "Price Above" },
+  { value: "price_below", label: "Price Below" },
+  { value: "pct_change", label: "% Change >" },
+];
+
+function WatchlistTab({ user }: { user: any }) {
+  const [items, setItems] = useState<WatchlistEntry[]>([]);
+  const [alerts, setAlerts] = useState<WatchlistAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addInput, setAddInput] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [alertForm, setAlertForm] = useState<{ watchlistId: string; type: string; threshold: string } | null>(null);
+  const [expandedAlerts, setExpandedAlerts] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    if (!user) return;
+    setLoading(true);
+    const [{ data }, { data: alertData }] = await Promise.all([
+      supabase.from("watchlist").select("*").eq("user_id", user.id).order("added_at", { ascending: false }),
+      supabase.from("watchlist_alerts").select("*").eq("user_id", user.id).eq("is_active", true),
+    ]);
+    if (data) setItems(data);
+    if (alertData) setAlerts(alertData as WatchlistAlert[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, [user]);
+
+  const handleAdd = async () => {
+    if (!user || !addInput.trim()) return;
+    const val = addInput.trim();
+    const isUpperTicker = val === val.toUpperCase() && val.length <= 6 && !val.includes(" ");
+    const ticker = isUpperTicker ? val : val.toUpperCase().replace(/\s+/g, "").slice(0, 10);
+    const companyName = isUpperTicker ? val : val;
+
+    const { error } = await supabase.from("watchlist").insert({
+      user_id: user.id,
+      ticker,
+      company_name: companyName,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message.includes("duplicate") ? "Already in watchlist" : error.message, variant: "destructive" });
+    } else {
+      setAddInput("");
+      setShowAdd(false);
+      fetchData();
+      toast({ title: "Added to watchlist" });
+    }
+  };
+
+  const handleRemove = async (id: string) => {
+    await supabase.from("watchlist").delete().eq("id", id);
+    setItems(prev => prev.filter(i => i.id !== id));
+    toast({ title: "Removed from watchlist" });
+  };
+
+  const handleAddAlert = async () => {
+    if (!user || !alertForm || !alertForm.threshold) return;
+    await supabase.from("watchlist_alerts").insert({
+      user_id: user.id,
+      watchlist_id: alertForm.watchlistId,
+      alert_type: alertForm.type,
+      threshold: parseFloat(alertForm.threshold),
+    });
+    setAlertForm(null);
+    fetchData();
+    toast({ title: "Alert set" });
+  };
+
+  const handleRemoveAlert = async (id: string) => {
+    await supabase.from("watchlist_alerts").delete().eq("id", id);
+    setAlerts(prev => prev.filter(a => a.id !== id));
+  };
+
+  if (loading) {
+    return <div className="py-12 text-center"><p className="text-sm text-muted-foreground animate-pulse">Loading watchlist...</p></div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Add stock bar */}
+      <div className="flex gap-2">
+        {showAdd ? (
+          <div className="flex gap-2 flex-1">
+            <input
+              placeholder="Ticker or company name (e.g. AAPL or Apple)"
+              value={addInput}
+              onChange={(e) => setAddInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              className="flex-1 bg-card border border-border rounded-md px-3 py-2.5 text-sm font-mono text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
+              autoFocus
+            />
+            <button onClick={handleAdd} disabled={!addInput.trim()} className="bg-primary text-primary-foreground text-xs font-mono px-4 py-2.5 rounded-md hover:bg-primary/90 disabled:opacity-40">Add</button>
+            <button onClick={() => setShowAdd(false)} className="px-3 py-2.5 text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-border rounded-md text-xs font-mono text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add Stock
+          </button>
+        )}
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyState icon={Eye} title="No stocks in watchlist" description="Add stocks to monitor them and set price alerts." />
+      ) : (
+        items.map((item) => {
+          const itemAlerts = alerts.filter(a => a.watchlist_id === item.id);
+          const isExpanded = expandedAlerts === item.id;
+
+          return (
+            <div key={item.id} className="bg-card border border-border p-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-mono text-sm font-bold text-foreground">{item.ticker}</h3>
+                    {itemAlerts.length > 0 && <Bell className="h-3 w-3 text-primary" />}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{item.company_name}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => setExpandedAlerts(isExpanded ? null : item.id)} className="p-2 hover:bg-accent rounded-md" title="Alerts">
+                    {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground" />}
+                  </button>
+                  <button onClick={() => handleRemove(item.id)} className="p-2 hover:bg-destructive/10 rounded-md" title="Remove">
+                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="mt-3 pt-3 border-t border-border space-y-2">
+                  {itemAlerts.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between text-xs">
+                      <span className="font-mono text-muted-foreground">
+                        {ALERT_TYPES.find(t => t.value === a.alert_type)?.label}: {a.threshold}
+                      </span>
+                      <button onClick={() => handleRemoveAlert(a.id)} className="text-destructive/60 hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {alertForm?.watchlistId === item.id ? (
+                    <div className="flex gap-1.5">
+                      <select
+                        value={alertForm.type}
+                        onChange={(e) => setAlertForm({ ...alertForm, type: e.target.value })}
+                        className="bg-background border border-border rounded px-2 py-1.5 text-xs font-mono text-foreground flex-1"
+                      >
+                        {ALERT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Value"
+                        value={alertForm.threshold}
+                        onChange={(e) => setAlertForm({ ...alertForm, threshold: e.target.value })}
+                        className="bg-background border border-border rounded px-2 py-1.5 text-xs font-mono text-foreground w-20"
+                      />
+                      <button onClick={handleAddAlert} className="bg-primary text-primary-foreground px-2 py-1.5 rounded text-xs font-mono">Set</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setAlertForm({ watchlistId: item.id, type: "price_above", threshold: "" })}
+                      className="text-xs font-mono text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" /> Add Alert
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
 export default Dashboard;
