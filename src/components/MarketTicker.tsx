@@ -41,7 +41,7 @@ const MiniChart = ({ data, positive }: { data: { t: number; v: number }[]; posit
       <polyline
         points={points}
         fill="none"
-        stroke={positive ? "hsl(var(--green-data))" : "hsl(var(--destructive))"}
+        stroke={positive ? "hsl(var(--green-light))" : "hsl(var(--destructive))"}
         strokeWidth="1.5"
         vectorEffect="non-scaling-stroke"
       />
@@ -70,7 +70,7 @@ const IndexModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) =
 
         <div className="mb-4">
           <span className="text-2xl font-bold font-mono text-foreground">{idx.price.toLocaleString()}</span>
-          <span className={cn("ml-2 text-sm font-mono font-semibold", positive ? "text-[hsl(var(--green-data))]" : "text-destructive")}>
+          <span className={cn("ml-2 text-sm font-mono font-semibold", positive ? "text-green-data" : "text-destructive")}>
             {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
           </span>
         </div>
@@ -85,7 +85,7 @@ const IndexModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) =
 
         <div className="mt-3 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
           <span>Intraday (5m)</span>
-          <span className={cn("px-2 py-0.5 rounded-full", idx.isOpen ? "bg-[hsl(var(--green-data))]/15 text-[hsl(var(--green-data))]" : "bg-muted text-muted-foreground")}>
+          <span className={cn("px-2 py-0.5 rounded-full", idx.isOpen ? "bg-green-data/15 text-green-data" : "bg-muted text-muted-foreground")}>
             {idx.isOpen ? "Live" : "Closed"}
           </span>
         </div>
@@ -163,7 +163,7 @@ const MarketTicker = () => {
                 {neutral ? (
                   <Minus className="h-3 w-3 text-muted-foreground" />
                 ) : positive ? (
-                  <TrendingUp className="h-3 w-3 text-[hsl(var(--green-data))]" />
+                  <TrendingUp className="h-3 w-3 text-green-data" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
@@ -173,7 +173,7 @@ const MarketTicker = () => {
                     neutral
                       ? "text-muted-foreground"
                       : positive
-                      ? "text-[hsl(var(--green-data))]"
+                      ? "text-green-data"
                       : "text-destructive"
                   )}
                 >
