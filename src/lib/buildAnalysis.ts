@@ -299,12 +299,87 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const expectedReturnAbs = Math.abs(expectedReturnPct).toFixed(1);
   const isUpside = expectedReturnPct >= 0;
 
+  // Valuation-based verdict (overrides score-only verdict)
+  const getValuationVerdict = (score: number, retPct: number): string => {
+    if (score >= 90) return "Exceptional Opportunity";
+    if (retPct > 15 && score >= 70) return "Strong Buy";
+    if (retPct > 5 && score >= 65) return "Buy";
+    if (retPct > 0 && score >= 60) return "Buy / Accumulate";
+    if (Math.abs(retPct) <= 5) return "Hold";
+    if (retPct < -5 && retPct >= -15) return "Hold / Reduce";
+    if (retPct < -15) return "Reduce / Wait for Pullback";
+    if (score >= 60) return "Hold / Accumulate on Dips";
+    if (score >= 50) return "Weak Hold";
+    return "Avoid";
+  };
+  const verdict = getValuationVerdict(totalScore, expectedReturnPct);
+
+  // Fair value range
+  const fairValueLow = adjBear;
+  const fairValueHigh = adjBull;
+  const fairValueMid = adjBase;
+
+  // Accumulation zone: suggest lower entry if price > fair value midpoint
+  const showAccZone = price > fairValueMid;
+  const accZoneLow = Math.round(fairValueMid * 0.96);
+  const accZoneHigh = Math.round(fairValueMid * 1.02);
+
+  // Model confidence
+  const confidenceFactors: string[] = [];
+  let confidenceScore = 50;
+  // Earnings predictability
+  if (earningsHist.length >= 3) { confidenceScore += 10; confidenceFactors.push("Earnings history available"); }
+  // Volatility stability
+  const vol52 = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
+  if (vol52 < 0.4) { confidenceScore += 10; confidenceFactors.push("Low volatility"); } else { confidenceFactors.push("High volatility reduces confidence"); }
+  // Data completeness
+  if (pe > 0) confidenceScore += 5;
+  if (profitMargins != null) confidenceScore += 5;
+  if (revenueGrowth != null) confidenceScore += 5;
+  if (fin?.targetMeanPrice) { confidenceScore += 10; confidenceFactors.push("Analyst targets available"); }
+  if (debtToEquity != null) confidenceScore += 3;
+  if (returnOnEquity != null) confidenceScore += 2;
+  // Model agreement boost
+  confidenceScore = Math.min(95, Math.max(20, confidenceScore));
+  const confidenceLevel: 'Low' | 'Moderate' | 'High' = confidenceScore >= 70 ? 'High' : confidenceScore >= 50 ? 'Moderate' : 'Low';
+
+  // Model agreement
+  const dcfSignal: 'Bullish' | 'Bearish' | 'Neutral' = price < adjBase ? 'Bullish' : price > adjBull ? 'Bearish' : 'Neutral';
+  const relValSignal: 'Bullish' | 'Bearish' | 'Neutral' = pe > 0 ? (pe < 20 ? 'Bullish' : pe > 40 ? 'Bearish' : 'Neutral') : 'Neutral';
+  const techTrendSignal: 'Bullish' | 'Bearish' | 'Neutral' = techs ? (price > (techs.sma200 || 0) && techs.rsi > 40 ? 'Bullish' : price < (techs.sma200 || 0) && techs.rsi < 60 ? 'Bearish' : 'Neutral') : 'Neutral';
+  const sectorMomSignal: 'Bullish' | 'Bearish' | 'Neutral' = pctChange > 1 ? 'Bullish' : pctChange < -1 ? 'Bearish' : 'Neutral';
+  const agreementModels = [
+    { name: "DCF Valuation", signal: dcfSignal },
+    { name: "Relative Valuation", signal: relValSignal },
+    { name: "Technical Trend", signal: techTrendSignal },
+    { name: "Sector Momentum", signal: sectorMomSignal },
+  ];
+  const bullCount = agreementModels.filter(m => m.signal === 'Bullish').length;
+  const bearCount = agreementModels.filter(m => m.signal === 'Bearish').length;
+  const agreementLevel: 'Low' | 'Moderate' | 'High' = (bullCount >= 3 || bearCount >= 3) ? 'High' : (bullCount >= 2 || bearCount >= 2) ? 'Moderate' : 'Low';
+  if (agreementLevel === 'High') confidenceScore = Math.min(95, confidenceScore + 5);
+
+  // Key drivers
+  const keyDrivers: string[] = [];
+  if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth expectations" : "Revenue contraction risk");
+  if (pe > 0) keyDrivers.push(pe > 30 ? "Valuation premium vs sector" : "Reasonable valuation");
+  if (pctChange > 2 || pctChange < -2) keyDrivers.push("Sector rotation trends");
+  if (profitMargins != null && profitMargins < 0.08) keyDrivers.push("Margin compression risk");
+  else if (profitMargins != null && profitMargins > 0.15) keyDrivers.push("Strong profit margins");
+  if (beta > 1.3) keyDrivers.push("High beta amplifies market moves");
+  if (keyDrivers.length === 0) keyDrivers.push("Limited fundamental drivers available");
+  const finalKeyDrivers = keyDrivers.slice(0, 4);
+
+  // Expected return display string
+  const expectedReturnStr = `${isUpside ? '+' : '-'}${expectedReturnAbs}%`;
+  const expectedReturnLabel = isUpside ? "Expected Upside" : "Expected Downside";
+
   const entryLow = Math.round(price * 0.95);
   const entryHigh = Math.round(price * 1.0);
   const stopLoss = Math.round(price * 0.88);
   const t1 = Math.round(price * 1.15);
   const t2 = Math.round(price * 1.25);
-  const t3 = bullPrice;
+  const t3 = adjBull;
   const riskAmt = entryLow - stopLoss;
   const rewardAmt = t2 - entryLow;
   const rrRatio = riskAmt > 0 ? `1 : ${(rewardAmt / riskAmt).toFixed(1)}` : '1 : N/A';
