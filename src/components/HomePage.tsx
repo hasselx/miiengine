@@ -61,7 +61,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
     if (company.trim()) onAnalyze(company.trim());
   };
 
-  const marqueeItems = [...FEATURES, ...FEATURES];
+  // marquee removed
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
@@ -113,24 +113,6 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
           ))}
         </div>
 
-        {/* Feature Marquee */}
-        <div className="w-screen mb-8 sm:mb-10 overflow-hidden animate-fade-in" style={{ animationDelay: "0.1s" }}>
-          <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-r from-background to-transparent z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-l from-background to-transparent z-10" />
-            <div className="flex animate-marquee gap-3 sm:gap-5">
-              {marqueeItems.map((feat, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-card border border-border rounded-lg whitespace-nowrap shrink-0"
-                >
-                  <feat.icon className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-xs sm:text-sm font-medium text-foreground">{feat.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {/* Search form */}
         <form
