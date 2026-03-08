@@ -97,31 +97,31 @@ const Dashboard = () => {
       <header className="bg-sidebar text-sidebar-foreground">
         <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/")} className="p-1.5 hover:bg-sidebar-accent rounded transition-colors">
-              <ArrowLeft className="h-4 w-4" />
+            <button onClick={() => navigate("/")} className="p-2 hover:bg-sidebar-accent rounded-md transition-colors">
+              <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <p className="font-mono text-[10px] tracking-[3px] text-sidebar-primary uppercase">My Account</p>
-              <h1 className="font-display text-2xl font-black tracking-tight">
+              <p className="font-mono text-[11px] tracking-[3px] text-sidebar-primary uppercase">My Account</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight">
                 {profile?.display_name || user?.email}
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Dark mode toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-md hover:bg-sidebar-accent transition-colors text-sidebar-foreground/50 hover:text-sidebar-primary"
+              className="p-2.5 rounded-full border border-sidebar-border hover:bg-sidebar-accent transition-colors text-sidebar-foreground/70 hover:text-sidebar-primary"
               title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <button
               onClick={signOut}
-              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] uppercase text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-sidebar-border font-mono text-[12px] tracking-[1px] uppercase text-sidebar-foreground/70 hover:text-sidebar-primary hover:bg-sidebar-accent transition-colors"
             >
-              <LogOut className="h-3.5 w-3.5" />
-              Sign Out
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>
