@@ -517,7 +517,8 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   if (keyDrivers.length === 0) keyDrivers.push("Limited fundamental drivers available");
   const finalKeyDrivers = keyDrivers.slice(0, 4);
 
-  // Expected return display string
+  // Keep scenario-level return for display (expectedPrice is probability-weighted)
+  // But the primary "target" and "return" shown to user = fair value midpoint
   const expectedReturnStr = `${isUpside ? '+' : '-'}${expectedReturnAbs}%`;
   const expectedReturnLabel = isUpside ? "Expected Upside" : "Expected Downside";
 
