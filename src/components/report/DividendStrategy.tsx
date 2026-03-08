@@ -4,7 +4,7 @@ import SectionWrapper from "./SectionWrapper";
 const colorMap = { green: "text-green-data", red: "text-red-data", gold: "text-gold", muted: "text-muted-foreground" };
 
 const DividendStrategy = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="23" title="Harvard Endowment — Dividend Strategy">
+  <SectionWrapper num="24" title="Harvard Endowment — Dividend Strategy">
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {data.dividendMetrics.map((m, i) => (
         <div key={i} className="bg-accent-area border border-border p-3 rounded-sm">
