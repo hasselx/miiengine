@@ -135,6 +135,8 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-valuation"><DCFValuation data={data} /></div>
           {/* 08 */}
           <div id="section-valuation-triangle"><ValuationTriangle data={data} /></div>
+          {/* Peer Comparison */}
+          {data.peerComparison && <div id="section-peer-comparison"><PeerComparison data={data} /></div>}
           {/* 09 */}
           <div id="section-price"><PriceProjectionSection data={data} /></div>
           {/* Price Distribution */}
