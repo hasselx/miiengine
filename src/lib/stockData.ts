@@ -77,6 +77,37 @@ export interface EarningsItem {
   sentiment: 'positive' | 'negative' | 'neutral';
 }
 
+export interface EarningsSurprise {
+  quarter: string;
+  estimate: string;
+  actual: string;
+  result: 'Beat' | 'Miss' | 'Inline';
+}
+
+export interface InsiderTransaction {
+  role: string;
+  action: 'Buy' | 'Sell';
+  shares: string;
+  date: string;
+}
+
+export interface CorrelationItem {
+  asset: string;
+  correlation: number;
+}
+
+export interface SectorRotationItem {
+  sector: string;
+  direction: 'up' | 'down' | 'neutral';
+  performance: string;
+}
+
+export interface SentimentFactor {
+  name: string;
+  value: string;
+  signal: 'bullish' | 'bearish' | 'neutral';
+}
+
 export interface HeaderMetric {
   label: string;
   value: string;
@@ -130,6 +161,20 @@ export interface StockAnalysis {
   patternNote: string;
   earningsBreakdown: EarningsItem[];
   earningsNote: string;
+  earningsSurprises: EarningsSurprise[];
+  nextEarningsDate: string;
+  nextEarningsEstimate: string;
+  supportLevels: string[];
+  resistanceLevels: string[];
+  insiderTransactions: InsiderTransaction[];
+  insiderSummary: { totalBuying: string; totalSelling: string; netSignal: string };
+  institutionalOwnership: number;
+  topHolders: { name: string; percentage: number }[];
+  sentimentScore: number;
+  sentimentLabel: 'Bullish' | 'Neutral' | 'Bearish';
+  sentimentFactors: SentimentFactor[];
+  correlations: CorrelationItem[];
+  sectorRotation: SectorRotationItem[];
   finalVerdict: string;
   finalVerdictText: string;
   finalAction: string;
@@ -315,6 +360,54 @@ export function getAnalysis(company: string, country: string): StockAnalysis {
       { label: "EBITDA Margin (Q3)", value: "24.7%", change: "−1% QoQ", sentiment: "negative" },
       { label: "EPS (TTM)", value: "₹8.42", change: "+67% YoY", sentiment: "positive" },
       { label: "Order Book", value: "~₹1,000 Cr", change: "Pipeline: ₹2,000–3,000 Cr", sentiment: "positive" },
+    ],
+    earningsSurprises: [
+      { quarter: "Q3 FY26", estimate: "₹2.25", actual: "₹2.10", result: "Miss" },
+      { quarter: "Q2 FY26", estimate: "₹2.10", actual: "₹2.35", result: "Beat" },
+      { quarter: "Q1 FY26", estimate: "₹1.95", actual: "₹2.12", result: "Beat" },
+      { quarter: "Q4 FY25", estimate: "₹1.80", actual: "₹1.90", result: "Beat" },
+    ],
+    nextEarningsDate: "May 15, 2026",
+    nextEarningsEstimate: "₹2.40",
+    supportLevels: ["₹632", "₹580", "₹540"],
+    resistanceLevels: ["₹722", "₹820", "₹900"],
+    insiderTransactions: [
+      { role: "Managing Director", action: "Buy", shares: "50,000", date: "Feb 20, 2026" },
+      { role: "CFO", action: "Buy", shares: "15,000", date: "Jan 28, 2026" },
+      { role: "Independent Director", action: "Sell", shares: "8,000", date: "Jan 10, 2026" },
+      { role: "Promoter Entity", action: "Buy", shares: "1,20,000", date: "Dec 15, 2025" },
+    ],
+    insiderSummary: { totalBuying: "₹11.8 Cr", totalSelling: "₹0.5 Cr", netSignal: "Strong Net Buying" },
+    institutionalOwnership: 28.5,
+    topHolders: [
+      { name: "SBI Mutual Fund", percentage: 4.2 },
+      { name: "HDFC AMC", percentage: 3.8 },
+      { name: "LIC of India", percentage: 3.1 },
+      { name: "Nippon India MF", percentage: 2.4 },
+      { name: "ICICI Prudential", percentage: 1.9 },
+    ],
+    sentimentScore: 62,
+    sentimentLabel: "Bullish",
+    sentimentFactors: [
+      { name: "Analyst Consensus", value: "12 Buy / 3 Hold / 1 Sell", signal: "bullish" },
+      { name: "Short Interest", value: "1.2%", signal: "bullish" },
+      { name: "Options P/C Ratio", value: "0.68", signal: "bullish" },
+      { name: "News Sentiment", value: "Positive", signal: "bullish" },
+    ],
+    correlations: [
+      { asset: "Nifty 50", correlation: 0.72 },
+      { asset: "Nifty Defence", correlation: 0.91 },
+      { asset: "S&P 500", correlation: 0.35 },
+      { asset: "Gold", correlation: -0.12 },
+      { asset: "USD/INR", correlation: -0.28 },
+    ],
+    sectorRotation: [
+      { sector: "Defence & Aerospace", direction: "up", performance: "+8.2%" },
+      { sector: "Technology", direction: "up", performance: "+3.1%" },
+      { sector: "Financials", direction: "neutral", performance: "+0.4%" },
+      { sector: "Energy", direction: "down", performance: "-2.1%" },
+      { sector: "Healthcare", direction: "neutral", performance: "+0.8%" },
+      { sector: "Consumer Discretionary", direction: "down", performance: "-1.5%" },
     ],
     earningsNote: "JPMorgan-level earnings decomposition shows exceptional top-line growth but emerging margin pressure in Q3 FY26. The revenue mix shift toward lower-margin defence engineering orders is a near-term concern, though the robust order pipeline provides strong medium-term visibility.",
     finalVerdict: "Hold / Accumulate",
