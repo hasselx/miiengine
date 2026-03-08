@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { X, TrendingUp, TrendingDown, BarChart3, Activity } from "lucide-react";
+import { X, BarChart3, Activity } from "lucide-react";
 
 /* ── Types ── */
 interface IndexData {
@@ -22,48 +22,138 @@ interface IndexData {
   volume: number;
 }
 
+interface TreemapRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  data: IndexData;
+}
+
 const CACHE_KEY = "mii-heatmap";
 const CACHE_TTL = 30_000;
 const POLL_INTERVAL = 60_000;
 
-/* ── Color scale ── */
-function heatColor(pct: number): { bg: string; text: string; border: string } {
-  const abs = Math.abs(pct);
-  if (abs < 0.05) return { bg: "bg-muted", text: "text-muted-foreground", border: "border-border" };
-  if (pct > 0) {
-    if (abs < 0.5) return { bg: "bg-[hsl(142,40%,88%)] dark:bg-[hsl(142,30%,16%)]", text: "text-[hsl(142,55%,30%)] dark:text-[hsl(142,50%,55%)]", border: "border-[hsl(142,35%,75%)] dark:border-[hsl(142,25%,22%)]" };
-    if (abs < 1.5) return { bg: "bg-[hsl(142,45%,78%)] dark:bg-[hsl(142,35%,20%)]", text: "text-[hsl(142,60%,25%)] dark:text-[hsl(142,55%,50%)]", border: "border-[hsl(142,40%,65%)] dark:border-[hsl(142,30%,26%)]" };
-    if (abs < 3) return { bg: "bg-[hsl(142,50%,65%)] dark:bg-[hsl(142,40%,26%)]", text: "text-[hsl(142,70%,18%)] dark:text-[hsl(142,60%,70%)]", border: "border-[hsl(142,45%,55%)] dark:border-[hsl(142,35%,32%)]" };
-    return { bg: "bg-[hsl(142,55%,50%)] dark:bg-[hsl(142,45%,30%)]", text: "text-[hsl(0,0%,100%)] dark:text-[hsl(142,65%,75%)]", border: "border-[hsl(142,50%,42%)] dark:border-[hsl(142,40%,36%)]" };
+const REGION_ORDER = ["United States", "Asia", "Europe", "India", "Oceania", "Americas", "Middle East"];
+
+/* ══════════════════════════════════════════════
+   Squarified Treemap Algorithm
+   ══════════════════════════════════════════════ */
+function squarify(
+  items: { value: number; data: IndexData }[],
+  x: number, y: number, w: number, h: number
+): TreemapRect[] {
+  if (items.length === 0) return [];
+  if (items.length === 1) return [{ x, y, w, h, data: items[0].data }];
+
+  const total = items.reduce((s, i) => s + i.value, 0);
+  if (total === 0) return [];
+
+  const sorted = [...items].sort((a, b) => b.value - a.value);
+  const rects: TreemapRect[] = [];
+
+  let remaining = [...sorted];
+  let cx = x, cy = y, cw = w, ch = h;
+
+  while (remaining.length > 0) {
+    const remTotal = remaining.reduce((s, i) => s + i.value, 0);
+    const isVertical = cw >= ch;
+    const side = isVertical ? ch : cw;
+
+    // Find the best row
+    let row: typeof remaining = [];
+    let bestAspect = Infinity;
+
+    for (let i = 1; i <= remaining.length; i++) {
+      const candidate = remaining.slice(0, i);
+      const rowSum = candidate.reduce((s, it) => s + it.value, 0);
+      const rowWidth = (rowSum / remTotal) * (isVertical ? cw : ch);
+      
+      let worstAspect = 0;
+      for (const item of candidate) {
+        const itemH = (item.value / rowSum) * side;
+        const aspect = Math.max(rowWidth / itemH, itemH / rowWidth);
+        worstAspect = Math.max(worstAspect, aspect);
+      }
+
+      if (worstAspect <= bestAspect) {
+        bestAspect = worstAspect;
+        row = candidate;
+      } else {
+        break;
+      }
+    }
+
+    // Layout the row
+    const rowSum = row.reduce((s, it) => s + it.value, 0);
+    const rowWidth = (rowSum / remTotal) * (isVertical ? cw : ch);
+
+    let offset = 0;
+    for (const item of row) {
+      const itemSize = (item.value / rowSum) * side;
+      if (isVertical) {
+        rects.push({ x: cx, y: cy + offset, w: rowWidth, h: itemSize, data: item.data });
+      } else {
+        rects.push({ x: cx + offset, y: cy, w: itemSize, h: rowWidth, data: item.data });
+      }
+      offset += itemSize;
+    }
+
+    // Reduce remaining area
+    if (isVertical) {
+      cx += rowWidth;
+      cw -= rowWidth;
+    } else {
+      cy += rowWidth;
+      ch -= rowWidth;
+    }
+
+    remaining = remaining.slice(row.length);
   }
-  if (abs < 0.5) return { bg: "bg-[hsl(0,40%,92%)] dark:bg-[hsl(0,30%,16%)]", text: "text-[hsl(0,55%,40%)] dark:text-[hsl(0,50%,55%)]", border: "border-[hsl(0,35%,82%)] dark:border-[hsl(0,25%,22%)]" };
-  if (abs < 1.5) return { bg: "bg-[hsl(0,45%,82%)] dark:bg-[hsl(0,35%,20%)]", text: "text-[hsl(0,60%,35%)] dark:text-[hsl(0,55%,50%)]", border: "border-[hsl(0,40%,72%)] dark:border-[hsl(0,30%,26%)]" };
-  if (abs < 3) return { bg: "bg-[hsl(0,50%,70%)] dark:bg-[hsl(0,40%,26%)]", text: "text-[hsl(0,70%,20%)] dark:text-[hsl(0,60%,70%)]", border: "border-[hsl(0,45%,60%)] dark:border-[hsl(0,35%,32%)]" };
-  return { bg: "bg-[hsl(0,55%,55%)] dark:bg-[hsl(0,45%,30%)]", text: "text-[hsl(0,0%,100%)] dark:text-[hsl(0,65%,75%)]", border: "border-[hsl(0,50%,47%)] dark:border-[hsl(0,40%,36%)]" };
+
+  return rects;
 }
 
-/* ── Mini sparkline ── */
+/* ── Inline HSL color (no Tailwind — used for absolute-positioned divs) ── */
+function heatColorInline(pct: number, isDark: boolean): { bg: string; text: string; border: string } {
+  const abs = Math.abs(pct);
+  if (abs < 0.05) {
+    return isDark
+      ? { bg: "hsl(220,10%,16%)", text: "hsl(220,10%,55%)", border: "hsl(220,10%,22%)" }
+      : { bg: "hsl(220,10%,92%)", text: "hsl(220,10%,40%)", border: "hsl(220,10%,82%)" };
+  }
+  if (pct > 0) {
+    const sat = isDark ? 35 : 45;
+    const l = isDark ? Math.max(14, 28 - abs * 4) : Math.min(92, 88 - abs * 10);
+    const tl = isDark ? Math.min(75, 45 + abs * 8) : Math.max(18, 35 - abs * 5);
+    return {
+      bg: `hsl(142,${sat + abs * 3}%,${l}%)`,
+      text: `hsl(142,${sat + 15}%,${tl}%)`,
+      border: `hsl(142,${sat - 5}%,${isDark ? l + 6 : l - 8}%)`,
+    };
+  }
+  const sat = isDark ? 35 : 45;
+  const l = isDark ? Math.max(14, 28 - abs * 4) : Math.min(92, 92 - abs * 10);
+  const tl = isDark ? Math.min(75, 45 + abs * 8) : Math.max(18, 40 - abs * 6);
+  return {
+    bg: `hsl(0,${sat + abs * 3}%,${l}%)`,
+    text: `hsl(0,${sat + 15}%,${tl}%)`,
+    border: `hsl(0,${sat - 5}%,${isDark ? l + 6 : l - 8}%)`,
+  };
+}
+
+/* ── Sparkline ── */
 const Sparkline = ({ data, positive }: { data: { t: number; v: number }[]; positive: boolean }) => {
   if (!data || data.length < 2) return null;
   const values = data.map((d) => d.v);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
-  const w = 140;
-  const h = 50;
-  const pts = values
-    .map((v, i) => `${(i / (values.length - 1)) * w},${h - ((v - min) / range) * h}`)
-    .join(" ");
-
+  const w = 140, h = 50;
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - ((v - min) / range) * h}`).join(" ");
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-12" preserveAspectRatio="none">
-      <polyline
-        points={pts}
-        fill="none"
-        stroke={positive ? "hsl(var(--green-light))" : "hsl(var(--destructive))"}
-        strokeWidth="1.5"
-        vectorEffect="non-scaling-stroke"
-      />
+      <polyline points={pts} fill="none" stroke={positive ? "hsl(var(--green-light))" : "hsl(var(--destructive))"} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 };
@@ -82,38 +172,27 @@ const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) 
               <p className="text-xs text-muted-foreground font-mono">{idx.exchange} · {idx.country}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-accent rounded-md">
-            <X className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <button onClick={onClose} className="p-1.5 hover:bg-accent rounded-md"><X className="h-4 w-4 text-muted-foreground" /></button>
         </div>
-
         <div className="mb-4 flex items-baseline gap-3">
           <span className="text-2xl font-bold font-mono text-foreground">{idx.price.toLocaleString()}</span>
           <span className={cn("text-sm font-mono font-semibold", positive ? "text-green-data" : "text-destructive")}>
             {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
           </span>
         </div>
-
         <div className="bg-background rounded-lg p-3 border border-border mb-4">
-          {idx.chartData.length > 2 ? (
-            <Sparkline data={idx.chartData} positive={positive} />
-          ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">Chart data unavailable</p>
-          )}
+          {idx.chartData.length > 2 ? <Sparkline data={idx.chartData} positive={positive} /> : <p className="text-xs text-muted-foreground text-center py-4">Chart data unavailable</p>}
         </div>
-
         <div className="grid grid-cols-2 gap-3">
           {[
             { label: "Day High", value: idx.dayHigh.toLocaleString() },
             { label: "Day Low", value: idx.dayLow.toLocaleString() },
             { label: "Volume", value: idx.volume > 1e9 ? `${(idx.volume / 1e9).toFixed(1)}B` : idx.volume > 1e6 ? `${(idx.volume / 1e6).toFixed(1)}M` : idx.volume > 1e3 ? `${(idx.volume / 1e3).toFixed(0)}K` : idx.volume || "—" },
             { label: "Status", value: idx.isOpen ? "Open" : "Closed", isStatus: true },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-background rounded-lg p-3 border border-border">
-              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">{stat.label}</p>
-              <p className={cn("text-sm font-mono font-semibold", stat.isStatus ? (idx.isOpen ? "text-green-data" : "text-muted-foreground") : "text-foreground")}>
-                {stat.value}
-              </p>
+          ].map((s) => (
+            <div key={s.label} className="bg-background rounded-lg p-3 border border-border">
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">{s.label}</p>
+              <p className={cn("text-sm font-mono font-semibold", s.isStatus ? (idx.isOpen ? "text-green-data" : "text-muted-foreground") : "text-foreground")}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -122,79 +201,68 @@ const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) 
   );
 };
 
-/* ── Treemap Tile ── */
-const TreemapTile = ({ idx, onClick, size }: { idx: IndexData; onClick: () => void; size: "xl" | "lg" | "md" | "sm" }) => {
+/* ── Tooltip ── */
+const Tooltip = ({ idx, mouseX, mouseY, containerRect }: { idx: IndexData; mouseX: number; mouseY: number; containerRect: DOMRect }) => {
   const positive = idx.changePct >= 0;
-  const colors = heatColor(idx.changePct);
-
-  const sizeClasses = {
-    xl: "col-span-2 row-span-2 p-4 sm:p-5",
-    lg: "col-span-2 row-span-1 p-3 sm:p-4",
-    md: "col-span-1 row-span-1 p-3 sm:p-4",
-    sm: "col-span-1 row-span-1 p-2.5 sm:p-3",
-  };
-
+  const left = mouseX - containerRect.left + 12;
+  const top = mouseY - containerRect.top - 10;
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "relative rounded-lg transition-all duration-200 border overflow-hidden group",
-        "hover:scale-[1.02] hover:shadow-lg hover:z-10 active:scale-[0.98]",
-        "text-left w-full h-full min-h-[80px]",
-        sizeClasses[size],
-        colors.bg,
-        colors.border
-      )}
+    <div
+      className="absolute z-50 pointer-events-none bg-popover border border-border rounded-lg shadow-xl p-3 min-w-[180px]"
+      style={{ left: Math.min(left, containerRect.width - 200), top: Math.max(0, top - 80) }}
     >
-      {/* Background trend icon */}
-      <div className="absolute bottom-2 right-2 opacity-[0.08] transition-opacity group-hover:opacity-[0.15]">
-        {positive ? <TrendingUp className={cn("h-10 w-10", size === "xl" && "h-16 w-16", size === "lg" && "h-12 w-12")} /> : <TrendingDown className={cn("h-10 w-10", size === "xl" && "h-16 w-16", size === "lg" && "h-12 w-12")} />}
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-base">{idx.flag}</span>
+        <span className="font-mono text-xs font-bold text-foreground">{idx.country}</span>
       </div>
-
-      {/* Flag + Country */}
-      <div className="flex items-center gap-1.5 mb-1">
-        <span className={cn("text-sm", size === "xl" && "text-xl", size === "lg" && "text-base")}>{idx.flag}</span>
-        <span className={cn("text-[9px] sm:text-[10px] font-mono uppercase tracking-wider opacity-70", colors.text, size === "xl" && "text-[11px] sm:text-xs")}>
-          {idx.country}
+      <p className="font-mono text-[11px] text-muted-foreground mb-1">{idx.name} · {idx.exchange}</p>
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className="font-mono text-sm font-bold text-foreground">{idx.price.toLocaleString()}</span>
+        <span className={cn("font-mono text-xs font-semibold", positive ? "text-green-data" : "text-destructive")}>
+          {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
         </span>
-        {!idx.isOpen && (
-          <span className="text-[7px] sm:text-[8px] font-mono bg-foreground/10 dark:bg-foreground/5 px-1 py-0.5 rounded text-muted-foreground ml-auto">
-            CLOSED
-          </span>
-        )}
       </div>
-
-      {/* Index name */}
-      <div className={cn("font-bold font-mono truncate", colors.text, size === "xl" ? "text-sm sm:text-base mb-1.5" : size === "lg" ? "text-xs sm:text-sm mb-1" : "text-[11px] sm:text-xs mb-0.5")}>
-        {idx.name}
-      </div>
-
-      {/* Percentage */}
-      <div className={cn("font-bold font-mono", colors.text, size === "xl" ? "text-2xl sm:text-3xl" : size === "lg" ? "text-lg sm:text-xl" : "text-base sm:text-lg")}>
-        {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
-      </div>
-
-      {/* Price - hidden on small tiles on mobile */}
-      <div className={cn("font-mono opacity-60 mt-0.5", colors.text, size === "xl" ? "text-xs sm:text-sm" : size === "lg" ? "text-[10px] sm:text-xs" : "text-[9px] sm:text-[10px] hidden sm:block")}>
-        {idx.price.toLocaleString()}
-      </div>
-    </button>
+      <span className={cn("font-mono text-[10px]", idx.isOpen ? "text-green-data" : "text-muted-foreground")}>
+        {idx.isOpen ? "● Open" : "○ Closed"}
+      </span>
+    </div>
   );
 };
 
-/* ── Weight → tile size mapping ── */
-function getTileSize(weight: number): "xl" | "lg" | "md" | "sm" {
-  if (weight >= 5) return "xl";
-  if (weight >= 4) return "lg";
-  if (weight >= 3) return "md";
-  return "sm";
-}
-
-/* ── Main Component ── */
+/* ══════════════════════════════════════════════
+   Main Component
+   ══════════════════════════════════════════════ */
 const GlobalHeatmap = () => {
   const [indices, setIndices] = useState<IndexData[]>([]);
   const [selected, setSelected] = useState<IndexData | null>(null);
+  const [hovered, setHovered] = useState<{ idx: IndexData; mx: number; my: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDark, setIsDark] = useState(false);
+
+  // Detect dark mode
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  // Observe container size
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width } = entries[0].contentRect;
+      // Height proportional to width for a nice aspect ratio
+      const h = Math.max(320, Math.min(width * 0.55, 560));
+      setContainerSize({ w: width, h });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -208,7 +276,6 @@ const GlobalHeatmap = () => {
         }
       }
     } catch {}
-
     try {
       const { data, error } = await supabase.functions.invoke("fetch-market-indices");
       if (error) throw error;
@@ -229,6 +296,20 @@ const GlobalHeatmap = () => {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Compute treemap layout
+  const rects = useMemo(() => {
+    if (!containerSize.w || indices.length === 0) return [];
+    const items = indices
+      .sort((a, b) => {
+        const ai = REGION_ORDER.indexOf(a.region);
+        const bi = REGION_ORDER.indexOf(b.region);
+        if (ai !== bi) return ai - bi;
+        return b.weight - a.weight;
+      })
+      .map((d) => ({ value: d.weight * d.weight, data: d })); // square the weight for more dramatic size difference
+    return squarify(items, 0, 0, containerSize.w, containerSize.h);
+  }, [indices, containerSize]);
+
   if (loading && indices.length === 0) {
     return (
       <div className="border-t border-border bg-card">
@@ -237,11 +318,7 @@ const GlobalHeatmap = () => {
             <Activity className="h-5 w-5 text-primary" />
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Global Stock Exchange Heatmap</h2>
           </div>
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className={cn("rounded-lg bg-muted animate-pulse", i < 3 ? "col-span-2 row-span-2 h-40" : i < 6 ? "col-span-2 h-20" : "col-span-1 h-20")} />
-            ))}
-          </div>
+          <div className="w-full h-[400px] rounded-xl bg-muted animate-pulse" />
         </div>
       </div>
     );
@@ -252,50 +329,107 @@ const GlobalHeatmap = () => {
   const avgChange = indices.reduce((s, i) => s + i.changePct, 0) / indices.length;
   const positiveCount = indices.filter((i) => i.changePct > 0).length;
 
-  // Sort by weight descending for treemap-like placement
-  const sorted = [...indices].sort((a, b) => b.weight - a.weight);
-
   return (
     <>
       <div className="border-t border-border bg-card">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div className="flex items-center gap-3">
               <BarChart3 className="h-5 w-5 text-primary" />
               <div>
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                  Global Stock Exchange Heatmap
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  Real-time performance · tile size reflects market weight
-                </p>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Global Stock Exchange Heatmap</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Real-time performance · tile size reflects market weight</p>
               </div>
             </div>
             <div className="flex items-center gap-3 text-xs font-mono">
               <span className={cn("px-2.5 py-1 rounded-full font-semibold", avgChange >= 0 ? "bg-[hsl(142,40%,88%)] dark:bg-[hsl(142,30%,18%)] text-[hsl(142,55%,30%)] dark:text-[hsl(142,50%,55%)]" : "bg-[hsl(0,40%,92%)] dark:bg-[hsl(0,30%,18%)] text-[hsl(0,55%,40%)] dark:text-[hsl(0,50%,55%)]")}>
                 Avg {avgChange >= 0 ? "+" : ""}{avgChange.toFixed(2)}%
               </span>
-              <span className="text-muted-foreground">
-                {positiveCount}/{indices.length} ↑
-              </span>
+              <span className="text-muted-foreground">{positiveCount}/{indices.length} ↑</span>
             </div>
           </div>
 
-          {/* Treemap Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 sm:gap-2 auto-rows-[minmax(80px,auto)]">
-            {sorted.map((idx) => (
-              <TreemapTile
-                key={idx.symbol}
-                idx={idx}
-                size={getTileSize(idx.weight)}
-                onClick={() => setSelected(idx)}
-              />
-            ))}
+          {/* Treemap Container */}
+          <div
+            ref={containerRef}
+            className="relative w-full rounded-xl overflow-hidden border border-border"
+            style={{ height: containerSize.h || 400 }}
+            onMouseLeave={() => setHovered(null)}
+          >
+            {rects.map((rect) => {
+              const d = rect.data;
+              const positive = d.changePct >= 0;
+              const colors = heatColorInline(d.changePct, isDark);
+              const isLarge = rect.w > 120 && rect.h > 90;
+              const isMedium = rect.w > 80 && rect.h > 60;
+              const isTiny = rect.w < 60 || rect.h < 45;
+
+              return (
+                <button
+                  key={d.symbol}
+                  className="absolute flex flex-col justify-center items-center overflow-hidden transition-all duration-150 hover:brightness-110 hover:z-20 cursor-pointer group"
+                  style={{
+                    left: rect.x,
+                    top: rect.y,
+                    width: rect.w,
+                    height: rect.h,
+                    backgroundColor: colors.bg,
+                    borderRight: `1px solid ${colors.border}`,
+                    borderBottom: `1px solid ${colors.border}`,
+                    color: colors.text,
+                  }}
+                  onClick={() => setSelected(d)}
+                  onMouseMove={(e) => setHovered({ idx: d, mx: e.clientX, my: e.clientY })}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  {/* Flag + Country */}
+                  {!isTiny && (
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className={cn("leading-none", isLarge ? "text-lg" : "text-sm")}>{d.flag}</span>
+                      {isMedium && (
+                        <span className="font-mono uppercase tracking-wider opacity-70" style={{ fontSize: isLarge ? 10 : 8 }}>
+                          {d.country}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Index Name */}
+                  <div className="font-bold font-mono truncate max-w-full px-1" style={{ fontSize: isLarge ? 13 : isMedium ? 11 : 9 }}>
+                    {d.name}
+                  </div>
+
+                  {/* Percentage */}
+                  <div className="font-bold font-mono" style={{ fontSize: isLarge ? 22 : isMedium ? 16 : 12 }}>
+                    {positive ? "+" : ""}{d.changePct.toFixed(2)}%
+                  </div>
+
+                  {/* Price (large tiles only) */}
+                  {isLarge && (
+                    <div className="font-mono opacity-50 mt-0.5" style={{ fontSize: 11 }}>
+                      {d.price.toLocaleString()}
+                    </div>
+                  )}
+
+                  {/* Closed badge */}
+                  {!d.isOpen && isMedium && (
+                    <div className="absolute top-1.5 right-1.5 font-mono px-1 py-0.5 rounded opacity-50" style={{ fontSize: 7, background: "rgba(0,0,0,0.15)" }}>
+                      CLOSED
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Hover Tooltip */}
+            {hovered && containerRef.current && (
+              <Tooltip idx={hovered.idx} mouseX={hovered.mx} mouseY={hovered.my} containerRect={containerRef.current.getBoundingClientRect()} />
+            )}
           </div>
 
           {/* Legend */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono text-muted-foreground">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono text-muted-foreground">
             <span>Strong ↓</span>
             <div className="flex gap-0.5">
               <div className="w-5 h-3 rounded-sm bg-[hsl(0,55%,55%)] dark:bg-[hsl(0,45%,32%)]" />
