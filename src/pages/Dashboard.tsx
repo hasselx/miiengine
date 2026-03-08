@@ -285,6 +285,33 @@ const Dashboard = () => {
         )}
 
         {tab === "watchlist" && <WatchlistTab user={user} />}
+
+        {tab === "settings" && (
+          <div className="max-w-2xl space-y-6">
+            <div className="bg-card border border-border rounded-md p-5">
+              <InvestorProfileSelector
+                value={profile?.investment_style || null}
+                onChange={async (style) => {
+                  if (!user) return;
+                  setSavingStyle(true);
+                  const { error } = await supabase.from('profiles').update({ investment_style: style } as any).eq('id', user.id);
+                  setSavingStyle(false);
+                  if (error) {
+                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  } else {
+                    setProfile(prev => prev ? { ...prev, investment_style: style } : prev);
+                    toast({ title: "Profile updated", description: "Your investment style has been saved. Future analyses will use this weighting." });
+                  }
+                }}
+                disabled={savingStyle}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Your investment style adjusts how the analysis engine weights different scoring factors.
+              Analyses generated after changing your profile will reflect the new weighting.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
