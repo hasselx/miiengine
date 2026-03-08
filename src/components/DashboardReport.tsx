@@ -13,6 +13,7 @@ import TradingPlanSection from "./report/TradingPlanSection";
 import TechnicalSection from "./report/TechnicalSection";
 import MoatSection from "./report/MoatSection";
 import RiskMatrix from "./report/RiskMatrix";
+import RiskMeter from "./report/RiskMeter";
 import FinalVerdict from "./report/FinalVerdict";
 import HoldingAnalysis from "./report/HoldingAnalysis";
 import ComparisonBanner from "./report/ComparisonBanner";
@@ -98,7 +99,10 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-technical"><TechnicalSection data={data} /></div>
           <div id="section-moat"><MoatSection data={data} /></div>
           <div id="section-pattern"><PatternFinder data={data} /></div>
-          <div id="section-risk"><RiskMatrix data={data} /></div>
+          <div id="section-risk">
+            <RiskMeter data={data} />
+            <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
+          </div>
           <FinalVerdict data={data} />
         </div>
       </div>
