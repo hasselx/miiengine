@@ -821,7 +821,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       const rate = divData?.rate != null ? divData.rate : null;
       return [
         { label: "Dividend Yield", value: dy != null ? `${(dy * 100).toFixed(2)}%` : 'N/A', note: rate != null ? `${currency}${fmt(rate)}/share` : 'No dividend data', color: (dy != null && dy > 0.02 ? 'green' as const : 'muted' as const) },
-        { label: "Payout Ratio", value: pr != null ? `${(pr * 100).toFixed(1)}%` : 'N/A', note: pe > 0 ? `Earnings coverage: ${fmt(pe, 1)}x P/E` : 'N/A', color: 'muted' as const },
+        { label: "Payout Ratio", value: pr != null ? `${(pr * 100).toFixed(1)}%` : 'N/A', note: (() => { const epsVal = num(quote?.eps); const dps = rate != null ? rate : 0; if (epsVal > 0 && dps > 0) return `Dividend coverage: ${fmt(epsVal / dps, 1)}x`; if (epsVal > 0) return `EPS: ${currency}${fmt(epsVal)}`; return 'N/A'; })(), color: 'muted' as const },
         { label: "Ex-Dividend Date", value: exDate || 'N/A', note: "Most recent ex-date", color: 'muted' as const },
         { label: "Dividend Sustainability", value: dy != null && dy > 0.03 ? 'Strong' : dy != null && dy > 0.01 ? 'Moderate' : 'Minimal', note: "Based on payout and earnings", color: (dy != null && dy > 0.02 ? 'green' as const : 'gold' as const) },
       ];
