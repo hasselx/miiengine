@@ -153,11 +153,11 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
             <RiskMeter data={data} />
             <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
           </div>
-          {/* 23 */}
-          <div id="section-dividend"><DividendStrategy data={data} /></div>
           {/* 24 */}
-          <div id="section-backtest"><BacktestSimulator data={data} /></div>
+          <div id="section-dividend"><DividendStrategy data={data} /></div>
           {/* 25 */}
+          <div id="section-backtest"><BacktestSimulator data={data} /></div>
+          {/* 26 */}
           <div id="section-verdict"><FinalVerdict data={data} /></div>
         </div>
 
