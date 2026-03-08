@@ -38,6 +38,7 @@ import ConfidenceMeter from "./report/ConfidenceMeter";
 import PriceDistribution from "./report/PriceDistribution";
 import FactorContributionChart from "./report/FactorContributionChart";
 import PeerComparison from "./report/PeerComparison";
+import CapitalFlowMap from "./report/CapitalFlowMap";
 
 interface DashboardReportProps {
   data: StockAnalysis;
