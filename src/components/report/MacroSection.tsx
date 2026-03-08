@@ -8,7 +8,7 @@ const sentimentStyle = {
 };
 
 const MacroSection = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="18" title="Macro & Sector Tailwinds" score="9 / 10">
+  <SectionWrapper num="19" title="Macro & Sector Tailwinds" score="9 / 10">
     <div className="divide-y divide-border">
       {data.macroItems.map((m, i) => (
         <div key={i} className="flex items-start sm:items-center gap-3 py-3">

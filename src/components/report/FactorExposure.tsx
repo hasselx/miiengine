@@ -18,7 +18,7 @@ const FactorExposure = ({ data }: { data: StockAnalysis }) => {
   const { factorExposure, marketRegime } = data;
 
   return (
-    <SectionWrapper num="22" title="Factor Exposure & Market Regime">
+    <SectionWrapper num="23" title="Factor Exposure & Market Regime">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         {/* Radar Chart */}
         <div className="bg-accent-area rounded-sm p-4 flex items-center justify-center" style={{ minHeight: 260 }}>

@@ -3,7 +3,7 @@ import SectionWrapper from "./SectionWrapper";
 import { cn } from "@/lib/utils";
 
 const InsiderActivity = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="16" title="Insider Activity Monitor">
+  <SectionWrapper num="17" title="Insider Activity Monitor">
     <div className="overflow-x-auto">
       <table className="w-full text-left font-mono text-[12px] sm:text-[13px]">
         <thead>

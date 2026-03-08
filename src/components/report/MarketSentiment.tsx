@@ -23,7 +23,7 @@ const MarketSentiment = ({ data }: { data: StockAnalysis }) => {
   const offset = circumference - (score / 100) * circumference;
 
   return (
-    <SectionWrapper num="17" title="Market Sentiment">
+    <SectionWrapper num="18" title="Market Sentiment">
       <div className="flex flex-col sm:flex-row items-center gap-6">
         {/* Gauge */}
         <div className="relative w-28 h-28 shrink-0">
