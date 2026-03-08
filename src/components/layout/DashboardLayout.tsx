@@ -1,5 +1,5 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
-import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen } from "lucide-react";
+import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen, Brain, FlaskConical, DollarSign, Zap, Building2, PieChart, ArrowUpDown, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,15 +15,27 @@ interface DashboardLayoutProps {
 }
 
 const NAV_ITEMS = [
+  { id: "ai-summary", label: "AI Summary", icon: Brain },
   { id: "summary", label: "Summary", icon: FileText },
   { id: "scores", label: "Score Matrix", icon: BarChart3 },
   { id: "fundamentals", label: "Fundamentals", icon: Layers },
+  { id: "earnings", label: "Earnings", icon: DollarSign },
+  { id: "earnings-surprise", label: "Earnings Surprise", icon: Zap },
   { id: "valuation", label: "Valuation", icon: TrendingUp },
   { id: "price", label: "Price Targets", icon: Target },
+  { id: "backtest", label: "Backtest Simulator", icon: FlaskConical },
   { id: "macro", label: "Macro", icon: Activity },
+  { id: "dividend", label: "Dividends", icon: PieChart },
+  { id: "insider", label: "Insider Activity", icon: Building2 },
+  { id: "correlation", label: "Correlation", icon: ArrowUpDown },
   { id: "technical", label: "Technicals", icon: LineChart },
+  { id: "support-resistance", label: "Support/Resistance", icon: Target },
   { id: "moat", label: "Moat", icon: Shield },
+  { id: "pattern", label: "Patterns", icon: Activity },
   { id: "risk", label: "Risk Matrix", icon: AlertTriangle },
+  { id: "sentiment", label: "Sentiment", icon: Globe },
+  { id: "institutional", label: "Institutional", icon: Building2 },
+  { id: "sector-rotation", label: "Sector Rotation", icon: PieChart },
 ];
 
 const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen, companyName }: DashboardLayoutProps) => {
@@ -60,7 +72,8 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           "bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border z-50",
           isMobile
             ? cn(
-                "fixed inset-y-0 left-0 w-[280px] transition-transform duration-300 ease-in-out",
+                "fixed left-0 w-[280px] transition-transform duration-300 ease-in-out",
+                "top-[2rem] bottom-0",
                 mobileOpen ? "translate-x-0" : "-translate-x-full"
               )
             : cn(

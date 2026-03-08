@@ -38,15 +38,27 @@ interface DashboardReportProps {
 }
 
 const SECTION_IDS: Record<string, string> = {
+  "ai-summary": "section-ai-summary",
   summary: "section-summary",
   scores: "section-scores",
   fundamentals: "section-fundamentals",
+  earnings: "section-earnings",
+  "earnings-surprise": "section-earnings-surprise",
   valuation: "section-valuation",
   price: "section-price",
+  backtest: "section-backtest",
   macro: "section-macro",
+  dividend: "section-dividend",
+  insider: "section-insider",
+  correlation: "section-correlation",
   technical: "section-technical",
+  "support-resistance": "section-support-resistance",
   moat: "section-moat",
+  pattern: "section-pattern",
   risk: "section-risk",
+  sentiment: "section-sentiment",
+  institutional: "section-institutional",
+  "sector-rotation": "section-sector-rotation",
 };
 
 const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportProps) => {
