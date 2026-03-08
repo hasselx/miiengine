@@ -204,15 +204,87 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const ticker = safe(quote?.symbol, company.toUpperCase());
   const sector = safe(profile?.sector, 'N/A');
 
-  // Compute scores
+  // Extract real financial data
+  const fin = statistics?.financials || {};
+  const divData = statistics?.dividends_and_splits || {};
+  const fundData = fundamentals || {};
+  const earningsHist = fundData?.earningsHistory || [];
+  const insiderTxnData = fundData?.insiderTransactions || [];
+  const instData = fundData?.institutionalOwnership || {};
+  const recData = fundData?.recommendation || null;
+  const beta = num(quote?.beta);
+  const debtToEquity = fin?.debtToEquity ?? null;
+  const returnOnEquity = fin?.returnOnEquity ?? null;
+  const revenueGrowth = fin?.revenueGrowth ?? null;
+  const profitMargins = fin?.profitMargins ?? null;
+  const grossMargins = fin?.grossMargins ?? null;
+  const operatingMargins = fin?.operatingMargins ?? null;
+
+  // Compute scores using real data
   const fund = scoreFundamentals(quote, statistics);
   const val = scoreValuation(quote, techs);
   const moat = scoreMoat(profile);
-  const momentum = { score: 6, subtitle: 'Based on recent price action and earnings data' };
+
+  // Momentum score from real earnings data
+  const momentum = (() => {
+    let score = 5;
+    if (earningsHist.length > 0) {
+      const beats = earningsHist.filter((e: any) => e.epsActual != null && e.epsEstimate != null && e.epsActual > e.epsEstimate).length;
+      score = Math.min(10, 3 + Math.round(beats * 2));
+      return { score, subtitle: `${beats}/${earningsHist.length} earnings beats` };
+    }
+    if (pctChange > 2) score = 7;
+    else if (pctChange < -2) score = 4;
+    return { score, subtitle: 'Based on recent price action' };
+  })();
+
   const tech = scoreTechnical(techs);
-  const quant = { score: 6, subtitle: 'Institutional data limited via current API' };
-  const risk = { score: 7, subtitle: 'Risk assessed from volatility and sector' };
-  const macro = { score: 7, subtitle: 'Macro environment based on current conditions' };
+
+  // Quantitative score from real institutional data
+  const quant = (() => {
+    let score = 5;
+    const instPct = num(instData?.percentage);
+    if (instPct > 60) score += 3;
+    else if (instPct > 30) score += 2;
+    else if (instPct > 10) score += 1;
+    if (recData) {
+      const buySignals = (recData.strongBuy || 0) + (recData.buy || 0);
+      const sellSignals = (recData.sell || 0) + (recData.strongSell || 0);
+      if (buySignals > sellSignals * 2) score += 2;
+      else if (buySignals > sellSignals) score += 1;
+    }
+    score = Math.min(10, Math.max(0, score));
+    return { score, subtitle: instPct > 0 ? `Institutional ownership: ${instPct.toFixed(1)}%` : 'Institutional data limited' };
+  })();
+
+  // Risk score from real data
+  const risk = (() => {
+    let score = 7;
+    if (debtToEquity != null) {
+      if (debtToEquity < 30) score += 2;
+      else if (debtToEquity > 100) score -= 2;
+    }
+    const vol52 = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
+    if (vol52 > 0.6) score -= 1;
+    if (beta != null && beta > 0) {
+      if (beta > 1.5) score -= 1;
+      else if (beta < 0.8) score += 1;
+    }
+    score = Math.min(10, Math.max(0, score));
+    const deLabel = debtToEquity != null ? `D/E: ${debtToEquity.toFixed(1)}` : 'D/E: N/A';
+    return { score, subtitle: `${deLabel}; 52W range: ${(vol52 * 100).toFixed(0)}%` };
+  })();
+
+  // Macro score from real financial data
+  const macro = (() => {
+    let score = 6;
+    if (revenueGrowth != null && revenueGrowth > 0.1) score += 2;
+    else if (revenueGrowth != null && revenueGrowth > 0) score += 1;
+    if (profitMargins != null && profitMargins > 0.15) score += 1;
+    if (pctChange >= 0) score += 1;
+    score = Math.min(10, Math.max(0, score));
+    return { score, subtitle: revenueGrowth != null ? `Revenue growth: ${(revenueGrowth * 100).toFixed(1)}%` : 'Revenue growth data unavailable' };
+  })();
 
   const totalScore = fund.score + val.score + moat.score + momentum.score + tech.score + quant.score + risk.score + macro.score;
 
