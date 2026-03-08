@@ -191,6 +191,9 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
       </div>
 
+      {/* Global Market Heatmap */}
+      <GlobalHeatmap />
+
       {/* About / Features Section */}
       <div className="border-t border-border bg-card">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
