@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { id: "valuation", label: "DCF Valuation", icon: TrendingUp },
   { id: "valuation-triangle", label: "Valuation Triangle", icon: Triangle },
   { id: "price", label: "Price Projection", icon: Target },
+  { id: "catalyst-timeline", label: "Catalyst Timeline", icon: Zap },
   { id: "price-extremes", label: "Price Extremes", icon: TrendingDown },
   { id: "trading-plan", label: "Trading Plan", icon: Crosshair },
   { id: "technical", label: "Technicals", icon: LineChart },
