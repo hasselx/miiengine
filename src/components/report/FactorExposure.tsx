@@ -14,11 +14,57 @@ const regimeBg = {
   "Sideways Market": "bg-gold/10",
 };
 
+function heatColor(score: number): string {
+  if (score >= 7) return "bg-green-data/20 text-green-data border-green-data/30";
+  if (score >= 4) return "bg-gold/15 text-gold border-gold/30";
+  return "bg-red-data/15 text-red-data border-red-data/30";
+}
+
+function heatLabel(score: number): string {
+  if (score >= 7) return "Strong";
+  if (score >= 4) return "Moderate";
+  return "Weak";
+}
+
 const FactorExposure = ({ data }: { data: StockAnalysis }) => {
   const { factorExposure, marketRegime } = data;
 
+  // Build interpretation
+  const strongFactors = factorExposure.filter(f => f.score >= 7).map(f => f.name.toLowerCase());
+  const weakFactors = factorExposure.filter(f => f.score < 4).map(f => f.name.toLowerCase());
+  const volFactor = factorExposure.find(f => f.name === "Volatility");
+
+  let interpretation = "";
+  if (strongFactors.length > 0) {
+    interpretation += `This stock exhibits strong exposure to ${strongFactors.join(" and ")} factors`;
+  }
+  if (weakFactors.length > 0) {
+    interpretation += `${strongFactors.length > 0 ? ", while " : ""}${weakFactors.join(" and ")} metrics indicate limited characteristics`;
+  }
+  if (volFactor && volFactor.score >= 7) {
+    interpretation += ". Elevated volatility suggests price sensitivity to market cycles";
+  }
+  if (interpretation) interpretation += ".";
+
   return (
     <SectionWrapper num="23" title="Factor Exposure & Market Regime">
+      {/* Factor Heatmap Grid */}
+      <div className="mb-4">
+        <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-3">Factor Heatmap</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {factorExposure.map((f) => (
+            <div key={f.name} className={`border rounded-sm p-3 text-center ${heatColor(f.score)}`}>
+              <p className="font-mono text-[10px] tracking-wide uppercase opacity-80">{f.name}</p>
+              <p className="font-display text-2xl font-bold mt-1">{f.score}</p>
+              <p className="font-mono text-[9px] mt-0.5">{heatLabel(f.score)}</p>
+            </div>
+          ))}
+        </div>
+        {interpretation && (
+          <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">{interpretation}</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         {/* Radar Chart */}
         <div className="bg-accent-area rounded-sm p-4 flex items-center justify-center" style={{ minHeight: 260 }}>
