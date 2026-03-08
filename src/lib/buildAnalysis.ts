@@ -355,37 +355,90 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const expectedReturnAbs = Math.abs(expectedReturnPct).toFixed(1);
   const isUpside = expectedReturnPct >= 0;
 
-  // === Valuation Triangle: 3 independent models ===
+  // === Valuation Triangle: 3 independent models with weighted composite ===
+  const dcfWeight = 0.40, relWeight = 0.35, momWeight = 0.25;
+
   // 1. DCF Valuation: projected EPS × base P/E
   const dcfTarget = Math.round(baseCalc.targetPrice > 0 ? baseCalc.targetPrice : price);
   const dcfSignalTri: 'Bullish' | 'Bearish' | 'Neutral' = dcfTarget > price * 1.05 ? 'Bullish' : dcfTarget < price * 0.95 ? 'Bearish' : 'Neutral';
 
   // 2. Relative Valuation: sector P/E comparison
-  // Use analyst mean as proxy for sector fair value, or apply sector-average PE to current EPS
   const sectorPE = fin?.targetMeanPrice && eps > 0
     ? Math.round(fin.targetMeanPrice / eps)
-    : basePE > 0 ? Math.round(basePE * 0.9) : 18; // conservative sector avg
+    : basePE > 0 ? Math.round(basePE * 0.9) : 18;
   const relativeTarget = eps > 0 ? Math.round(eps * sectorPE) : Math.round(price * 0.95);
   const relSignal: 'Bullish' | 'Bearish' | 'Neutral' = relativeTarget > price * 1.05 ? 'Bullish' : relativeTarget < price * 0.95 ? 'Bearish' : 'Neutral';
 
   // 3. Momentum Valuation: price trend extrapolation using SMA trajectory
   const momentumTarget = (() => {
     if (techs && techs.sma50 && techs.sma200) {
-      // Extrapolate 12-month trend from SMA50/200 relationship
       const trendStrength = (techs.sma50 - techs.sma200) / techs.sma200;
       return Math.round(price * (1 + trendStrength));
     }
-    // Fallback: use 52W midpoint regression toward mean
     const mid52 = (high52 + low52) / 2;
     const reversion = (mid52 - price) * 0.5;
     return Math.round(price + reversion);
   })();
   const momSignal: 'Bullish' | 'Bearish' | 'Neutral' = momentumTarget > price * 1.05 ? 'Bullish' : momentumTarget < price * 0.95 ? 'Bearish' : 'Neutral';
 
-  // Composite: average of three models
-  const compositeTarget = Math.round((dcfTarget + relativeTarget + momentumTarget) / 3);
+  // Weighted composite: DCF 40%, Relative 35%, Momentum 25%
+  const compositeTarget = Math.round(dcfTarget * dcfWeight + relativeTarget * relWeight + momentumTarget * momWeight);
   const compositeReturnPct = ((compositeTarget - price) / price) * 100;
   const compositeIsUpside = compositeReturnPct >= 0;
+
+  // === Fair Value Range with realistic capping (10-40% of CMP) ===
+  let fvLow = adjBear;
+  let fvHigh = adjBull;
+  const rangeWidth = (fvHigh - fvLow) / price;
+  // If range is unrealistically wide (>80%), compress it
+  if (rangeWidth > 0.80) {
+    const midFV = (fvLow + fvHigh) / 2;
+    fvLow = Math.round(midFV - price * 0.20);
+    fvHigh = Math.round(midFV + price * 0.20);
+  }
+  // If range is too narrow (<10%), widen slightly
+  if (rangeWidth < 0.10 && rangeWidth >= 0) {
+    fvLow = Math.round(price * 0.93);
+    fvHigh = Math.round(price * 1.07);
+  }
+  const fvMid = Math.round((fvLow + fvHigh) / 2);
+
+  // === Market Regime Detection ===
+  const detectMarketRegime = (): { regime: 'Bull Market' | 'Bear Market' | 'Sideways Market'; signals: string[]; adjustment: string } => {
+    const signals: string[] = [];
+    let bullSignals = 0, bearSignals = 0;
+
+    // Index trend via SMA
+    if (techs) {
+      if (techs.sma50 && techs.sma200 && techs.sma50 > techs.sma200) { bullSignals++; signals.push("Golden cross (SMA50 > SMA200)"); }
+      else if (techs.sma50 && techs.sma200) { bearSignals++; signals.push("Death cross (SMA50 < SMA200)"); }
+      // Volatility
+      const vol = (high52 - low52) / low52;
+      if (vol > 0.50) { bearSignals++; signals.push("High 52W volatility"); }
+      else { signals.push("Moderate volatility"); }
+      // Breadth proxy: price position in 52W range
+      const posIn52W = (price - low52) / (high52 - low52);
+      if (posIn52W > 0.65) { bullSignals++; signals.push("Price in upper 52W range"); }
+      else if (posIn52W < 0.35) { bearSignals++; signals.push("Price in lower 52W range"); }
+      else { signals.push("Price in mid 52W range"); }
+    }
+    if (pctChange > 1) { bullSignals++; } else if (pctChange < -1) { bearSignals++; }
+
+    if (bullSignals >= 2) return { regime: 'Bull Market', signals, adjustment: 'Momentum weighted higher' };
+    if (bearSignals >= 2) return { regime: 'Bear Market', signals, adjustment: 'Risk and valuation weighted higher' };
+    return { regime: 'Sideways Market', signals, adjustment: 'Balanced weighting applied' };
+  };
+  const marketRegime = detectMarketRegime();
+
+  // === Factor Exposure Map (0-10 each) ===
+  const factorExposure = [
+    { name: "Growth", score: Math.min(10, Math.max(0, revenueGrowth != null ? Math.round(revenueGrowth * 40) : 4)) },
+    { name: "Value", score: Math.min(10, Math.max(0, pe > 0 ? Math.round(10 - Math.min(pe / 6, 10)) : 5)) },
+    { name: "Momentum", score: Math.min(10, Math.max(0, techs ? Math.round((techs.rsi / 10) * (price > (techs.sma50 || price) ? 1.1 : 0.8)) : 5)) },
+    { name: "Quality", score: Math.min(10, Math.max(0, Math.round((profitMargins != null ? profitMargins * 30 : 4) + (returnOnEquity != null ? returnOnEquity * 15 : 2)))) },
+    { name: "Volatility", score: Math.min(10, Math.max(0, Math.round(10 - (beta > 0 ? beta * 3 : 5)))) },
+    { name: "Macro Sensitivity", score: Math.min(10, Math.max(0, Math.round((macro.score / 10) * 10))) },
+  ];
 
 
   const getValuationVerdict = (score: number, retPct: number): string => {
