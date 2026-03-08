@@ -136,7 +136,7 @@ const MarketTimings = () => {
         {exchangeStatuses.map((ex) => (
           <div
             key={ex.name}
-            className="grid grid-cols-[auto_1fr_auto_1fr_auto_auto] items-center gap-2 px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
+            className="grid grid-cols-[auto_minmax(80px,1fr)_auto_auto_auto] items-center gap-2 px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
           >
             <span className="text-sm">{ex.flag}</span>
             <div className="min-w-0">
@@ -145,11 +145,10 @@ const MarketTimings = () => {
                 {ex.openHour.toString().padStart(2, "0")}:{ex.openMin.toString().padStart(2, "0")}–{ex.closeHour.toString().padStart(2, "0")}:{ex.closeMin.toString().padStart(2, "0")} {ex.timezone}
               </p>
             </div>
-            <div className="text-center">
+            <div className="text-center min-w-[56px]">
               <p className="font-mono text-[10px] font-medium text-primary">{ex.currencyLabel}</p>
               <p className="font-mono text-[10px] text-foreground">{formatCurrency(ex.currencyPair, ex.currencyValue)}</p>
             </div>
-            <div className="min-w-0" />
             <div className="text-right min-w-[44px]">
               <p className="font-mono text-[8px] text-muted-foreground uppercase">Local</p>
               <p className="font-mono text-[10px] text-muted-foreground">{ex.localTime}</p>
