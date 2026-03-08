@@ -50,6 +50,7 @@ const SECTION_IDS: Record<string, string> = {
   valuation: "section-valuation",
   "valuation-triangle": "section-valuation-triangle",
   price: "section-price",
+  "catalyst-timeline": "section-catalyst-timeline",
   "price-extremes": "section-price-extremes",
   "trading-plan": "section-trading-plan",
   technical: "section-technical",
