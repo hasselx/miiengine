@@ -21,6 +21,12 @@ export interface PriceScenario {
   change: string;
   description: string;
   type: 'bull' | 'base' | 'bear';
+  assumptions: {
+    revenueGrowth: string;
+    operatingMargin: string;
+    peMultiple: string;
+    projectedEps: string;
+  };
 }
 
 export interface TradingCell {
