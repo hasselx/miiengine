@@ -208,6 +208,7 @@ export interface StockAnalysis {
   keyDrivers: string[];
   factorExposure: { name: string; score: number }[];
   marketRegime: { regime: 'Bull Market' | 'Bear Market' | 'Sideways Market'; signals: string[]; adjustment: string };
+  catalystTimeline: { date: string; event: string; category: 'earnings' | 'corporate' | 'industry' | 'product' | 'macro'; impact: 'High' | 'Moderate' | 'Low' }[];
   finalVerdict: string;
   finalVerdictText: string;
   finalAction: string;
