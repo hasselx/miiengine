@@ -214,6 +214,7 @@ export interface StockAnalysis {
   factorContributions: { name: string; contribution: number }[];
   priceDistribution: { bear: { price: string; probability: number; drivers: string[] }; base: { price: string; probability: number; drivers: string[] }; bull: { price: string; probability: number; drivers: string[] }; expectedPrice: string };
   catalystTimeline: { date: string; event: string; category: 'earnings' | 'corporate' | 'industry' | 'product' | 'macro'; impact: 'High' | 'Moderate' | 'Low' }[];
+  peerComparison: PeerComparisonData | null;
   finalVerdict: string;
   finalVerdictText: string;
   finalAction: string;
@@ -235,4 +236,33 @@ export interface StockAnalysis {
   };
   watermark: string;
   disclaimer: string;
+}
+
+export interface PeerMetric {
+  symbol: string;
+  name: string;
+  price: number;
+  pe: number;
+  marketCap: number;
+  revenueGrowth: number | null;
+  operatingMargin: number | null;
+  profitMargin: number | null;
+  roe: number | null;
+  debtToEquity: number | null;
+  eps: number;
+}
+
+export interface PeerComparisonData {
+  peers: PeerMetric[];
+  companyMetrics: PeerMetric;
+  relativeScore: number; // 0-10
+  ranking: { symbol: string; name: string; score: number }[];
+  commentary: string;
+  sectorAvg: {
+    pe: number;
+    revenueGrowth: number | null;
+    operatingMargin: number | null;
+    roe: number | null;
+    debtToEquity: number | null;
+  };
 }

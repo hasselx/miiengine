@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { PeerMetric } from "./stockData";
 
 export interface StockRawData {
   quote: any;
@@ -17,6 +18,18 @@ export async function fetchStockData(symbol: string, exchange?: string): Promise
   if (data.error) throw new Error(data.error);
 
   return data as StockRawData;
+}
+
+export async function fetchPeerData(symbol: string, industry: string, sector: string): Promise<PeerMetric[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('fetch-peer-data', {
+      body: { symbol, industry, sector },
+    });
+    if (error || !data?.peers) return [];
+    return data.peers as PeerMetric[];
+  } catch {
+    return [];
+  }
 }
 
 // Map common country+company aliases to symbols
