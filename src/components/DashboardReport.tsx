@@ -61,6 +61,7 @@ const SECTION_IDS: Record<string, string> = {
   "sector-rotation": "section-sector-rotation",
   correlation: "section-correlation",
   moat: "section-moat",
+  "factor-exposure": "section-factor-exposure",
   risk: "section-risk",
   dividend: "section-dividend",
   backtest: "section-backtest",
