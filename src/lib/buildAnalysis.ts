@@ -400,22 +400,29 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const compositeReturnPct = ((compositeTarget - price) / price) * 100;
   const compositeIsUpside = compositeReturnPct >= 0;
 
-  // === Fair Value Range with realistic capping (10-40% of CMP) ===
+  // === Fair Value Range with market-cap-aware band compression ===
   let fvLow = adjBear;
   let fvHigh = adjBull;
-  const rangeWidth = (fvHigh - fvLow) / price;
-  // If range is unrealistically wide (>80%), compress it
-  if (rangeWidth > 0.80) {
-    const midFV = (fvLow + fvHigh) / 2;
-    fvLow = Math.round(midFV - price * 0.20);
-    fvHigh = Math.round(midFV + price * 0.20);
+  const fvMidRaw = Math.round((fvLow + fvHigh) / 2);
+
+  // Determine max allowed band width as % of midpoint based on company profile
+  const isSmallCap = marketCap > 0 && marketCap < 5e9;
+  const isMidCapVolatile = marketCap >= 5e9 && marketCap < 50e9 && vol52Prelim > 0.4;
+  const maxBandPct = isSmallCap ? 0.70 : isMidCapVolatile ? 0.60 : 0.50;
+
+  const bandWidth = fvMidRaw > 0 ? (fvHigh - fvLow) / fvMidRaw : 0;
+  if (bandWidth > maxBandPct) {
+    // Compress symmetrically around midpoint
+    const halfBand = fvMidRaw * (maxBandPct / 2);
+    fvLow = Math.round(fvMidRaw - halfBand);
+    fvHigh = Math.round(fvMidRaw + halfBand);
   }
-  // If range is too narrow (<10%), widen slightly
-  if (rangeWidth < 0.10 && rangeWidth >= 0) {
-    fvLow = Math.round(price * 0.93);
-    fvHigh = Math.round(price * 1.07);
+  // If range is too narrow (<10% of midpoint), widen slightly
+  if (fvMidRaw > 0 && bandWidth < 0.10) {
+    fvLow = Math.round(fvMidRaw * 0.93);
+    fvHigh = Math.round(fvMidRaw * 1.07);
   }
-  const fvMid = Math.round((fvLow + fvHigh) / 2);
+  const fvMid = fvMidRaw;
 
   // === Market Regime Detection ===
   const detectMarketRegime = (): { regime: 'Bull Market' | 'Bear Market' | 'Sideways Market'; signals: string[]; adjustment: string } => {
