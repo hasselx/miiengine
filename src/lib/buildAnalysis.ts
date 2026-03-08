@@ -188,7 +188,7 @@ function scoreTechnical(techs: any): { score: number; subtitle: string } {
 }
 
 export function buildAnalysisFromRealData(raw: StockRawData, company: string, country: string, exchange: string): StockAnalysis {
-  const { quote, profile, statistics, timeSeries } = raw;
+  const { quote, profile, statistics, timeSeries, fundamentals } = raw;
   const techs = computeTechnicals(timeSeries);
   const currency = getCurrencyFromData(quote, exchange);
   const price = num(quote.close || quote.price);
