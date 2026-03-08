@@ -8,6 +8,7 @@ import ScoreMatrix from "./report/ScoreMatrix";
 import FundamentalAnalysis from "./report/FundamentalAnalysis";
 import DCFValuation from "./report/DCFValuation";
 import PriceProjectionSection from "./report/PriceProjectionSection";
+import ValuationTriangle from "./report/ValuationTriangle";
 import MacroSection from "./report/MacroSection";
 import TradingPlanSection from "./report/TradingPlanSection";
 import TechnicalSection from "./report/TechnicalSection";
@@ -112,6 +113,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-earnings-surprise"><EarningsSurpriseTracker data={data} /></div>
           <div id="section-valuation"><DCFValuation data={data} /></div>
           <div id="section-price"><PriceProjectionSection data={data} /></div>
+          <div id="section-valuation-triangle"><ValuationTriangle data={data} /></div>
           <div id="section-institutional"><InstitutionalOwnership data={data} /></div>
           <div id="section-insider"><InsiderActivity data={data} /></div>
           <div id="section-macro"><MacroSection data={data} /></div>

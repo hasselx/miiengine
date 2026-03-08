@@ -193,6 +193,14 @@ export interface StockAnalysis {
   sentimentFactors: SentimentFactor[];
   correlations: CorrelationItem[];
   sectorRotation: SectorRotationItem[];
+  valuationTriangle: {
+    dcf: { price: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
+    relative: { price: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
+    momentum: { price: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
+    composite: string;
+    compositeReturn: string;
+    compositeLabel: string;
+  };
   fairValueRange: { low: string; high: string; midpoint: string };
   accumulationZone: { low: string; high: string; show: boolean };
   modelConfidence: { score: number; level: 'Low' | 'Moderate' | 'High'; factors: string[] };
