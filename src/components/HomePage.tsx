@@ -65,7 +65,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
       {/* Top bar — sticky on mobile */}
-      <div className="flex justify-end px-4 sm:px-6 py-3 sm:py-4 sticky top-0 bg-background/80 backdrop-blur-sm z-20">
+      <div className="flex justify-end px-4 sm:px-6 py-3 sm:py-4 sticky top-8 bg-background/80 backdrop-blur-sm z-20">
         {user ? (
           <div className="flex items-center gap-3">
             <button onClick={() => navigate("/dashboard")} className="font-mono text-[11px] text-primary hover:underline flex items-center gap-1.5 p-2 touch-target">
