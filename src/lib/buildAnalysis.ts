@@ -568,7 +568,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     ],
     totalScore,
     verdict,
-    verdictNote: totalScore < 70 ? `Entry below ${currency}${Math.round(price * 0.92)} upgrades to BUY` : 'Strong conviction level',
+    verdictNote: isBuyVerdict ? 'Strong conviction — accumulate at current levels' : targetReturnPct < 0 ? `Wait for pullback to ${currency}${accZoneLow}–${currency}${accZoneHigh}` : 'Fair value — hold existing positions',
     scoreRange: v.range,
     scores: [
       { step: 1, name: "Fundamental Quality", subtitle: fund.subtitle, score: weightedScores[0], maxScore: 20, weight: `${Math.round(weights[0] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
