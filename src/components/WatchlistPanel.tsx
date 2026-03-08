@@ -53,7 +53,7 @@ const WatchlistPanel = ({ open, onClose }: { open: boolean; onClose: () => void 
   const [triggered, setTriggered] = useState<TriggeredAlert[]>([]);
   const [loading, setLoading] = useState(false);
   const [addTicker, setAddTicker] = useState("");
-  const [addName, setAddName] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [alertForm, setAlertForm] = useState<{ watchlistId: string; type: string; threshold: string } | null>(null);
   const [expandedAlerts, setExpandedAlerts] = useState<string | null>(null);
