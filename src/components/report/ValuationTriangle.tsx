@@ -32,7 +32,8 @@ const ValuationTriangle = ({ data }: { data: StockAnalysis }) => {
         {models.map((m) => (
           <div key={m.label} className={`${signalBg[m.signal]} p-4 text-center`}>
             <p className="text-lg mb-1">{m.icon}</p>
-            <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-2">{m.label}</p>
+            <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-1">{m.label}</p>
+            <p className="font-mono text-[8px] tracking-[1px] text-muted-foreground/60 mb-2">Weight: {m.weight}</p>
             <p className={`font-display text-xl sm:text-2xl font-bold mb-1 ${signalColor[m.signal]}`}>{m.price}</p>
             <span className={`inline-block font-mono text-[10px] px-2 py-0.5 rounded ${signalBg[m.signal]} ${signalColor[m.signal]}`}>
               {m.signal}
@@ -47,7 +48,7 @@ const ValuationTriangle = ({ data }: { data: StockAnalysis }) => {
         <div>
           <p className="font-mono text-[10px] tracking-[3px] uppercase text-gold mb-1">Composite Fair Value</p>
           <p className="font-display text-3xl sm:text-[36px] font-bold">{composite}</p>
-          <p className="font-mono text-[10px] text-cream/50 mt-1">Average of DCF + Relative + Momentum</p>
+          <p className="font-mono text-[10px] text-cream/50 mt-1">DCF (40%) + Relative (35%) + Momentum (25%)</p>
         </div>
         <div className="sm:text-right">
           <p className={`font-mono text-lg sm:text-xl font-medium ${compositeReturn.startsWith('-') ? 'text-red-data' : 'text-gold'}`}>
@@ -58,7 +59,7 @@ const ValuationTriangle = ({ data }: { data: StockAnalysis }) => {
       </div>
 
       <div className="mt-3 text-[12px] text-muted-foreground p-3 border-l-[3px] border-gold bg-accent-area leading-[1.7] rounded-sm">
-        <strong>Methodology:</strong> The Valuation Triangle averages three independent approaches — discounted cash flow (earnings-based), relative valuation (sector P/E comparison), and momentum valuation (price trend extrapolation) — to reduce single-model bias and improve target reliability.
+        <strong>Methodology:</strong> The Valuation Triangle uses a weighted composite — DCF (40%), Relative (35%), and Momentum (25%) — to reduce single-model bias. Weights are calibrated to prioritize fundamental models while incorporating market trend signals.
       </div>
     </SectionWrapper>
   );

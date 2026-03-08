@@ -31,6 +31,7 @@ import CorrelationAnalyzer from "./report/CorrelationAnalyzer";
 import SectorRotation from "./report/SectorRotation";
 import BacktestSimulator from "./report/BacktestSimulator";
 import AIStockSummary from "./report/AIStockSummary";
+import FactorExposure from "./report/FactorExposure";
 
 interface DashboardReportProps {
   data: StockAnalysis;
@@ -60,6 +61,7 @@ const SECTION_IDS: Record<string, string> = {
   "sector-rotation": "section-sector-rotation",
   correlation: "section-correlation",
   moat: "section-moat",
+  "factor-exposure": "section-factor-exposure",
   risk: "section-risk",
   dividend: "section-dividend",
   backtest: "section-backtest",
@@ -145,15 +147,17 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           {/* 21 */}
           <div id="section-moat"><MoatSection data={data} /></div>
           {/* 22 */}
+          <div id="section-factor-exposure"><FactorExposure data={data} /></div>
+          {/* 23 */}
           <div id="section-risk">
             <RiskMeter data={data} />
             <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
           </div>
-          {/* 23 */}
-          <div id="section-dividend"><DividendStrategy data={data} /></div>
           {/* 24 */}
-          <div id="section-backtest"><BacktestSimulator data={data} /></div>
+          <div id="section-dividend"><DividendStrategy data={data} /></div>
           {/* 25 */}
+          <div id="section-backtest"><BacktestSimulator data={data} /></div>
+          {/* 26 */}
           <div id="section-verdict"><FinalVerdict data={data} /></div>
         </div>
 

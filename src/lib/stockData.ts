@@ -194,9 +194,9 @@ export interface StockAnalysis {
   correlations: CorrelationItem[];
   sectorRotation: SectorRotationItem[];
   valuationTriangle: {
-    dcf: { price: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
-    relative: { price: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
-    momentum: { price: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
+    dcf: { price: string; weight: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
+    relative: { price: string; weight: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
+    momentum: { price: string; weight: string; method: string; signal: 'Bullish' | 'Bearish' | 'Neutral' };
     composite: string;
     compositeReturn: string;
     compositeLabel: string;
@@ -206,6 +206,8 @@ export interface StockAnalysis {
   modelConfidence: { score: number; level: 'Low' | 'Moderate' | 'High'; factors: string[] };
   modelAgreement: { level: 'Low' | 'Moderate' | 'High'; models: { name: string; signal: 'Bullish' | 'Bearish' | 'Neutral' }[] };
   keyDrivers: string[];
+  factorExposure: { name: string; score: number }[];
+  marketRegime: { regime: 'Bull Market' | 'Bear Market' | 'Sideways Market'; signals: string[]; adjustment: string };
   finalVerdict: string;
   finalVerdictText: string;
   finalAction: string;

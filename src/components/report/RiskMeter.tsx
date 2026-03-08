@@ -141,7 +141,7 @@ const RiskMeter = ({ data }: { data: StockAnalysis }) => {
   };
 
   return (
-    <SectionWrapper num="22" title="Risk Meter" score={`${score}/100`}>
+    <SectionWrapper num="23" title="Risk Meter" score={`${score}/100`}>
       {/* Gauge */}
       <div className="flex flex-col items-center pb-3">
         <Gauge score={score} size={isMobile ? 160 : 200} />
