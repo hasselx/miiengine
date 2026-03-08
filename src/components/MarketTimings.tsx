@@ -135,33 +135,29 @@ const MarketTimings = () => {
         {exchangeStatuses.map((ex) => (
           <div
             key={ex.name}
-            className="flex items-center justify-between px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
+            className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm">{ex.flag}</span>
-              <div className="min-w-0">
-                <p className="font-mono text-[11px] font-semibold text-foreground truncate">{ex.name}</p>
-                <p className="font-mono text-[9px] text-muted-foreground">
-                  {ex.openHour.toString().padStart(2, "0")}:{ex.openMin.toString().padStart(2, "0")}–{ex.closeHour.toString().padStart(2, "0")}:{ex.closeMin.toString().padStart(2, "0")} {ex.timezone}
-                </p>
-              </div>
+            <span className="text-sm">{ex.flag}</span>
+            <div className="min-w-0">
+              <p className="font-mono text-[11px] font-semibold text-foreground truncate">{ex.name}</p>
+              <p className="font-mono text-[9px] text-muted-foreground">
+                {ex.openHour.toString().padStart(2, "0")}:{ex.openMin.toString().padStart(2, "0")}–{ex.closeHour.toString().padStart(2, "0")}:{ex.closeMin.toString().padStart(2, "0")} {ex.timezone}
+              </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="text-right">
-                <p className="font-mono text-[10px] text-muted-foreground">{ex.localTime}</p>
-                <p className="font-mono text-[9px] text-primary/80">{ex.currencyPair}: {formatCurrency(ex.currencyPair, ex.currencyValue)}</p>
-              </div>
-              <span
-                className={cn(
-                  "font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded-full",
-                  ex.status === "open" && "bg-[hsl(142,30%,18%)] text-[hsl(142,50%,55%)]",
-                  ex.status === "pre-market" && "bg-[hsl(45,30%,18%)] text-[hsl(45,50%,55%)]",
-                  ex.status === "closed" && "bg-muted text-muted-foreground"
-                )}
-              >
-                {ex.status === "open" ? "Open" : ex.status === "pre-market" ? "Pre" : "Closed"}
-              </span>
+            <div className="text-right min-w-[72px]">
+              <p className="font-mono text-[10px] text-muted-foreground">{ex.localTime}</p>
+              <p className="font-mono text-[9px] text-primary/80">{ex.currencyPair}: {formatCurrency(ex.currencyPair, ex.currencyValue)}</p>
             </div>
+            <span
+              className={cn(
+                "font-mono text-[9px] font-semibold px-2 py-1 rounded-full text-center min-w-[48px]",
+                ex.status === "open" && "bg-[hsl(142,30%,18%)] text-[hsl(142,50%,55%)]",
+                ex.status === "pre-market" && "bg-[hsl(45,30%,18%)] text-[hsl(45,50%,55%)]",
+                ex.status === "closed" && "bg-muted text-muted-foreground"
+              )}
+            >
+              {ex.status === "open" ? "Open" : ex.status === "pre-market" ? "Pre" : "Closed"}
+            </span>
           </div>
         ))}
       </div>
