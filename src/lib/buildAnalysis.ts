@@ -1,4 +1,18 @@
-import { StockAnalysis, MoatItem, RiskItem, PatternSignal, SentimentFactor } from "./stockData";
+import { StockAnalysis, MoatItem, RiskItem, PatternSignal, SentimentFactor, InvestmentStyle } from "./stockData";
+
+// Weight multipliers per investment style (keyed by score category index 0-7)
+// Categories: 0=Fundamental, 1=Valuation, 2=Moat, 3=Momentum, 4=Technical, 5=Quant, 6=Risk, 7=Macro
+function getStyleWeights(style: InvestmentStyle): number[] {
+  switch (style) {
+    case 'long_term':    return [1.3, 1.2, 1.3, 0.8, 0.7, 1.0, 1.0, 1.0];
+    case 'swing_trader': return [0.8, 0.8, 0.7, 1.3, 1.4, 1.0, 1.0, 0.8];
+    case 'short_term':   return [0.7, 0.7, 0.6, 1.4, 1.3, 1.1, 1.0, 0.7];
+    case 'intraday':     return [0.5, 0.5, 0.5, 1.5, 1.5, 1.2, 1.0, 0.5];
+    case 'value':        return [1.4, 1.5, 1.2, 0.7, 0.6, 0.9, 1.2, 0.8];
+    case 'growth':       return [1.1, 0.9, 0.9, 1.3, 1.0, 1.0, 0.8, 1.3];
+    default:             return [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+  }
+}
 import { StockRawData } from "./stockApi";
 
 function safe(val: any, fallback: string = 'N/A'): string {
