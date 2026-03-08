@@ -163,7 +163,7 @@ const MarketTicker = () => {
                 {neutral ? (
                   <Minus className="h-3 w-3 text-muted-foreground" />
                 ) : positive ? (
-                  <TrendingUp className="h-3 w-3 text-[hsl(var(--green-data))]" />
+                  <TrendingUp className="h-3 w-3 text-green-data" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-destructive" />
                 )}
