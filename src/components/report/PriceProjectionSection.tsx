@@ -41,12 +41,12 @@ const PriceProjectionSection = ({ data }: { data: StockAnalysis }) => (
       })}
     </div>
 
-    {/* Expected Price Box */}
+    {/* Target Price Box */}
     <div className="bg-ink text-cream p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-sm">
       <div>
-        <p className="font-mono text-[10px] tracking-[3px] uppercase text-gold mb-1">Expected Price (Probability-Weighted)</p>
-        <p className="font-display text-3xl sm:text-[40px] font-bold">{data.expectedPrice}</p>
-        <p className="font-mono text-[11px] text-cream/50 mt-1 break-all sm:break-normal">{data.expectedFormula}</p>
+        <p className="font-mono text-[10px] tracking-[3px] uppercase text-gold mb-1">Target Price (Fair Value Midpoint)</p>
+        <p className="font-display text-3xl sm:text-[40px] font-bold">{data.fairValueRange.midpoint}</p>
+        <p className="font-mono text-[11px] text-cream/50 mt-1">Prob-Weighted: {data.expectedPrice} · {data.expectedFormula}</p>
       </div>
       <div className="sm:text-right">
         <p className={`font-mono text-xl sm:text-[28px] font-medium ${data.expectedUpside.startsWith('-') ? 'text-red-data' : 'text-gold'}`}>{data.expectedUpside}</p>
