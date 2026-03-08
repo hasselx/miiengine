@@ -51,12 +51,20 @@ function getExchangeStatus(ex: Exchange): { status: "open" | "pre-market" | "clo
 }
 
 const MarketTimings = () => {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
   const exchangeStatuses = useMemo(() => {
     return EXCHANGES.map((ex) => ({
       ...ex,
       ...getExchangeStatus(ex),
     }));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick]);
 
   return (
     <div className="space-y-3">
