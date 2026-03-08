@@ -70,7 +70,7 @@ const IndexModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) =
 
         <div className="mb-4">
           <span className="text-2xl font-bold font-mono text-foreground">{idx.price.toLocaleString()}</span>
-          <span className={cn("ml-2 text-sm font-mono font-semibold", positive ? "text-[hsl(var(--green-data))]" : "text-destructive")}>
+          <span className={cn("ml-2 text-sm font-mono font-semibold", positive ? "text-green-data" : "text-destructive")}>
             {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
           </span>
         </div>
