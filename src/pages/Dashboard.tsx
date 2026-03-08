@@ -177,6 +177,15 @@ const Dashboard = () => {
             <Eye className="h-3.5 w-3.5 inline mr-2" />
             Watchlist
           </button>
+          <button
+            onClick={() => setTab("settings")}
+            className={`font-mono text-[11px] tracking-[2px] uppercase px-5 py-3 border-b-2 transition-colors ${
+              tab === "settings" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
+            }`}
+          >
+            <Settings className="h-3.5 w-3.5 inline mr-2" />
+            Settings
+          </button>
         </div>
       </header>
 
