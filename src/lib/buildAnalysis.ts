@@ -893,13 +893,14 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       return catalysts;
     })(),
     finalVerdict: verdict,
-    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedReturnStr} ${expectedReturnLabel.toLowerCase()}). Market regime: <strong>${marketRegime.regime}</strong>.`,
-    finalAction: `<strong>Recommendation:</strong> ${isUpside && totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : isUpside && totalScore >= 60 ? 'Accumulate on dips near ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Hold with 12-month view.' : !isUpside ? 'Hold existing positions. Wait for pullback to ' + currency + accZoneLow + '–' + currency + accZoneHigh + ' for better entry.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
+    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with a 12-month target price of ${currency}${targetPrice} (${targetReturnStr} ${targetReturnLabel.toLowerCase()}). Market regime: <strong>${marketRegime.regime}</strong>.`,
+    finalAction: `<strong>Recommendation:</strong> ${isBuyVerdict ? 'Initiate position within ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Targets: ' + currency + t1 + ' / ' + currency + t2 + '.' : targetReturnPct >= 0 ? 'Hold existing positions. Current price near fair value.' : 'Reduce exposure. Wait for pullback to ' + currency + optEntryLow + '–' + currency + optEntryHigh + ' for better risk-reward.'}`,
     finalFooter: [
       { label: "SCORE", value: `${totalScore} / 100` },
-      { label: "TARGET", value: `${currency}${expectedPrice}` },
-      { label: "RETURN", value: expectedReturnStr },
+      { label: "TARGET", value: `${currency}${targetPrice}` },
+      { label: "RETURN", value: targetReturnStr },
       { label: "FAIR VALUE", value: `${currency}${fvLow} – ${currency}${fvHigh}` },
+      { label: "ENTRY ZONE", value: `${currency}${optEntryLow} – ${currency}${optEntryHigh}` },
       { label: "CONFIDENCE", value: `${confidenceScore}% (${confidenceLevel})` },
       { label: "REGIME", value: marketRegime.regime },
     ],
