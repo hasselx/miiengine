@@ -318,6 +318,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
 
   return {
     company: companyName,
+    investmentStyle: investmentStyle || null,
     subtitle: `${companyName} · ${safe(quote?.exchange, exchange)} · ${ticker}`,
     verdictBadge: v.badge,
     reportType: `Institutional Equity Research · 12-Month Horizon · ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,
