@@ -267,7 +267,21 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const rawScores = [fund.score, val.score, moat.score, momentum.score, tech.score, quant.score, risk.score, macro.score];
   const maxScores = [20, 15, 10, 10, 15, 10, 10, 10];
   const weightedScores = rawScores.map((s, i) => Math.min(maxScores[i], Math.round(s * weights[i])));
-  const totalScore = weightedScores.reduce((a, b) => a + b, 0);
+  let totalScore = weightedScores.reduce((a, b) => a + b, 0);
+
+  // === Momentum Bias Correction ===
+  // If technical score is strong but fundamentals are weak, penalize
+  const techPct = (weightedScores[4] / maxScores[4]) * 100;
+  const fundPct = (weightedScores[0] / maxScores[0]) * 100;
+  if (techPct > 80 && fundPct < 50) {
+    totalScore = Math.round(totalScore * 0.88); // reduce by ~12%
+  }
+
+  // Preliminary volatility for guardrails (full vol52 computed later with fair value)
+  const vol52Prelim = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
+
+  // === Valuation Guardrail ===
+  // Prevent inflated scores when price is well above fair value
 
   const getScoreVerdict = (s: number) => {
     if (s >= 90) return { badge: "⬛ STRONG BUY", range: "90–100 = STRONG BUY" };
@@ -449,7 +463,12 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const targetReturnStr = `${targetIsUpside ? '+' : '-'}${targetReturnAbs}%`;
   const targetReturnLabel = targetIsUpside ? "Expected Upside" : "Expected Downside";
 
+  // === Valuation Guardrail: cap recommendation if price >> fair value ===
+  const priceAboveFV = fvMid > 0 ? (price - fvMid) / fvMid : 0;
+  const maxVerdictIfOvervalued = priceAboveFV > 0.15; // price > 115% of fair value
+
   // === Recommendation based on score thresholds ===
+  const VERDICT_LEVELS = ["Sell", "Reduce", "Hold", "Accumulate", "Buy", "Strong Buy"];
   const getScoreBasedVerdict = (score: number): string => {
     if (score >= 90) return "Strong Buy";
     if (score >= 75) return "Buy";
@@ -458,7 +477,36 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     if (score >= 30) return "Reduce";
     return "Sell";
   };
-  const verdict = getScoreBasedVerdict(totalScore);
+
+  const downgradeVerdict = (v: string): string => {
+    const idx = VERDICT_LEVELS.indexOf(v);
+    return idx > 0 ? VERDICT_LEVELS[idx - 1] : v;
+  };
+
+  let verdict = getScoreBasedVerdict(totalScore);
+
+  // === Market Regime Adjustment: Bear market downgrades by one level ===
+  // (marketRegime computed later, so we do a preliminary check here)
+  const prelimBull = techs?.sma50 && techs?.sma200 && techs.sma50 > techs.sma200 ? 1 : 0;
+  const prelimBear = (techs?.sma50 && techs?.sma200 && techs.sma50 < techs.sma200 ? 1 : 0)
+    + (vol52Prelim > 0.50 ? 1 : 0)
+    + (pctChange < -1 ? 1 : 0);
+  const isBearRegime = prelimBear >= 2 && prelimBull === 0;
+  if (isBearRegime) {
+    verdict = downgradeVerdict(verdict);
+  }
+
+  // === Valuation Guardrail: if price > 115% of fair value, max = Hold ===
+  if (maxVerdictIfOvervalued) {
+    const maxIdx = VERDICT_LEVELS.indexOf("Hold");
+    const curIdx = VERDICT_LEVELS.indexOf(verdict);
+    if (curIdx > maxIdx) verdict = "Hold";
+  }
+
+  // === High Volatility Downgrade ===
+  if (vol52Prelim > 0.60 && (verdict === "Strong Buy" || verdict === "Buy")) {
+    verdict = downgradeVerdict(verdict);
+  }
 
   // === Accumulation Zone: relative to CMP ===
   // For Buy recs: zone includes/slightly below CMP using nearest support
@@ -516,8 +564,16 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   ];
   const bullCount = agreementModels.filter(m => m.signal === 'Bullish').length;
   const bearCount = agreementModels.filter(m => m.signal === 'Bearish').length;
-  const agreementLevel: 'Low' | 'Moderate' | 'High' = (bullCount >= 3 || bearCount >= 3) ? 'High' : (bullCount >= 2 || bearCount >= 2) ? 'Moderate' : 'Low';
-  if (agreementLevel === 'High') confidenceScore = Math.min(95, confidenceScore + 5);
+  // Model agreement: equal = Neutral, diff 1 = Moderate, diff 2+ = High
+  const agreementDiff = Math.abs(bullCount - bearCount);
+  const agreementLevel: 'Low' | 'Moderate' | 'High' = agreementDiff >= 2 ? 'High' : agreementDiff === 1 ? 'Moderate' : 'Low';
+  if (agreementLevel === 'High' && bullCount > bearCount) confidenceScore = Math.min(85, confidenceScore + 5);
+
+  // === Final Consistency Validation ===
+  // If model agreement is bearish-dominant but verdict is Buy+, downgrade
+  if (bearCount > bullCount && (verdict === 'Strong Buy' || verdict === 'Buy')) {
+    verdict = downgradeVerdict(verdict);
+  }
 
   // Key drivers — sector-aware
   const keyDrivers: string[] = [];
