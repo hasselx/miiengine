@@ -13,6 +13,7 @@ import TradingPlanSection from "./report/TradingPlanSection";
 import TechnicalSection from "./report/TechnicalSection";
 import MoatSection from "./report/MoatSection";
 import RiskMatrix from "./report/RiskMatrix";
+import RiskMeter from "./report/RiskMeter";
 import FinalVerdict from "./report/FinalVerdict";
 import HoldingAnalysis from "./report/HoldingAnalysis";
 import ComparisonBanner from "./report/ComparisonBanner";
