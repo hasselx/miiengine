@@ -113,6 +113,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-earnings-surprise"><EarningsSurpriseTracker data={data} /></div>
           <div id="section-valuation"><DCFValuation data={data} /></div>
           <div id="section-price"><PriceProjectionSection data={data} /></div>
+          <div id="section-valuation-triangle"><ValuationTriangle data={data} /></div>
           <div id="section-institutional"><InstitutionalOwnership data={data} /></div>
           <div id="section-insider"><InsiderActivity data={data} /></div>
           <div id="section-macro"><MacroSection data={data} /></div>

@@ -770,6 +770,14 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     sectorRotation: sector && sector !== 'N/A'
       ? [{ sector, direction: (pctChange >= 0.5 ? "up" : pctChange <= -0.5 ? "down" : "neutral") as 'up' | 'down' | 'neutral', performance: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange)}%` }]
       : [{ sector: "N/A", direction: "neutral" as const, performance: "Data unavailable" }],
+    valuationTriangle: {
+      dcf: { price: `${currency}${dcfTarget}`, method: `Projected EPS (${currency}${baseProjEps}) × ${scenarios.base.peMultiple}x P/E`, signal: dcfSignalTri },
+      relative: { price: `${currency}${relativeTarget}`, method: `Current EPS × ${sectorPE}x sector-avg P/E`, signal: relSignal },
+      momentum: { price: `${currency}${momentumTarget}`, method: `SMA trend extrapolation over 12 months`, signal: momSignal },
+      composite: `${currency}${compositeTarget}`,
+      compositeReturn: `${compositeIsUpside ? '+' : '-'}${Math.abs(compositeReturnPct).toFixed(1)}%`,
+      compositeLabel: `${compositeIsUpside ? 'Expected Upside' : 'Expected Downside'} from ${currency}${fmt(price)}`,
+    },
     fairValueRange: { low: `${currency}${adjBear}`, high: `${currency}${adjBull}`, midpoint: `${currency}${adjBase}` },
     accumulationZone: { low: `${currency}${accZoneLow}`, high: `${currency}${accZoneHigh}`, show: showAccZone },
     modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
