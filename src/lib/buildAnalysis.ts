@@ -364,7 +364,21 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const baseProjEps = sorted[1].calc.projEps;
   const bearProjEps = sorted[2].calc.projEps;
 
-  const expectedPrice = Math.round(adjBull * 0.25 + adjBase * 0.50 + adjBear * 0.25);
+  // === Probability Assignment & Normalization ===
+  // Raw probabilities based on market conditions
+  let probBear = 25, probBase = 50, probBull = 25;
+  // Adjust for market regime
+  if (vol52Prelim > 0.50) { probBear += 5; probBull -= 5; }
+  if (pctChange > 2) { probBull += 3; probBear -= 3; }
+  else if (pctChange < -2) { probBear += 3; probBull -= 3; }
+  // Normalize to exactly 100%
+  const probTotal = probBear + probBase + probBull;
+  probBear = Math.round((probBear / probTotal) * 100);
+  probBull = Math.round((probBull / probTotal) * 100);
+  probBase = 100 - probBear - probBull; // ensures exact sum = 100
+
+  // === Unified Target Price = Probability-Weighted Expected Price ===
+  const expectedPrice = Math.round(adjBull * (probBull / 100) + adjBase * (probBase / 100) + adjBear * (probBear / 100));
   const expectedReturnPct = ((expectedPrice - price) / price) * 100;
   const expectedReturnAbs = Math.abs(expectedReturnPct).toFixed(1);
   const isUpside = expectedReturnPct >= 0;
