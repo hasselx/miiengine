@@ -682,12 +682,19 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     sectorRotation: sector && sector !== 'N/A'
       ? [{ sector, direction: (pctChange >= 0.5 ? "up" : pctChange <= -0.5 ? "down" : "neutral") as 'up' | 'down' | 'neutral', performance: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange)}%` }]
       : [{ sector: "N/A", direction: "neutral" as const, performance: "Data unavailable" }],
-    finalVerdict: v.verdict,
-    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedUpside}% upside).`,
-    finalAction: `<strong>Recommendation:</strong> ${totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : totalScore >= 60 ? 'Accumulate on dips near ' + currency + entryLow + '–' + currency + entryHigh + '. Hold with 12-month view.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
+    fairValueRange: { low: `${currency}${adjBear}`, high: `${currency}${adjBull}`, midpoint: `${currency}${adjBase}` },
+    accumulationZone: { low: `${currency}${accZoneLow}`, high: `${currency}${accZoneHigh}`, show: showAccZone },
+    modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
+    modelAgreement: { level: agreementLevel, models: agreementModels },
+    keyDrivers: finalKeyDrivers,
+    finalVerdict: verdict,
+    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedReturnStr} ${expectedReturnLabel.toLowerCase()}).`,
+    finalAction: `<strong>Recommendation:</strong> ${isUpside && totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : isUpside && totalScore >= 60 ? 'Accumulate on dips near ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Hold with 12-month view.' : !isUpside ? 'Hold existing positions. Wait for pullback to ' + currency + accZoneLow + '–' + currency + accZoneHigh + ' for better entry.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
     finalFooter: [
       { label: "SCORE", value: `${totalScore} / 100` },
       { label: "TARGET", value: `${currency}${expectedPrice}` },
+      { label: "FAIR VALUE", value: `${currency}${adjBear} – ${currency}${adjBull}` },
+      { label: "CONFIDENCE", value: `${confidenceScore}% (${confidenceLevel})` },
       { label: "HORIZON", value: "12 Months" },
     ],
     priceExtremes: {
