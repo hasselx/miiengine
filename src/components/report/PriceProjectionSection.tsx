@@ -71,9 +71,15 @@ const PriceProjectionSection = ({ data }: { data: StockAnalysis }) => (
       <div className="mt-2 p-2.5 bg-bull-light border-l-[3px] border-green-dark rounded-sm">
         <p className="font-mono text-[9px] tracking-[2px] text-green-dark uppercase mb-0.5">Accumulation Zone</p>
         <p className="font-mono text-sm font-semibold text-green-dark">{data.accumulationZone.low} – {data.accumulationZone.high}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Better risk-reward entry range below current price</p>
       </div>
     )}
+
+    {/* Optimal Entry Zone */}
+    <div className="mt-2 p-2.5 bg-accent-area border-l-[3px] border-gold rounded-sm">
+      <p className="font-mono text-[9px] tracking-[2px] text-gold uppercase mb-0.5">Optimal Entry Zone</p>
+      <p className="font-mono text-sm font-semibold text-ink">{data.optimalEntry.low} – {data.optimalEntry.high}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">{data.optimalEntry.basis}</p>
+    </div>
 
     <div className="mt-3.5 text-[12px] text-muted-foreground p-3 border-l-[3px] border-ink bg-accent-area leading-[1.7] rounded-sm">
       <strong>Conservative Note:</strong> {data.priceNote}
