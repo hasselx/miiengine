@@ -124,7 +124,19 @@ img,svg{max-width:100%;height:auto}
           <p className="font-mono text-[10px] tracking-[2px] text-sidebar-foreground/30 uppercase mt-2">
             {data.reportType}
             {data.investmentStyle && (
-              <span className="ml-3 text-sidebar-primary/70">
+              <span className={`ml-3 ${
+                (() => {
+                  switch (data.investmentStyle) {
+                    case 'long_term': return 'text-[hsl(142,50%,45%)]';
+                    case 'value': return 'text-[hsl(152,45%,42%)]';
+                    case 'growth': return 'text-[hsl(170,40%,45%)]';
+                    case 'swing_trader': return 'text-[hsl(45,70%,50%)]';
+                    case 'short_term': return 'text-[hsl(25,70%,50%)]';
+                    case 'intraday': return 'text-[hsl(0,65%,50%)]';
+                    default: return 'text-sidebar-primary/70';
+                  }
+                })()
+              }`}>
                 · {INVESTMENT_STYLES.find(s => s.value === data.investmentStyle)?.label || data.investmentStyle}
               </span>
             )}
