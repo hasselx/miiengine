@@ -123,9 +123,65 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
   const change = price - prevClose;
   const pctChange = prevClose ? (change / prevClose) * 100 : 0;
 
+  // Fetch fundamentals (P/E, EPS, sector, etc.) from quoteSummary
+  let trailingPE = 0;
+  let forwardPE = 0;
+  let eps = 0;
+  let sector = 'N/A';
+  let industry = 'N/A';
+  let fullName = meta.longName || meta.shortName || meta.symbol || symbol;
+  let description = '';
+  let employees = 'N/A';
+  let marketCap = 0;
+  let avgVolume = 'N/A';
+  let country = isIndianExchange(exchange) ? 'India' : 'N/A';
+
+  try {
+    const modules = 'summaryDetail,defaultKeyStatistics,assetProfile,earnings';
+    const summaryUrls = [
+      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooSymbol)}?modules=${modules}${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
+      `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooSymbol)}?modules=${modules}${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
+    ];
+
+    for (const url of summaryUrls) {
+      try {
+        const res = await fetch(url, { headers });
+        if (!res.ok) { await res.text(); continue; }
+        const json = await res.json();
+        const result = json?.quoteSummary?.result?.[0];
+        if (result) {
+          const sd = result.summaryDetail || {};
+          const ks = result.defaultKeyStatistics || {};
+          const ap = result.assetProfile || {};
+
+          trailingPE = sd.trailingPE?.raw ?? ks.trailingPE?.raw ?? 0;
+          forwardPE = sd.forwardPE?.raw ?? ks.forwardPE?.raw ?? 0;
+          eps = ks.trailingEps?.raw ?? sd.trailingEps?.raw ?? 0;
+          marketCap = sd.marketCap?.raw ?? 0;
+          avgVolume = sd.averageVolume?.raw ? String(sd.averageVolume.raw) : 'N/A';
+          sector = ap.sector || 'N/A';
+          industry = ap.industry || 'N/A';
+          country = ap.country || country;
+          fullName = ap.longBusinessSummary ? (meta.longName || meta.shortName || symbol) : fullName;
+          description = ap.longBusinessSummary || '';
+          employees = ap.fullTimeEmployees ? String(ap.fullTimeEmployees) : 'N/A';
+
+          console.log(`Yahoo fundamentals: PE=${trailingPE}, EPS=${eps}, sector=${sector}`);
+          break;
+        }
+      } catch (e) {
+        console.warn(`Yahoo quoteSummary error: ${e}`);
+      }
+    }
+  } catch (e) {
+    console.warn(`Failed to fetch Yahoo fundamentals: ${e}`);
+  }
+
+  const peValue = trailingPE > 0 ? trailingPE : forwardPE;
+
   const quote = {
     symbol,
-    name: meta.longName || meta.shortName || meta.symbol || symbol,
+    name: fullName,
     exchange: exchange || meta.exchangeName || '',
     close: price,
     price,
@@ -133,9 +189,9 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
     change: parseFloat(change.toFixed(2)),
     percent_change: parseFloat(pctChange.toFixed(2)),
     volume: String(meta.regularMarketVolume ?? '0'),
-    average_volume: 'N/A',
-    pe: 0,
-    eps: 0,
+    average_volume: avgVolume,
+    pe: parseFloat(peValue.toFixed(2)),
+    eps: parseFloat(eps.toFixed(2)),
     fifty_two_week: {
       high: meta.fiftyTwoWeekHigh ?? 0,
       low: meta.fiftyTwoWeekLow ?? 0,
@@ -144,15 +200,15 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
 
   const profile = {
     name: quote.name,
-    sector: 'N/A',
-    industry: 'N/A',
-    country: isIndianExchange(exchange) ? 'India' : 'N/A',
-    employees: 'N/A',
-    description: '',
+    sector,
+    industry,
+    country,
+    employees,
+    description,
   };
 
   const statistics = {
-    valuations_metrics: { market_capitalization: 0 },
+    valuations_metrics: { market_capitalization: marketCap },
   };
 
   const timeSeries = timestamps.map((ts: number, i: number) => {
