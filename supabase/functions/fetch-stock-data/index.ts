@@ -11,12 +11,9 @@ function isIndianExchange(exchange?: string): boolean {
 
 // ─── Yahoo Finance with crumb/cookie auth ───
 async function getYahooCrumb(): Promise<{ crumb: string; cookie: string }> {
-  // Step 1: Get consent cookie
   const consentRes = await fetch('https://fc.yahoo.com/', { redirect: 'manual' });
   await consentRes.text();
   const setCookie = consentRes.headers.get('set-cookie') || '';
-
-  // Step 2: Get crumb
   const crumbRes = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -24,7 +21,6 @@ async function getYahooCrumb(): Promise<{ crumb: string; cookie: string }> {
     },
   });
   const crumb = await crumbRes.text();
-
   return { crumb, cookie: setCookie };
 }
 
@@ -47,7 +43,7 @@ async function fetchFromTwelveData(symbol: string, exchange: string | undefined,
     throw new Error(quote.message || 'Twelve Data error');
   }
 
-  return { quote, profile, statistics: stats, timeSeries: timeSeries.values || [] };
+  return { quote, profile, statistics: stats, timeSeries: timeSeries.values || [], fundamentals: null };
 }
 
 // ─── Provider 2: Yahoo Finance (REST with crumb auth) ───
@@ -56,14 +52,12 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
     ? [`${symbol}.NS`, `${symbol}.BO`]
     : [symbol];
 
-  // Get auth crumb
   let crumb = '';
   let cookie = '';
   try {
     const auth = await getYahooCrumb();
     crumb = auth.crumb;
     cookie = auth.cookie;
-    console.log(`Yahoo crumb obtained: ${crumb ? 'yes' : 'no'}`);
   } catch (e) {
     console.warn(`Failed to get Yahoo crumb: ${e}`);
   }
@@ -78,29 +72,19 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
   let yahooSymbol = candidates[0];
 
   for (const candidate of candidates) {
-    // Try multiple Yahoo domains/endpoints
     const urls = [
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
       `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(candidate)}?range=1y&interval=1d${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
     ];
-    
     for (const url of urls) {
       try {
-        console.log(`Yahoo: trying ${candidate} via ${url.includes('query1') ? 'query1' : 'query2'}`);
         const res = await fetch(url, { headers });
-        console.log(`Yahoo ${candidate}: status ${res.status}`);
-        
-        if (!res.ok) {
-          await res.text();
-          continue;
-        }
-        
+        if (!res.ok) { await res.text(); continue; }
         const json = await res.json();
         const result = json?.chart?.result?.[0];
         if (result && result.meta?.regularMarketPrice) {
           chartResult = result;
           yahooSymbol = candidate;
-          console.log(`Yahoo SUCCESS: ${candidate}, price=${result.meta.regularMarketPrice}`);
           break;
         }
       } catch (e) {
@@ -123,21 +107,28 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
   const change = price - prevClose;
   const pctChange = prevClose ? (change / prevClose) * 100 : 0;
 
-  // Fetch fundamentals (P/E, EPS, sector, etc.) from quoteSummary
-  let trailingPE = 0;
-  let forwardPE = 0;
-  let eps = 0;
-  let sector = 'N/A';
-  let industry = 'N/A';
+  // Initialize extended data
+  let trailingPE = 0, forwardPE = 0, eps = 0;
+  let sector = 'N/A', industry = 'N/A';
   let fullName = meta.longName || meta.shortName || meta.symbol || symbol;
-  let description = '';
-  let employees = 'N/A';
-  let marketCap = 0;
-  let avgVolume = 'N/A';
+  let description = '', employees = 'N/A';
+  let marketCap = 0, avgVolume = 'N/A';
   let country = isIndianExchange(exchange) ? 'India' : 'N/A';
+  let beta: number | null = null;
+  let shortRatio: number | null = null;
+  let shortPercentFloat: number | null = null;
+
+  // Extended data from quoteSummary
+  let earningsHistory: any[] = [];
+  let insiderTxns: any[] = [];
+  let topInstitutions: any[] = [];
+  let instOwnershipPct = 0;
+  let recommendationData: any = null;
+  let financials: any = null;
+  let dividendData: any = {};
 
   try {
-    const modules = 'summaryDetail,defaultKeyStatistics,assetProfile,earnings';
+    const modules = 'summaryDetail,defaultKeyStatistics,assetProfile,earningsHistory,insiderTransactions,institutionOwnership,recommendationTrend,financialData';
     const summaryUrls = [
       `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooSymbol)}?modules=${modules}${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
       `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooSymbol)}?modules=${modules}${crumb ? `&crumb=${encodeURIComponent(crumb)}` : ''}`,
@@ -153,6 +144,7 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
           const sd = result.summaryDetail || {};
           const ks = result.defaultKeyStatistics || {};
           const ap = result.assetProfile || {};
+          const fd = result.financialData || {};
 
           trailingPE = sd.trailingPE?.raw ?? ks.trailingPE?.raw ?? 0;
           forwardPE = sd.forwardPE?.raw ?? ks.forwardPE?.raw ?? 0;
@@ -162,11 +154,93 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
           sector = ap.sector || 'N/A';
           industry = ap.industry || 'N/A';
           country = ap.country || country;
-          fullName = ap.longBusinessSummary ? (meta.longName || meta.shortName || symbol) : fullName;
+          fullName = meta.longName || meta.shortName || ap.name || symbol;
           description = ap.longBusinessSummary || '';
           employees = ap.fullTimeEmployees ? String(ap.fullTimeEmployees) : 'N/A';
+          beta = sd.beta?.raw ?? ks.beta?.raw ?? null;
+          shortRatio = ks.shortRatio?.raw ?? null;
+          shortPercentFloat = ks.shortPercentOfFloat?.raw ?? null;
 
-          console.log(`Yahoo fundamentals: PE=${trailingPE}, EPS=${eps}, sector=${sector}`);
+          // Earnings history
+          const eh = result.earningsHistory?.history;
+          if (eh && Array.isArray(eh)) {
+            earningsHistory = eh.map((e: any) => ({
+              quarter: e.quarter?.fmt || '',
+              date: e.period || '',
+              epsEstimate: e.epsEstimate?.raw ?? null,
+              epsActual: e.epsActual?.raw ?? null,
+              surprise: e.epsDifference?.raw ?? null,
+              surprisePct: e.surprisePercent?.raw ?? null,
+            }));
+          }
+
+          // Insider transactions
+          const it = result.insiderTransactions?.transactions;
+          if (it && Array.isArray(it)) {
+            insiderTxns = it.slice(0, 10).map((t: any) => ({
+              name: t.filerName || 'Unknown',
+              relation: t.filerRelation || 'N/A',
+              date: t.startDate?.fmt || '',
+              shares: t.shares?.raw ?? 0,
+              value: t.value?.raw ?? 0,
+              action: t.transactionText || (t.shares?.raw > 0 ? 'Purchase' : 'Sale'),
+            }));
+          }
+
+          // Institutional ownership
+          const io = result.institutionOwnership?.ownershipList;
+          if (io && Array.isArray(io)) {
+            topInstitutions = io.slice(0, 8).map((inst: any) => ({
+              name: inst.organization || 'Unknown',
+              shares: inst.position?.raw ?? 0,
+              percentage: inst.pctHeld?.raw ? parseFloat((inst.pctHeld.raw * 100).toFixed(2)) : 0,
+              date: inst.reportDate?.fmt || '',
+            }));
+          }
+          instOwnershipPct = ks.heldPercentInstitutions?.raw ? parseFloat((ks.heldPercentInstitutions.raw * 100).toFixed(1)) : 0;
+
+          // Recommendation trend
+          const rt = result.recommendationTrend?.trend;
+          if (rt && Array.isArray(rt) && rt.length > 0) {
+            const latest = rt[0];
+            recommendationData = {
+              strongBuy: latest.strongBuy ?? 0,
+              buy: latest.buy ?? 0,
+              hold: latest.hold ?? 0,
+              sell: latest.sell ?? 0,
+              strongSell: latest.strongSell ?? 0,
+            };
+          }
+
+          // Financial data
+          if (fd) {
+            financials = {
+              debtToEquity: fd.debtToEquity?.raw ?? null,
+              returnOnEquity: fd.returnOnEquity?.raw ?? null,
+              revenueGrowth: fd.revenueGrowth?.raw ?? null,
+              grossMargins: fd.grossMargins?.raw ?? null,
+              operatingMargins: fd.operatingMargins?.raw ?? null,
+              profitMargins: fd.profitMargins?.raw ?? null,
+              currentRatio: fd.currentRatio?.raw ?? null,
+              totalRevenue: fd.totalRevenue?.raw ?? null,
+              targetMeanPrice: fd.targetMeanPrice?.raw ?? null,
+              targetHighPrice: fd.targetHighPrice?.raw ?? null,
+              targetLowPrice: fd.targetLowPrice?.raw ?? null,
+              recommendationKey: fd.recommendationKey || null,
+              numberOfAnalystOpinions: fd.numberOfAnalystOpinions?.raw ?? null,
+            };
+          }
+
+          // Dividend data
+          dividendData = {
+            yield: sd.dividendYield?.raw ?? null,
+            rate: sd.dividendRate?.raw ?? null,
+            exDate: sd.exDividendDate?.fmt || null,
+            payoutRatio: sd.payoutRatio?.raw ?? null,
+            fiveYearAvgYield: sd.fiveYearAvgDividendYield?.raw ?? null,
+          };
+
+          console.log(`Yahoo fundamentals: PE=${trailingPE}, EPS=${eps}, sector=${sector}, instOwn=${instOwnershipPct}%, earnings=${earningsHistory.length}q, insiders=${insiderTxns.length}`);
           break;
         }
       } catch (e) {
@@ -192,6 +266,10 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
     average_volume: avgVolume,
     pe: parseFloat(peValue.toFixed(2)),
     eps: parseFloat(eps.toFixed(2)),
+    forward_pe: parseFloat(forwardPE.toFixed(2)),
+    beta,
+    short_ratio: shortRatio,
+    short_percent_float: shortPercentFloat,
     fifty_two_week: {
       high: meta.fiftyTwoWeekHigh ?? 0,
       low: meta.fiftyTwoWeekLow ?? 0,
@@ -209,6 +287,18 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
 
   const statistics = {
     valuations_metrics: { market_capitalization: marketCap },
+    dividends_and_splits: dividendData,
+    financials,
+  };
+
+  const fundamentals = {
+    earningsHistory,
+    insiderTransactions: insiderTxns,
+    institutionalOwnership: {
+      percentage: instOwnershipPct,
+      holders: topInstitutions,
+    },
+    recommendation: recommendationData,
   };
 
   const timeSeries = timestamps.map((ts: number, i: number) => {
@@ -223,7 +313,7 @@ async function fetchFromYahooFinance(symbol: string, exchange: string) {
     };
   });
 
-  return { quote, profile, statistics, timeSeries };
+  return { quote, profile, statistics, timeSeries, fundamentals };
 }
 
 // ─── Provider 3: Alpha Vantage ───
@@ -263,6 +353,10 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
     average_volume: overviewData['AverageVolume'] || 'N/A',
     pe: parseFloat(overviewData['PERatio']) || 0,
     eps: parseFloat(overviewData['EPS']) || 0,
+    forward_pe: parseFloat(overviewData['ForwardPE']) || 0,
+    beta: parseFloat(overviewData['Beta']) || null,
+    short_ratio: null,
+    short_percent_float: null,
     fifty_two_week: {
       high: parseFloat(overviewData['52WeekHigh']) || 0,
       low: parseFloat(overviewData['52WeekLow']) || 0,
@@ -280,6 +374,27 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
 
   const statistics = {
     valuations_metrics: { market_capitalization: parseFloat(overviewData['MarketCapitalization']) || 0 },
+    dividends_and_splits: {
+      yield: parseFloat(overviewData['DividendYield']) || null,
+      rate: parseFloat(overviewData['DividendPerShare']) || null,
+      exDate: overviewData['ExDividendDate'] || null,
+      payoutRatio: parseFloat(overviewData['PayoutRatio']) || null,
+    },
+    financials: {
+      debtToEquity: null,
+      returnOnEquity: parseFloat(overviewData['ReturnOnEquityTTM']) || null,
+      revenueGrowth: null,
+      grossMargins: null,
+      operatingMargins: parseFloat(overviewData['OperatingMarginTTM']) || null,
+      profitMargins: parseFloat(overviewData['ProfitMargin']) || null,
+      currentRatio: null,
+      totalRevenue: parseFloat(overviewData['RevenueTTM']) || null,
+      targetMeanPrice: parseFloat(overviewData['AnalystTargetPrice']) || null,
+      targetHighPrice: null,
+      targetLowPrice: null,
+      recommendationKey: null,
+      numberOfAnalystOpinions: null,
+    },
   };
 
   const timeSeries = Object.entries(ts).slice(0, 250).map(([date, values]: [string, any]) => ({
@@ -287,7 +402,7 @@ async function fetchFromAlphaVantage(symbol: string, exchange: string, apiKey: s
     low: values['3. low'], close: values['4. close'], volume: values['5. volume'],
   }));
 
-  return { quote, profile, statistics, timeSeries };
+  return { quote, profile, statistics, timeSeries, fundamentals: null };
 }
 
 // ─── Cascading fetch ───
@@ -304,7 +419,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       console.warn(`Yahoo failed: ${msg}`);
     }
 
-    // 2. Twelve Data (works for Indian stocks too)
     const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
     if (tdKey) {
       try {
@@ -317,7 +431,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       }
     }
 
-    // 3. Alpha Vantage
     const avKey = Deno.env.get('ALPHA_VANTAGE_API_KEY');
     if (avKey) {
       try {
@@ -330,7 +443,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       }
     }
   } else {
-    // Global: Twelve Data → Yahoo Finance → try as Indian stock
     const tdKey = Deno.env.get('TWELVE_DATA_API_KEY');
     if (tdKey) {
       try {
@@ -352,7 +464,6 @@ async function fetchWithFallbacks(symbol: string, exchange: string | undefined) 
       console.warn(`Yahoo failed: ${msg}`);
     }
 
-    // Last resort: try as Indian stock (NSE) via Yahoo
     if (!isIndianExchange(exchange)) {
       try {
         console.log(`[Fallback] Trying as Indian stock (NSE) for ${symbol}`);
