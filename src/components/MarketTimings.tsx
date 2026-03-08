@@ -13,21 +13,22 @@ interface Exchange {
   closeHour: number;
   closeMin: number;
   currencyPair: string; // e.g. "USD/INR"
+  currencyLabel: string; // e.g. "INR"
 }
 
 const EXCHANGES: Exchange[] = [
-  { name: "NSE / BSE", code: "India", flag: "🇮🇳", timezone: "IST", utcOffset: 5.5, openHour: 9, openMin: 15, closeHour: 15, closeMin: 30, currencyPair: "USD/INR" },
-  { name: "NYSE", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "DXY" },
-  { name: "NASDAQ", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "DXY" },
-  { name: "LSE", code: "UK", flag: "🇬🇧", timezone: "GMT", utcOffset: 1, openHour: 8, openMin: 0, closeHour: 16, closeMin: 30, currencyPair: "GBP/USD" },
-  { name: "TSE", code: "Japan", flag: "🇯🇵", timezone: "JST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 0, currencyPair: "USD/JPY" },
-  { name: "SSE", code: "China", flag: "🇨🇳", timezone: "CST", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 15, closeMin: 0, currencyPair: "USD/CNY" },
-  { name: "HKEX", code: "HK", flag: "🇭🇰", timezone: "HKT", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "USD/HKD" },
-  { name: "Xetra", code: "Germany", flag: "🇩🇪", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30, currencyPair: "EUR/USD" },
-  { name: "Euronext", code: "France", flag: "🇫🇷", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30, currencyPair: "EUR/USD" },
-  { name: "ASX", code: "Australia", flag: "🇦🇺", timezone: "AEST", utcOffset: 10, openHour: 10, openMin: 0, closeHour: 16, closeMin: 0, currencyPair: "AUD/USD" },
-  { name: "KRX", code: "Korea", flag: "🇰🇷", timezone: "KST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 30, currencyPair: "USD/KRW" },
-  { name: "TSX", code: "Canada", flag: "🇨🇦", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "USD/CAD" },
+  { name: "NSE / BSE", code: "India", flag: "🇮🇳", timezone: "IST", utcOffset: 5.5, openHour: 9, openMin: 15, closeHour: 15, closeMin: 30, currencyPair: "USD/INR", currencyLabel: "INR" },
+  { name: "NYSE", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "DXY", currencyLabel: "DXY" },
+  { name: "NASDAQ", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "DXY", currencyLabel: "DXY" },
+  { name: "LSE", code: "UK", flag: "🇬🇧", timezone: "GMT", utcOffset: 1, openHour: 8, openMin: 0, closeHour: 16, closeMin: 30, currencyPair: "GBP/USD", currencyLabel: "GBP" },
+  { name: "TSE", code: "Japan", flag: "🇯🇵", timezone: "JST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 0, currencyPair: "USD/JPY", currencyLabel: "JPY" },
+  { name: "SSE", code: "China", flag: "🇨🇳", timezone: "CST", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 15, closeMin: 0, currencyPair: "USD/CNY", currencyLabel: "CNY" },
+  { name: "HKEX", code: "HK", flag: "🇭🇰", timezone: "HKT", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "USD/HKD", currencyLabel: "HKD" },
+  { name: "Xetra", code: "Germany", flag: "🇩🇪", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30, currencyPair: "EUR/USD", currencyLabel: "EUR" },
+  { name: "Euronext", code: "France", flag: "🇫🇷", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30, currencyPair: "EUR/USD", currencyLabel: "EUR" },
+  { name: "ASX", code: "Australia", flag: "🇦🇺", timezone: "AEST", utcOffset: 10, openHour: 10, openMin: 0, closeHour: 16, closeMin: 0, currencyPair: "AUD/USD", currencyLabel: "AUD" },
+  { name: "KRX", code: "Korea", flag: "🇰🇷", timezone: "KST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 30, currencyPair: "USD/KRW", currencyLabel: "KRW" },
+  { name: "TSX", code: "Canada", flag: "🇨🇦", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "USD/CAD", currencyLabel: "CAD" },
 ];
 
 // Fallback rates (used if API fails)
@@ -135,7 +136,7 @@ const MarketTimings = () => {
         {exchangeStatuses.map((ex) => (
           <div
             key={ex.name}
-            className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
+            className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
           >
             <span className="text-sm">{ex.flag}</span>
             <div className="min-w-0">
@@ -144,9 +145,13 @@ const MarketTimings = () => {
                 {ex.openHour.toString().padStart(2, "0")}:{ex.openMin.toString().padStart(2, "0")}–{ex.closeHour.toString().padStart(2, "0")}:{ex.closeMin.toString().padStart(2, "0")} {ex.timezone}
               </p>
             </div>
-            <div className="text-right min-w-[72px]">
+            <div className="text-center min-w-[64px]">
+              <p className="font-mono text-[10px] font-medium text-primary">{ex.currencyLabel}</p>
+              <p className="font-mono text-[10px] text-foreground">{formatCurrency(ex.currencyPair, ex.currencyValue)}</p>
+            </div>
+            <div className="text-right min-w-[44px]">
+              <p className="font-mono text-[8px] text-muted-foreground uppercase">Local</p>
               <p className="font-mono text-[10px] text-muted-foreground">{ex.localTime}</p>
-              <p className="font-mono text-[9px] text-primary/80">{ex.currencyPair}: {formatCurrency(ex.currencyPair, ex.currencyValue)}</p>
             </div>
             <span
               className={cn(
