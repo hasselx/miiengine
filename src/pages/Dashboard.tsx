@@ -39,8 +39,9 @@ const Dashboard = () => {
   const [searches, setSearches] = useState<SavedSearch[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [tab, setTab] = useState<"searches" | "holdings" | "watchlist">("searches");
-  const [profile, setProfile] = useState<{ display_name: string | null } | null>(null);
+  const [tab, setTab] = useState<"searches" | "holdings" | "watchlist" | "settings">("searches");
+  const [profile, setProfile] = useState<{ display_name: string | null; investment_style: InvestmentStyle } | null>(null);
+  const [savingStyle, setSavingStyle] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
