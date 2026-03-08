@@ -42,8 +42,6 @@ const HIGHLIGHTS = [
   "Transparent valuation models and risk frameworks",
   "Automated equity research generation",
 ];
-      <Methodology />
-
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   const [company, setCompany] = useState("");
