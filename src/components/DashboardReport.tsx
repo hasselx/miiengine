@@ -8,6 +8,7 @@ import ScoreMatrix from "./report/ScoreMatrix";
 import FundamentalAnalysis from "./report/FundamentalAnalysis";
 import DCFValuation from "./report/DCFValuation";
 import PriceProjectionSection from "./report/PriceProjectionSection";
+import ValuationTriangle from "./report/ValuationTriangle";
 import MacroSection from "./report/MacroSection";
 import TradingPlanSection from "./report/TradingPlanSection";
 import TechnicalSection from "./report/TechnicalSection";
