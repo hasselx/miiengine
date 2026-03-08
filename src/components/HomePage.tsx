@@ -67,20 +67,20 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-      {/* Top bar — sticky on mobile */}
-      <div className="flex justify-end px-4 sm:px-6 py-3 sm:py-4 sticky top-8 bg-background/80 backdrop-blur-sm z-20">
+      {/* Top bar — sticky, minimal gap from ticker */}
+      <div className="flex justify-end px-4 sm:px-6 py-2 sticky top-8 bg-background/80 backdrop-blur-sm z-20">
         {user ? (
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/dashboard")} className="font-mono text-[11px] text-primary hover:underline flex items-center gap-1.5 p-2 touch-target">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">My Account</span>
-            </button>
-            <button onClick={signOut} className="font-mono text-[11px] text-muted-foreground hover:text-foreground p-2 touch-target">Sign out</button>
-          </div>
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 px-4 py-2 border border-border rounded-full font-mono text-[13px] text-foreground hover:border-primary/50 hover:text-primary transition-colors"
+          >
+            <User className="h-4 w-4" />
+            <span>My Account</span>
+          </button>
         ) : (
           <button
             onClick={() => navigate("/auth")}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-sidebar text-sidebar-foreground font-mono text-[11px] tracking-[1px] uppercase hover:opacity-90 transition-opacity rounded-md touch-target"
+            className="flex items-center gap-2 px-4 py-2 border border-border rounded-full font-mono text-[13px] text-foreground hover:border-primary/50 hover:text-primary transition-colors"
           >
             <User className="h-4 w-4" />
             Sign In
