@@ -121,7 +121,14 @@ img,svg{max-width:100%;height:auto}
           <p className="font-mono text-[10px] tracking-[3px] text-sidebar-primary uppercase mb-1.5">Multi-Institutional Intelligence Engine</p>
           <h1 className="font-display text-2xl sm:text-4xl lg:text-[48px] font-black leading-none mb-1.5 tracking-tight">{data.company}</h1>
           <p className="text-[12px] sm:text-[13px] text-sidebar-foreground/50 font-light tracking-wide break-words">{data.subtitle}</p>
-          <p className="font-mono text-[10px] tracking-[2px] text-sidebar-foreground/30 uppercase mt-2">{data.reportType}</p>
+          <p className="font-mono text-[10px] tracking-[2px] text-sidebar-foreground/30 uppercase mt-2">
+            {data.reportType}
+            {data.investmentStyle && (
+              <span className="ml-3 text-sidebar-primary/70">
+                · {INVESTMENT_STYLES.find(s => s.value === data.investmentStyle)?.label || data.investmentStyle}
+              </span>
+            )}
+          </p>
         </div>
 
         {/* Compact action bar */}
