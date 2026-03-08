@@ -54,7 +54,7 @@ const Dashboard = () => {
       const [searchRes, holdingRes, profileRes] = await Promise.all([
         supabase.from("saved_searches").select("*").eq("user_id", user.id).order("searched_at", { ascending: false }),
         supabase.from("holdings").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+        supabase.from("profiles").select("display_name, investment_style").eq("id", user.id).single(),
       ]);
       if (searchRes.data) setSearches(searchRes.data);
       if (holdingRes.data) setHoldings(holdingRes.data);
