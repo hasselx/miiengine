@@ -28,6 +28,8 @@ import InstitutionalOwnership from "./report/InstitutionalOwnership";
 import MarketSentiment from "./report/MarketSentiment";
 import CorrelationAnalyzer from "./report/CorrelationAnalyzer";
 import SectorRotation from "./report/SectorRotation";
+import BacktestSimulator from "./report/BacktestSimulator";
+import AIStockSummary from "./report/AIStockSummary";
 
 interface DashboardReportProps {
   data: StockAnalysis;
