@@ -1017,7 +1017,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     priceDistribution: {
       bear: {
         price: `${currency}${adjBear}`,
-        probability: 25,
+        probability: probBear,
         drivers: (() => {
           const d: string[] = [];
           if (profitMargins != null) d.push('Margin compression');
@@ -1028,7 +1028,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       },
       base: {
         price: `${currency}${adjBase}`,
-        probability: 50,
+        probability: probBase,
         drivers: (() => {
           const d: string[] = [];
           d.push('Steady earnings growth');
@@ -1040,7 +1040,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       },
       bull: {
         price: `${currency}${adjBull}`,
-        probability: 30,
+        probability: probBull,
         drivers: (() => {
           const d: string[] = [];
           if (revenueGrowth != null) d.push('Strong revenue growth');
