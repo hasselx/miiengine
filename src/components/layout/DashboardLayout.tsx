@@ -170,6 +170,14 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Home button */}
+            <button
+              onClick={() => navigate("/")}
+              className="p-2 hover:bg-accent rounded-md transition-colors touch-target"
+              title="Back to Home"
+            >
+              <Home className="h-4 w-4 text-muted-foreground" />
+            </button>
             {/* Search — icon only on mobile, expanded on desktop */}
             <button
               onClick={onSearchOpen}
