@@ -941,6 +941,32 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
     modelAgreement: { level: agreementLevel, models: agreementModels },
     keyDrivers: finalKeyDrivers,
+    ratingChangeTriggers: (() => {
+      const upgrades: string[] = [];
+      const downgrades: string[] = [];
+      const nextLevel = VERDICT_LEVELS[Math.min(VERDICT_LEVELS.indexOf(verdict) + 1, VERDICT_LEVELS.length - 1)];
+      const prevLevel = VERDICT_LEVELS[Math.max(VERDICT_LEVELS.indexOf(verdict) - 1, 0)];
+
+      // Upgrade triggers
+      if (revenueGrowth != null && revenueGrowth < 0.25) upgrades.push("Revenue growth exceeds 25%");
+      if (fvMid > price) upgrades.push(`Price declines below ${currency}${Math.round(fvMid * 0.85)} creating valuation discount`);
+      else upgrades.push(`Earnings growth re-rates valuation higher`);
+      if (profitMargins != null && profitMargins < 0.20) upgrades.push("Operating margins expand meaningfully");
+      if (techs && techs.sma50 && techs.sma200 && techs.sma50 < techs.sma200) upgrades.push("Golden cross forms (SMA50 crosses above SMA200)");
+      if (isBanking) upgrades.push("Asset quality improves with declining NPAs");
+      else if (isTech) upgrades.push("Cloud/product adoption accelerates");
+      else if (isIndustrial) upgrades.push("Order backlog expands significantly");
+
+      // Downgrade triggers
+      if (profitMargins != null) downgrades.push("Operating margins decline below sector average");
+      downgrades.push("Sector momentum weakens materially");
+      if (fvMid > 0) downgrades.push(`Price exceeds ${currency}${Math.round(fvMid * 1.15)} without earnings growth`);
+      if (debtToEquity != null && debtToEquity < 100) downgrades.push("Leverage increases significantly");
+      if (techs && techs.sma200) downgrades.push("Price breaks below 200-day moving average");
+      if (isBanking) downgrades.push("NPA ratios deteriorate");
+
+      return { upgrades: upgrades.slice(0, 4), downgrades: downgrades.slice(0, 4) };
+    })(),
     factorExposure,
     marketRegime,
     catalystTimeline: (() => {

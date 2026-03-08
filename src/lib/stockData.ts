@@ -207,6 +207,7 @@ export interface StockAnalysis {
   modelConfidence: { score: number; level: 'Low' | 'Moderate' | 'High'; factors: string[] };
   modelAgreement: { level: 'Low' | 'Moderate' | 'High'; models: { name: string; signal: 'Bullish' | 'Bearish' | 'Neutral' }[] };
   keyDrivers: string[];
+  ratingChangeTriggers: { upgrades: string[]; downgrades: string[] };
   factorExposure: { name: string; score: number }[];
   marketRegime: { regime: 'Bull Market' | 'Bear Market' | 'Sideways Market'; signals: string[]; adjustment: string };
   catalystTimeline: { date: string; event: string; category: 'earnings' | 'corporate' | 'industry' | 'product' | 'macro'; impact: 'High' | 'Moderate' | 'Low' }[];
