@@ -355,7 +355,39 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const expectedReturnAbs = Math.abs(expectedReturnPct).toFixed(1);
   const isUpside = expectedReturnPct >= 0;
 
-  // Valuation-based verdict (overrides score-only verdict)
+  // === Valuation Triangle: 3 independent models ===
+  // 1. DCF Valuation: projected EPS × base P/E
+  const dcfTarget = Math.round(baseCalc.targetPrice > 0 ? baseCalc.targetPrice : price);
+  const dcfSignalTri: 'Bullish' | 'Bearish' | 'Neutral' = dcfTarget > price * 1.05 ? 'Bullish' : dcfTarget < price * 0.95 ? 'Bearish' : 'Neutral';
+
+  // 2. Relative Valuation: sector P/E comparison
+  // Use analyst mean as proxy for sector fair value, or apply sector-average PE to current EPS
+  const sectorPE = fin?.targetMeanPrice && eps > 0
+    ? Math.round(fin.targetMeanPrice / eps)
+    : basePE > 0 ? Math.round(basePE * 0.9) : 18; // conservative sector avg
+  const relativeTarget = eps > 0 ? Math.round(eps * sectorPE) : Math.round(price * 0.95);
+  const relSignal: 'Bullish' | 'Bearish' | 'Neutral' = relativeTarget > price * 1.05 ? 'Bullish' : relativeTarget < price * 0.95 ? 'Bearish' : 'Neutral';
+
+  // 3. Momentum Valuation: price trend extrapolation using SMA trajectory
+  const momentumTarget = (() => {
+    if (techs && techs.sma50 && techs.sma200) {
+      // Extrapolate 12-month trend from SMA50/200 relationship
+      const trendStrength = (techs.sma50 - techs.sma200) / techs.sma200;
+      return Math.round(price * (1 + trendStrength));
+    }
+    // Fallback: use 52W midpoint regression toward mean
+    const mid52 = (high52 + low52) / 2;
+    const reversion = (mid52 - price) * 0.5;
+    return Math.round(price + reversion);
+  })();
+  const momSignal: 'Bullish' | 'Bearish' | 'Neutral' = momentumTarget > price * 1.05 ? 'Bullish' : momentumTarget < price * 0.95 ? 'Bearish' : 'Neutral';
+
+  // Composite: average of three models
+  const compositeTarget = Math.round((dcfTarget + relativeTarget + momentumTarget) / 3);
+  const compositeReturnPct = ((compositeTarget - price) / price) * 100;
+  const compositeIsUpside = compositeReturnPct >= 0;
+
+
   const getValuationVerdict = (score: number, retPct: number): string => {
     if (score >= 90) return "Exceptional Opportunity";
     if (retPct > 15 && score >= 70) return "Strong Buy";
