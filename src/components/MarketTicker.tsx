@@ -155,9 +155,9 @@ const MarketTicker = () => {
               <button
                 key={`${idx.symbol}-${i}`}
                 onClick={() => setSelectedIdx(idx)}
-                className="flex items-center gap-1.5 shrink-0 px-2 py-1 hover:bg-sidebar-accent/50 rounded transition-colors"
+                className="flex items-center gap-2.5 shrink-0 px-3 py-1 hover:bg-sidebar-accent/50 rounded transition-colors"
               >
-                <span className="text-[11px] font-mono font-medium text-sidebar-foreground/80 whitespace-nowrap">
+                <span className="text-[11px] font-mono font-medium text-sidebar-foreground/70 whitespace-nowrap">
                   {idx.name}
                 </span>
                 {neutral ? (

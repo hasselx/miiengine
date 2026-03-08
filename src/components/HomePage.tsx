@@ -179,15 +179,15 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
       {/* About / Features Section */}
       <div className="border-t border-border bg-card">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-start">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-14 items-start">
             {/* About */}
-            <div className="animate-fade-in">
-              <p className="font-mono text-[10px] tracking-[4px] uppercase text-primary mb-3">About</p>
-              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+            <div>
+              <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-3">About</p>
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-4">
                 What is MII Engine?
               </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed mb-6">
+              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
                 MII Engine is a Multi-Institutional Intelligence platform that aggregates data from
                 multiple financial sources to deliver professional-grade equity research reports.
                 Our engine evaluates stocks across 10+ dimensions including fundamentals, technicals,
@@ -204,16 +204,16 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
             </div>
 
             {/* Feature grid */}
-            <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <p className="font-mono text-[10px] tracking-[4px] uppercase text-primary mb-3">Features</p>
-              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6">
+            <div>
+              <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-3">Features</p>
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-6">
                 What you get
               </h2>
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {FEATURES.map((feat, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-background border border-border rounded-lg hover:border-primary/40 transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-background border border-border rounded-lg hover:border-foreground/20 transition-colors"
                   >
                     <feat.icon className="h-4 w-4 text-primary shrink-0" />
                     <span className="text-xs sm:text-sm font-medium text-foreground">{feat.text}</span>

@@ -187,9 +187,9 @@ const SectorPerformanceTracker = () => {
                 key={s.symbol}
                 onClick={() => setExpanded(isExpanded ? null : s.symbol)}
                 className={cn(
-                  "relative text-left bg-background border rounded-lg px-3.5 py-3 transition-all",
-                  "hover:border-foreground/20 hover:shadow-md",
-                  isExpanded ? "border-primary/40 shadow-md" : "border-border"
+                  "relative text-left bg-background border rounded-lg px-3.5 py-3 transition-colors",
+                  "hover:border-foreground/20",
+                  isExpanded ? "border-foreground/25" : "border-border"
                 )}
               >
                 {/* Performance bar background */}

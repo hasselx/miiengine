@@ -314,12 +314,10 @@ const GlobalHeatmap = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              <div>
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Global Stock Exchange Heatmap</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Real-time performance · tile size reflects market weight</p>
-              </div>
+            <div>
+              <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-1.5">Market Overview</p>
+              <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">Global Stock Exchange Heatmap</h2>
+              <p className="text-xs text-muted-foreground mt-1">Real-time performance · tile size reflects market weight</p>
             </div>
             <div className="flex items-center gap-3 text-xs font-mono">
               <span className={cn("px-2.5 py-1 rounded-full font-semibold", avgChange >= 0 ? "bg-[hsl(142,40%,88%)] dark:bg-[hsl(142,30%,18%)] text-[hsl(142,55%,30%)] dark:text-[hsl(142,50%,55%)]" : "bg-[hsl(0,40%,92%)] dark:bg-[hsl(0,30%,18%)] text-[hsl(0,55%,40%)] dark:text-[hsl(0,50%,55%)]")}>
