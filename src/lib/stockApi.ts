@@ -5,6 +5,7 @@ export interface StockRawData {
   profile: any;
   statistics: any;
   timeSeries: any[];
+  fundamentals: any | null;
 }
 
 export async function fetchStockData(symbol: string, exchange?: string): Promise<StockRawData> {
