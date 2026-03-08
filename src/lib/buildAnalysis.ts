@@ -465,24 +465,21 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const accZoneLow = Math.round(fairValueMid * 0.96);
   const accZoneHigh = Math.round(fairValueMid * 1.02);
 
-  // Model confidence
+  // Model confidence — capped at 85%
   const confidenceFactors: string[] = [];
   let confidenceScore = 50;
-  // Earnings predictability
   if (earningsHist.length >= 3) { confidenceScore += 10; confidenceFactors.push("Earnings history available"); }
-  // Volatility stability
   const vol52 = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
   if (vol52 < 0.4) { confidenceScore += 10; confidenceFactors.push("Low volatility"); } else { confidenceFactors.push("High volatility reduces confidence"); }
-  // Data completeness
   if (pe > 0) confidenceScore += 5;
   if (profitMargins != null) confidenceScore += 5;
   if (revenueGrowth != null) confidenceScore += 5;
   if (fin?.targetMeanPrice) { confidenceScore += 10; confidenceFactors.push("Analyst targets available"); }
   if (debtToEquity != null) confidenceScore += 3;
   if (returnOnEquity != null) confidenceScore += 2;
-  // Model agreement boost
-  confidenceScore = Math.min(95, Math.max(20, confidenceScore));
-  const confidenceLevel: 'Low' | 'Moderate' | 'High' = confidenceScore >= 70 ? 'High' : confidenceScore >= 50 ? 'Moderate' : 'Low';
+  // Cap at 85% per spec
+  confidenceScore = Math.min(85, Math.max(40, confidenceScore));
+  const confidenceLevel: 'Low' | 'Moderate' | 'High' = confidenceScore >= 70 ? 'High' : confidenceScore >= 55 ? 'Moderate' : 'Low';
 
   // Model agreement
   const dcfSignal: 'Bullish' | 'Bearish' | 'Neutral' = price < adjBase ? 'Bullish' : price > adjBull ? 'Bearish' : 'Neutral';
