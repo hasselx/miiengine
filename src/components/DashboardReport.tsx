@@ -33,6 +33,10 @@ import BacktestSimulator from "./report/BacktestSimulator";
 import AIStockSummary from "./report/AIStockSummary";
 import FactorExposure from "./report/FactorExposure";
 import CatalystTimeline from "./report/CatalystTimeline";
+import RecommendationStack from "./report/RecommendationStack";
+import ConfidenceMeter from "./report/ConfidenceMeter";
+import PriceDistribution from "./report/PriceDistribution";
+import FactorContributionChart from "./report/FactorContributionChart";
 
 interface DashboardReportProps {
   data: StockAnalysis;
@@ -97,6 +101,14 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
         )}
         <ScoreBanner data={data} />
 
+        {/* Decision Stack + Factor Contribution + Confidence — below score banner */}
+        <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 max-w-[1000px] mx-auto space-y-4 sm:space-y-5">
+          <RecommendationStack data={data} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FactorContributionChart data={data} />
+            <ConfidenceMeter data={data} />
+          </div>
+        </div>
         {/* Holding Analysis — togglable */}
         {holdingsOpen && (
           <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 max-w-[1400px] mx-auto">
@@ -124,6 +136,8 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-valuation-triangle"><ValuationTriangle data={data} /></div>
           {/* 09 */}
           <div id="section-price"><PriceProjectionSection data={data} /></div>
+          {/* Price Distribution */}
+          <div id="section-price-distribution"><PriceDistribution data={data} /></div>
           {/* 10 */}
           <div id="section-catalyst-timeline"><CatalystTimeline data={data} /></div>
           {/* 11 */}
