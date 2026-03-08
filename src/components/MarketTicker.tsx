@@ -85,7 +85,7 @@ const IndexModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) =
 
         <div className="mt-3 flex items-center justify-between text-[10px] font-mono text-muted-foreground">
           <span>Intraday (5m)</span>
-          <span className={cn("px-2 py-0.5 rounded-full", idx.isOpen ? "bg-[hsl(var(--green-data))]/15 text-[hsl(var(--green-data))]" : "bg-muted text-muted-foreground")}>
+          <span className={cn("px-2 py-0.5 rounded-full", idx.isOpen ? "bg-green-data/15 text-green-data" : "bg-muted text-muted-foreground")}>
             {idx.isOpen ? "Live" : "Closed"}
           </span>
         </div>
