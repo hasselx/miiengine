@@ -419,7 +419,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: "Volume", value: safe(quote?.volume, 'N/A'), change: `Avg: ${safe(quote?.average_volume, 'N/A')}` },
     ],
     totalScore,
-    verdict: v.verdict,
+    verdict,
     verdictNote: totalScore < 70 ? `Entry below ${currency}${Math.round(price * 0.92)} upgrades to BUY` : 'Strong conviction level',
     scoreRange: v.range,
     scores: [
