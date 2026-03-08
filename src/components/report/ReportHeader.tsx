@@ -124,79 +124,97 @@ img,svg{max-width:100%;height:auto}
           <p className="font-mono text-[10px] tracking-[2px] text-sidebar-foreground/30 uppercase mt-2">{data.reportType}</p>
         </div>
 
-        {/* Action buttons — horizontal row on mobile */}
-        <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-2 shrink-0 flex-wrap">
-          <div className="bg-sidebar-primary text-sidebar-primary-foreground font-mono text-[11px] font-semibold tracking-[2px] px-[18px] py-2 uppercase rounded">
+        {/* Compact action bar */}
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+          <div className="bg-sidebar-primary text-sidebar-primary-foreground font-mono text-[10px] sm:text-[11px] font-semibold tracking-[2px] px-3 sm:px-4 py-1.5 sm:py-2 uppercase rounded mr-1">
             {data.verdictBadge}
           </div>
-          <button
-            onClick={handleSaveSearch}
-            disabled={saved}
-            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors disabled:text-sidebar-primary p-2 touch-target"
-          >
-            <Bookmark className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} />
-            <span className="hidden sm:inline">{saved ? "Saved" : "Save"}</span>
-          </button>
-          <div className="relative">
+          <div className="flex items-center gap-0.5 bg-sidebar-accent/30 border border-sidebar-border rounded-lg p-0.5">
             <button
-              onClick={() => setShowDownload(!showDownload)}
-              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors p-2 touch-target"
+              onClick={handleSaveSearch}
+              disabled={saved}
+              title={saved ? "Saved" : "Save Search"}
+              className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] px-2.5 py-1.5 rounded-md transition-all ${
+                saved
+                  ? 'text-sidebar-primary bg-sidebar-primary/10'
+                  : 'text-sidebar-foreground/50 hover:text-sidebar-primary hover:bg-sidebar-primary/10'
+              }`}
             >
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Download</span>
+              <Bookmark className={`h-3.5 w-3.5 ${saved ? 'fill-current' : ''}`} />
+              <span className="hidden sm:inline">{saved ? "Saved" : "Save"}</span>
             </button>
-            {showDownload && (
-              <div className="absolute right-0 top-full mt-1 bg-sidebar border border-sidebar-border rounded shadow-lg z-50 min-w-[140px]">
-                <button
-                  onClick={downloadPdf}
-                  className="flex items-center gap-2 w-full px-3 py-3 font-mono text-[11px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors touch-target"
-                >
-                  <FileText className="h-4 w-4" /> Save as PDF
-                </button>
-                <button
-                  onClick={downloadHtml}
-                  className="flex items-center gap-2 w-full px-3 py-3 font-mono text-[11px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors touch-target"
-                >
-                  <FileCode className="h-4 w-4" /> Save as HTML
-                </button>
-              </div>
-            )}
+            <button
+              onClick={async () => {
+                if (!user) {
+                  toast({ title: "Sign in required", description: "Create an account to use the watchlist." });
+                  navigate("/auth");
+                  return;
+                }
+                if (addedToWatchlist) return;
+                const ticker = data.subtitle?.split('·')[2]?.trim() || data.company;
+                const { error } = await supabase.from('watchlist').insert({
+                  user_id: user.id,
+                  ticker,
+                  company_name: data.company,
+                });
+                if (error) {
+                  toast({ title: error.message.includes("duplicate") ? "Already in watchlist" : "Error", description: error.message, variant: "destructive" });
+                  if (error.message.includes("duplicate")) setAddedToWatchlist(true);
+                } else {
+                  setAddedToWatchlist(true);
+                  toast({ title: "Added to Watchlist", description: `${data.company} is now in your watchlist.` });
+                }
+              }}
+              disabled={addedToWatchlist}
+              title={addedToWatchlist ? "Watching" : "Add to Watchlist"}
+              className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] px-2.5 py-1.5 rounded-md transition-all ${
+                addedToWatchlist
+                  ? 'text-sidebar-primary bg-sidebar-primary/10'
+                  : 'text-sidebar-foreground/50 hover:text-sidebar-primary hover:bg-sidebar-primary/10'
+              }`}
+            >
+              {addedToWatchlist ? <Check className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">{addedToWatchlist ? "Watching" : "Watch"}</span>
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowDownload(!showDownload)}
+                title="Download Report"
+                className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary hover:bg-sidebar-primary/10 px-2.5 py-1.5 rounded-md transition-all"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Download</span>
+              </button>
+              {showDownload && (
+                <div className="absolute right-0 top-full mt-1 bg-sidebar border border-sidebar-border rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden">
+                  <button
+                    onClick={downloadPdf}
+                    className="flex items-center gap-2 w-full px-3 py-2.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> PDF
+                  </button>
+                  <button
+                    onClick={downloadHtml}
+                    className="flex items-center gap-2 w-full px-3 py-2.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                  >
+                    <FileCode className="h-3.5 w-3.5" /> HTML
+                  </button>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={onToggleHoldings}
+              title="Holdings Analysis"
+              className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] px-2.5 py-1.5 rounded-md transition-all ${
+                holdingsOpen
+                  ? 'text-sidebar-primary bg-sidebar-primary/10'
+                  : 'text-sidebar-foreground/50 hover:text-sidebar-primary hover:bg-sidebar-primary/10'
+              }`}
+            >
+              <Briefcase className={`h-3.5 w-3.5 ${holdingsOpen ? 'fill-current' : ''}`} />
+              <span className="hidden sm:inline">Holdings</span>
+            </button>
           </div>
-          <button
-            onClick={async () => {
-              if (!user) {
-                toast({ title: "Sign in required", description: "Create an account to use the watchlist." });
-                navigate("/auth");
-                return;
-              }
-              if (addedToWatchlist) return;
-              const ticker = data.subtitle?.split('·')[2]?.trim() || data.company;
-              const { error } = await supabase.from('watchlist').insert({
-                user_id: user.id,
-                ticker,
-                company_name: data.company,
-              });
-              if (error) {
-                toast({ title: error.message.includes("duplicate") ? "Already in watchlist" : "Error", description: error.message, variant: "destructive" });
-                if (error.message.includes("duplicate")) setAddedToWatchlist(true);
-              } else {
-                setAddedToWatchlist(true);
-                toast({ title: "Added to Watchlist", description: `${data.company} is now in your watchlist.` });
-              }
-            }}
-            disabled={addedToWatchlist}
-            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors disabled:text-sidebar-primary p-2 touch-target"
-          >
-            {addedToWatchlist ? <Check className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            <span className="hidden sm:inline">{addedToWatchlist ? "Watching" : "Watch"}</span>
-          </button>
-          <button
-            onClick={onToggleHoldings}
-            className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] transition-colors p-2 touch-target ${holdingsOpen ? 'text-sidebar-primary' : 'text-sidebar-foreground/50 hover:text-sidebar-primary'}`}
-          >
-            <Briefcase className={`h-4 w-4 ${holdingsOpen ? 'fill-current' : ''}`} />
-            <span className="hidden sm:inline">Holdings</span>
-          </button>
         </div>
       </div>
 
