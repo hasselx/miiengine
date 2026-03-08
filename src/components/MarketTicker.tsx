@@ -173,7 +173,7 @@ const MarketTicker = () => {
                     neutral
                       ? "text-muted-foreground"
                       : positive
-                      ? "text-[hsl(var(--green-data))]"
+                      ? "text-green-data"
                       : "text-destructive"
                   )}
                 >
