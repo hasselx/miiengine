@@ -561,8 +561,16 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   ];
   const bullCount = agreementModels.filter(m => m.signal === 'Bullish').length;
   const bearCount = agreementModels.filter(m => m.signal === 'Bearish').length;
-  const agreementLevel: 'Low' | 'Moderate' | 'High' = (bullCount >= 3 || bearCount >= 3) ? 'High' : (bullCount >= 2 || bearCount >= 2) ? 'Moderate' : 'Low';
-  if (agreementLevel === 'High') confidenceScore = Math.min(95, confidenceScore + 5);
+  // Model agreement: equal = Neutral, diff 1 = Moderate, diff 2+ = High
+  const agreementDiff = Math.abs(bullCount - bearCount);
+  const agreementLevel: 'Low' | 'Moderate' | 'High' = agreementDiff >= 2 ? 'High' : agreementDiff === 1 ? 'Moderate' : 'Low';
+  if (agreementLevel === 'High' && bullCount > bearCount) confidenceScore = Math.min(85, confidenceScore + 5);
+
+  // === Final Consistency Validation ===
+  // If model agreement is bearish-dominant but verdict is Buy+, downgrade
+  if (bearCount > bullCount && (verdict === 'Strong Buy' || verdict === 'Buy')) {
+    verdict = downgradeVerdict(verdict);
+  }
 
   // Key drivers — sector-aware
   const keyDrivers: string[] = [];
