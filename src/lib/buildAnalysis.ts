@@ -449,15 +449,16 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const targetReturnStr = `${targetIsUpside ? '+' : '-'}${targetReturnAbs}%`;
   const targetReturnLabel = targetIsUpside ? "Expected Upside" : "Expected Downside";
 
-  // === Recommendation based on expected return thresholds ===
-  const getValuationVerdict = (retPct: number): string => {
-    if (retPct > 15) return "Strong Buy";
-    if (retPct > 8) return "Buy";
-    if (retPct >= 0) return "Hold";
-    if (retPct >= -8) return "Hold / Reduce";
-    return "Reduce / Sell";
+  // === Recommendation based on score thresholds ===
+  const getScoreBasedVerdict = (score: number): string => {
+    if (score >= 90) return "Strong Buy";
+    if (score >= 75) return "Buy";
+    if (score >= 60) return "Accumulate";
+    if (score >= 45) return "Hold";
+    if (score >= 30) return "Reduce";
+    return "Sell";
   };
-  const verdict = getValuationVerdict(targetReturnPct);
+  const verdict = getScoreBasedVerdict(totalScore);
 
   // === Accumulation Zone: relative to CMP ===
   // For Buy recs: zone includes/slightly below CMP using nearest support
