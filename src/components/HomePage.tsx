@@ -210,6 +210,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
       </div>
 
+      <Methodology />
+
       {/* Footer */}
       <div className="border-t border-border px-4 sm:px-6 py-6 text-center space-y-2">
         <p className="text-[10px] sm:text-xs font-mono text-muted-foreground tracking-wide">
