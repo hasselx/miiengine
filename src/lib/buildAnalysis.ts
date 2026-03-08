@@ -476,8 +476,8 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   ];
 
 
-  // === Target Price = Fair Value Midpoint ===
-  const targetPrice = fvMid;
+  // === Target Price = Probability-Weighted Expected Price ===
+  const targetPrice = expectedPrice;
   const targetReturnPct = ((targetPrice - price) / price) * 100;
   const targetReturnAbs = Math.abs(targetReturnPct).toFixed(1);
   const targetIsUpside = targetReturnPct >= 0;
