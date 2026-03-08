@@ -23,6 +23,13 @@ const FinalVerdict = ({ data }: { data: StockAnalysis }) => (
       </div>
     )}
 
+    {/* Optimal Entry Zone */}
+    <div className="mt-3">
+      <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Optimal Entry Zone</p>
+      <p className="font-mono text-sm text-gold">{data.optimalEntry.low} – {data.optimalEntry.high}</p>
+      <p className="font-mono text-[10px] text-[hsl(0,0%,45%)] mt-0.5">{data.optimalEntry.basis}</p>
+    </div>
+
     {/* Model Confidence */}
     <div className="mt-3">
       <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Model Confidence</p>
