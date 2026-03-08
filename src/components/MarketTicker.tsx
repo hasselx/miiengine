@@ -41,7 +41,7 @@ const MiniChart = ({ data, positive }: { data: { t: number; v: number }[]; posit
       <polyline
         points={points}
         fill="none"
-        stroke={positive ? "hsl(var(--green-data))" : "hsl(var(--destructive))"}
+        stroke={positive ? "hsl(var(--green-light))" : "hsl(var(--destructive))"}
         strokeWidth="1.5"
         vectorEffect="non-scaling-stroke"
       />
