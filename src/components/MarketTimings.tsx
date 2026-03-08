@@ -136,7 +136,7 @@ const MarketTimings = () => {
         {exchangeStatuses.map((ex) => (
           <div
             key={ex.name}
-            className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-3 px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
+            className="grid grid-cols-[auto_1fr_auto_1fr_auto_auto] items-center gap-2 px-3 py-2 rounded-md border border-border bg-background hover:border-foreground/10 transition-colors"
           >
             <span className="text-sm">{ex.flag}</span>
             <div className="min-w-0">
