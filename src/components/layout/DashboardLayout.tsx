@@ -72,7 +72,8 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           "bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border z-50",
           isMobile
             ? cn(
-                "fixed inset-y-0 left-0 w-[280px] transition-transform duration-300 ease-in-out",
+                "fixed left-0 w-[280px] transition-transform duration-300 ease-in-out",
+                "top-[2rem] bottom-0",
                 mobileOpen ? "translate-x-0" : "-translate-x-full"
               )
             : cn(
