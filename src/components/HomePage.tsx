@@ -173,7 +173,15 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
       </div>
 
-      <GlobalHeatmap />
+      {/* Heatmap + Market Timings side by side */}
+      <div className="border-t border-border bg-card">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+            <GlobalHeatmap inline />
+            <MarketTimings />
+          </div>
+        </div>
+      </div>
 
       {/* Global Sector Performance Tracker */}
       <SectorPerformanceTracker />
