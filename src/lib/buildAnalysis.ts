@@ -976,6 +976,64 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     })(),
     factorExposure,
     marketRegime,
+    decisionStack: (() => {
+      const stack: { factor: string; signal: 'Bullish' | 'Bearish' | 'Neutral' | 'Adjustment'; detail: string }[] = [];
+      stack.push({ factor: 'Fundamentals', signal: fundPct >= 60 ? 'Bullish' : fundPct < 40 ? 'Bearish' : 'Neutral', detail: `Score: ${weightedScores[0]}/${maxScores[0]}` });
+      const valPct = (weightedScores[1] / maxScores[1]) * 100;
+      stack.push({ factor: 'Valuation', signal: valPct >= 60 ? 'Bullish' : valPct < 40 ? 'Bearish' : 'Neutral', detail: pe > 0 ? `P/E: ${fmt(pe, 1)}x` : 'N/A' });
+      stack.push({ factor: 'Technical Trend', signal: techPct >= 60 ? 'Bullish' : techPct < 40 ? 'Bearish' : 'Neutral', detail: techs ? `RSI: ${fmt(techs.rsi, 0)}` : 'N/A' });
+      stack.push({ factor: 'Sector Momentum', signal: pctChange > 1 ? 'Bullish' : pctChange < -1 ? 'Bearish' : 'Neutral', detail: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange)}% today` });
+      if (isBearRegime) stack.push({ factor: 'Macro Regime', signal: 'Adjustment', detail: 'Bear Market — downgrade applied' });
+      else stack.push({ factor: 'Macro Regime', signal: marketRegime.regime === 'Bull Market' ? 'Bullish' : 'Neutral', detail: marketRegime.regime });
+      if (maxVerdictIfOvervalued) stack.push({ factor: 'Valuation Cap', signal: 'Adjustment', detail: 'Price > 115% of fair value' });
+      return stack;
+    })(),
+    factorContributions: (() => {
+      const names = ['Fundamental Quality', 'Intrinsic Valuation', 'Competitive Moat', 'Earnings Momentum', 'Technical Strength', 'Quantitative Signals', 'Risk Stability', 'Macro Tailwinds'];
+      const baseline = [10, 7, 5, 5, 7, 5, 5, 5]; // neutral baselines
+      return names.map((name, i) => ({
+        name,
+        contribution: weightedScores[i] - baseline[i],
+      }));
+    })(),
+    priceDistribution: {
+      bear: {
+        price: `${currency}${adjBear}`,
+        probability: 25,
+        drivers: (() => {
+          const d: string[] = [];
+          if (profitMargins != null) d.push('Margin compression');
+          d.push('Sector slowdown');
+          d.push('Macro pressure');
+          return d.slice(0, 3);
+        })(),
+      },
+      base: {
+        price: `${currency}${adjBase}`,
+        probability: 50,
+        drivers: (() => {
+          const d: string[] = [];
+          d.push('Steady earnings growth');
+          d.push('Stable valuation multiples');
+          if (sector !== 'N/A') d.push(`${sector} sector demand`);
+          else d.push('Market stability');
+          return d.slice(0, 3);
+        })(),
+      },
+      bull: {
+        price: `${currency}${adjBull}`,
+        probability: 30,
+        drivers: (() => {
+          const d: string[] = [];
+          if (revenueGrowth != null) d.push('Strong revenue growth');
+          d.push('Sector re-rating');
+          if (profitMargins != null) d.push('Operating margin expansion');
+          else d.push('Earnings beat catalysts');
+          return d.slice(0, 3);
+        })(),
+      },
+      expectedPrice: `${currency}${expectedPrice}`,
+    },
     catalystTimeline: (() => {
       const now = new Date();
       const catalysts: { date: string; event: string; category: 'earnings' | 'corporate' | 'industry' | 'product' | 'macro'; impact: 'High' | 'Moderate' | 'Low' }[] = [];

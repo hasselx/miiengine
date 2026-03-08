@@ -33,6 +33,10 @@ import BacktestSimulator from "./report/BacktestSimulator";
 import AIStockSummary from "./report/AIStockSummary";
 import FactorExposure from "./report/FactorExposure";
 import CatalystTimeline from "./report/CatalystTimeline";
+import RecommendationStack from "./report/RecommendationStack";
+import ConfidenceMeter from "./report/ConfidenceMeter";
+import PriceDistribution from "./report/PriceDistribution";
+import FactorContributionChart from "./report/FactorContributionChart";
 
 interface DashboardReportProps {
   data: StockAnalysis;
