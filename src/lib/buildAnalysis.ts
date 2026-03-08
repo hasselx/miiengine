@@ -475,7 +475,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const optEntryHigh = Math.round(price);
   const optEntryBasis = techs ? "Based on nearest support levels and recent price structure" : "Based on estimated support range";
 
-  // Model confidence — capped at 85%
+  // Model confidence — capped at 85%, adjusted for volatility and sector risk
   const confidenceFactors: string[] = [];
   let confidenceScore = 50;
   if (earningsHist.length >= 3) { confidenceScore += 10; confidenceFactors.push("Earnings history available"); }
@@ -487,6 +487,18 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   if (fin?.targetMeanPrice) { confidenceScore += 10; confidenceFactors.push("Analyst targets available"); }
   if (debtToEquity != null) confidenceScore += 3;
   if (returnOnEquity != null) confidenceScore += 2;
+
+  // Sector/volatility confidence penalty
+  const sectorLower = sector.toLowerCase();
+  const isHighVolSector = ['financial services', 'banks', 'financial', 'banking'].some(s => sectorLower.includes(s))
+    || (debtToEquity != null && debtToEquity > 200)
+    || beta > 1.5
+    || vol52 > 0.6;
+  if (isHighVolSector) {
+    confidenceScore -= 8;
+    confidenceFactors.push("High-volatility sector reduces confidence");
+  }
+
   // Cap at 85% per spec
   confidenceScore = Math.min(85, Math.max(40, confidenceScore));
   const confidenceLevel: 'Low' | 'Moderate' | 'High' = confidenceScore >= 70 ? 'High' : confidenceScore >= 55 ? 'Moderate' : 'Low';
