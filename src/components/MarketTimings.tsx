@@ -13,6 +13,7 @@ interface Exchange {
   closeHour: number;
   closeMin: number;
   currencyPair: string; // e.g. "USD/INR"
+  currencyLabel: string; // e.g. "INR"
 }
 
 const EXCHANGES: Exchange[] = [
