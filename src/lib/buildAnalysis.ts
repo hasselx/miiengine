@@ -809,7 +809,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
         { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.5 ? "HIGH" : "MEDIUM") as any, filled: (high52 - low52) / low52 > 0.5 ? 4 : 3 },
         { name: "Technical Risk", level: price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM", filled: price < (techs?.sma200 || price) ? 4 : 2 },
       ];
-      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 300 ? "HIGH" : debtToEquity > 150 ? "MEDIUM" : "LOW", filled: debtToEquity > 300 ? 4 : debtToEquity > 150 ? 3 : 1 });
+      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 150 ? "HIGH" : debtToEquity > 100 ? "MEDIUM" : "LOW", filled: debtToEquity > 600 ? 5 : debtToEquity > 300 ? 4 : debtToEquity > 150 ? 3 : debtToEquity > 100 ? 2 : 1 });
       if (beta > 0) items.push({ name: "Beta Risk", level: beta > 1.5 ? "HIGH" : beta > 1 ? "MEDIUM" : "LOW", filled: beta > 1.5 ? 4 : beta > 1 ? 3 : 2 });
       items.push({ name: "Momentum Risk", level: pctChange < -3 ? "HIGH" : pctChange < 0 ? "MEDIUM" : "LOW", filled: pctChange < -3 ? 4 : pctChange < 0 ? 3 : 1 });
       return items;
