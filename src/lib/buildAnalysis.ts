@@ -519,13 +519,34 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const agreementLevel: 'Low' | 'Moderate' | 'High' = (bullCount >= 3 || bearCount >= 3) ? 'High' : (bullCount >= 2 || bearCount >= 2) ? 'Moderate' : 'Low';
   if (agreementLevel === 'High') confidenceScore = Math.min(95, confidenceScore + 5);
 
-  // Key drivers
+  // Key drivers — sector-aware
   const keyDrivers: string[] = [];
-  if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth expectations" : "Revenue contraction risk");
-  if (pe > 0) keyDrivers.push(pe > 30 ? "Valuation premium vs sector" : "Reasonable valuation");
+  const isBanking = ['financial services', 'banks', 'financial', 'banking'].some(s => sectorLower.includes(s));
+  const isTech = ['technology', 'software', 'internet', 'semiconductor'].some(s => sectorLower.includes(s));
+  const isIndustrial = ['industrials', 'manufacturing', 'industrial', 'materials', 'basic materials'].some(s => sectorLower.includes(s));
+
+  if (isBanking) {
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Loan growth and interest income expansion" : "Declining interest income");
+    if (profitMargins != null) keyDrivers.push(profitMargins > 0.15 ? "Strong net interest margin" : "Net interest margin under pressure");
+    if (debtToEquity != null) keyDrivers.push("Capital adequacy and asset quality");
+    keyDrivers.push("NPA trends and provisioning outlook");
+  } else if (isTech) {
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0.15 ? "Strong earnings growth trajectory" : revenueGrowth > 0 ? "Moderate growth momentum" : "Revenue growth stalling");
+    if (profitMargins != null) keyDrivers.push(profitMargins > 0.20 ? "Margin expansion from scale" : "Margin pressure from R&D intensity");
+    keyDrivers.push("Cloud / product adoption trends");
+    if (pe > 30) keyDrivers.push("Premium valuation — growth expectations priced in");
+  } else if (isIndustrial) {
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth from order backlog" : "Declining order pipeline");
+    if (profitMargins != null) keyDrivers.push(profitMargins > 0.10 ? "Healthy operating margins" : "Margin compression from input costs");
+    keyDrivers.push("Sector demand and capex cycle outlook");
+  } else {
+    // Generic drivers
+    if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth expectations" : "Revenue contraction risk");
+    if (pe > 0) keyDrivers.push(pe > 30 ? "Valuation premium vs sector" : "Reasonable valuation");
+    if (profitMargins != null && profitMargins < 0.08) keyDrivers.push("Margin compression risk");
+    else if (profitMargins != null && profitMargins > 0.15) keyDrivers.push("Strong profit margins");
+  }
   if (pctChange > 2 || pctChange < -2) keyDrivers.push("Sector rotation trends");
-  if (profitMargins != null && profitMargins < 0.08) keyDrivers.push("Margin compression risk");
-  else if (profitMargins != null && profitMargins > 0.15) keyDrivers.push("Strong profit margins");
   if (beta > 1.3) keyDrivers.push("High beta amplifies market moves");
   if (keyDrivers.length === 0) keyDrivers.push("Limited fundamental drivers available");
   const finalKeyDrivers = keyDrivers.slice(0, 4);
