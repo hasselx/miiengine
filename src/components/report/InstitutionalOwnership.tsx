@@ -4,7 +4,7 @@ import SectionWrapper from "./SectionWrapper";
 const InstitutionalOwnership = ({ data }: { data: StockAnalysis }) => {
   const pct = data.institutionalOwnership;
   return (
-    <SectionWrapper num="14" title="Institutional Ownership" score={`${pct}%`}>
+    <SectionWrapper num="15" title="Institutional Ownership" score={`${pct}%`}>
       {/* Gauge bar */}
       <div className="mb-5">
         <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mb-1.5">

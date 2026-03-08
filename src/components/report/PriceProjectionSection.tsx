@@ -2,7 +2,7 @@ import { StockAnalysis } from "@/lib/stockData";
 import SectionWrapper from "./SectionWrapper";
 
 const PriceProjectionSection = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="08" title="12-Month Price Projection">
+  <SectionWrapper num="09" title="12-Month Price Projection">
     {/* Scenarios — stack on mobile */}
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-border mb-4 sm:mb-5 rounded-sm overflow-hidden">
       {data.priceScenarios.map((s) => {

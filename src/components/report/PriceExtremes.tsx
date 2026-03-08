@@ -17,7 +17,7 @@ const PriceExtremes = ({ data }: Props) => {
   ];
 
   return (
-    <SectionWrapper num="09" title="Price Extremes vs CMP">
+    <SectionWrapper num="10" title="Price Extremes vs CMP">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {items.map((item) => (
           <div

@@ -5,7 +5,7 @@ const sentColor = { positive: "text-green-data", negative: "text-red-data", neut
 const sentBg = { positive: "bg-[hsl(120,40%,92%)] text-green-dark", negative: "bg-[hsl(0,60%,95%)] text-red-dark", neutral: "bg-[hsl(45,100%,93%)] text-[hsl(45,50%,33%)]" };
 
 const EarningsBreakdown = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="04" title="JPMorgan — Earnings Breakdown">
+  <SectionWrapper num="05" title="JPMorgan — Earnings Breakdown">
     <div className="divide-y divide-border">
       {data.earningsBreakdown.map((e, i) => (
         <div key={i} className="flex items-center gap-2 sm:gap-3 py-3">

@@ -4,7 +4,7 @@ import SectionWrapper from "./SectionWrapper";
 const sentDot = { positive: "bg-green-data", negative: "bg-red-data", neutral: "bg-gold" };
 
 const ExecutiveSummary = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="01" title="Executive Summary">
+  <SectionWrapper num="02" title="Executive Summary">
     <div className="space-y-3 sm:space-y-4">
       {data.executiveSummary.map((p, i) => (
         <p key={i} className="text-[13px] sm:text-[14px] leading-[1.7] sm:leading-[1.8] text-foreground" dangerouslySetInnerHTML={{ __html: p }} />

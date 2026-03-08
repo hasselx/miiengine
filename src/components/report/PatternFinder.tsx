@@ -4,7 +4,7 @@ import SectionWrapper from "./SectionWrapper";
 const typeColor = { bullish: "text-green-data", bearish: "text-red-data", neutral: "text-gold" };
 
 const PatternFinder = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="10" title="Renaissance — Pattern Finder">
+  <SectionWrapper num="14" title="Renaissance — Pattern Finder">
     <div className="divide-y divide-border">
       {data.patternSignals.map((p, i) => (
         <div key={i} className="py-3 space-y-2">

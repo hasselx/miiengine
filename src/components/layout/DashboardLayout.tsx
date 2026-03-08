@@ -1,5 +1,5 @@
 import { ReactNode, useState, useRef, useEffect } from "react";
-import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen, Brain, FlaskConical, DollarSign, Zap, Building2, PieChart, ArrowUpDown, Globe, Home } from "lucide-react";
+import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen, Brain, FlaskConical, DollarSign, Zap, Building2, PieChart, ArrowUpDown, Globe, Home, Triangle, Gauge, TrendingDown, Crosshair } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,33 +15,31 @@ interface DashboardLayoutProps {
 }
 
 const NAV_ITEMS = [
-  // — Overview —
   { id: "ai-summary", label: "AI Summary", icon: Brain },
   { id: "summary", label: "Executive Summary", icon: FileText },
   { id: "scores", label: "Score Matrix", icon: BarChart3 },
-  // — Fundamentals & Earnings —
   { id: "fundamentals", label: "Fundamentals", icon: Layers },
-  { id: "earnings", label: "Earnings", icon: DollarSign },
+  { id: "earnings", label: "Earnings Breakdown", icon: DollarSign },
   { id: "earnings-surprise", label: "Earnings Surprise", icon: Zap },
-  { id: "valuation", label: "Valuation", icon: TrendingUp },
-  // — Technicals & Price —
+  { id: "valuation", label: "DCF Valuation", icon: TrendingUp },
+  { id: "valuation-triangle", label: "Valuation Triangle", icon: Triangle },
+  { id: "price", label: "Price Projection", icon: Target },
+  { id: "price-extremes", label: "Price Extremes", icon: TrendingDown },
+  { id: "trading-plan", label: "Trading Plan", icon: Crosshair },
   { id: "technical", label: "Technicals", icon: LineChart },
-  { id: "support-resistance", label: "Support/Resistance", icon: Target },
-  { id: "pattern", label: "Patterns", icon: Activity },
-  { id: "price", label: "Price Targets", icon: Target },
-  // — Ownership & Activity —
-  { id: "institutional", label: "Institutional", icon: Building2 },
+  { id: "support-resistance", label: "Support / Resistance", icon: Target },
+  { id: "pattern", label: "Pattern Finder", icon: Activity },
+  { id: "institutional", label: "Institutional Ownership", icon: Building2 },
   { id: "insider", label: "Insider Activity", icon: Building2 },
-  { id: "sentiment", label: "Sentiment", icon: Globe },
-  // — Macro & Strategy —
-  { id: "macro", label: "Macro", icon: Activity },
+  { id: "sentiment", label: "Market Sentiment", icon: Globe },
+  { id: "macro", label: "Macro & Tailwinds", icon: Activity },
   { id: "sector-rotation", label: "Sector Rotation", icon: PieChart },
   { id: "correlation", label: "Correlation", icon: ArrowUpDown },
-  { id: "moat", label: "Moat", icon: Shield },
-  { id: "risk", label: "Risk Matrix", icon: AlertTriangle },
-  // — Tools —
-  { id: "dividend", label: "Dividends", icon: PieChart },
+  { id: "moat", label: "Competitive Moat", icon: Shield },
+  { id: "risk", label: "Risk Analysis", icon: AlertTriangle },
+  { id: "dividend", label: "Dividend Strategy", icon: PieChart },
   { id: "backtest", label: "Backtest Simulator", icon: FlaskConical },
+  { id: "verdict", label: "Final Verdict", icon: Gauge },
 ];
 
 const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen, companyName }: DashboardLayoutProps) => {
@@ -54,7 +52,6 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
   const navigate = useNavigate();
   const { setOpen: setWatchlistOpen } = useWatchlist();
 
-  // Close account menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
@@ -67,12 +64,10 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Mobile overlay */}
       {isMobile && mobileOpen && (
         <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-40" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar — sliding drawer on mobile */}
       <aside
         className={cn(
           "bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border z-50",
@@ -84,11 +79,10 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
               )
             : cn(
                 "sticky top-8 h-[calc(100vh-2rem)] transition-all duration-300",
-                collapsed ? "w-[60px]" : "w-[220px]"
+                collapsed ? "w-[60px]" : "w-[240px]"
               )
         )}
       >
-        {/* Logo area */}
         <div className={cn(
           "flex items-center h-14 border-b border-sidebar-border px-4 shrink-0",
           collapsed && !isMobile && "justify-center px-0"
@@ -99,7 +93,6 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           {collapsed && !isMobile && (
             <span className="font-display text-lg font-bold text-sidebar-foreground">M</span>
           )}
-          {/* Close button on mobile */}
           {isMobile && (
             <button onClick={() => setMobileOpen(false)} className="ml-auto p-2 text-sidebar-foreground/50 hover:text-sidebar-foreground">
               <X className="h-5 w-5" />
@@ -107,31 +100,39 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           )}
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 py-3 space-y-0.5 overflow-y-auto sidebar-scroll">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                onSectionClick?.(item.id);
-                if (isMobile) setMobileOpen(false);
-              }}
-              className={cn(
-                "flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-colors touch-target",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent",
-                activeSection === item.id
-                  ? "bg-sidebar-accent text-sidebar-primary border-r-2 border-sidebar-primary"
-                  : "text-sidebar-foreground/70",
-                collapsed && !isMobile && "justify-center px-0"
-              )}
-              title={item.label}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {(!collapsed || isMobile) && <span className="truncate">{item.label}</span>}
-            </button>
-          ))}
+          {NAV_ITEMS.map((item, idx) => {
+            const num = String(idx + 1).padStart(2, "0");
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onSectionClick?.(item.id);
+                  if (isMobile) setMobileOpen(false);
+                }}
+                className={cn(
+                  "flex items-center gap-2 w-full px-3 py-2.5 text-[13px] font-medium transition-colors touch-target",
+                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent",
+                  activeSection === item.id
+                    ? "bg-sidebar-accent text-sidebar-primary border-r-2 border-sidebar-primary"
+                    : "text-sidebar-foreground/70",
+                  collapsed && !isMobile && "justify-center px-0"
+                )}
+                title={`${num}. ${item.label}`}
+              >
+                {collapsed && !isMobile ? (
+                  <span className="font-mono text-[10px] text-sidebar-foreground/50">{num}</span>
+                ) : (
+                  <>
+                    <span className="font-mono text-[10px] text-sidebar-foreground/40 w-5 shrink-0">{num}</span>
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </>
+                )}
+              </button>
+            );
+          })}
 
-          {/* Collapse toggle right after nav items (desktop only) */}
           {!isMobile && (
             <button
               onClick={() => setCollapsed(!collapsed)}
@@ -148,9 +149,7 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
         </nav>
       </aside>
 
-      {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Sticky top header bar */}
         <header className="h-14 bg-card border-b border-border flex items-center justify-between px-3 sm:px-6 shrink-0 sticky top-8 z-30">
           <div className="flex items-center gap-2 min-w-0">
             {isMobile && (
@@ -170,7 +169,6 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Home button */}
             <button
               onClick={() => navigate("/")}
               className="p-2 hover:bg-accent rounded-md transition-colors touch-target"
@@ -178,7 +176,6 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
             >
               <Home className="h-4 w-4 text-muted-foreground" />
             </button>
-            {/* Search — icon only on mobile, expanded on desktop */}
             <button
               onClick={onSearchOpen}
               className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors text-xs font-mono touch-target"
@@ -237,7 +234,6 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

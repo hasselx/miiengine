@@ -3,7 +3,7 @@ import SectionWrapper from "./SectionWrapper";
 import { ArrowDown, ArrowUp } from "lucide-react";
 
 const SupportResistance = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="12" title="Support / Resistance Levels">
+  <SectionWrapper num="13" title="Support / Resistance Levels">
     <div className="grid grid-cols-2 gap-4">
       <div>
         <div className="flex items-center gap-1.5 mb-3">

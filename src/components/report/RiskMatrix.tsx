@@ -5,7 +5,7 @@ const tagStyle = { LOW: "bg-[hsl(120,40%,92%)] text-green-dark", MEDIUM: "bg-[hs
 const dotColor = { LOW: "bg-green-data", MEDIUM: "bg-gold", HIGH: "bg-red-data" };
 
 const RiskMatrix = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="07" title="Risk Matrix" score="7 / 10">
+  <SectionWrapper num="22" title="Risk Matrix" score="7 / 10">
     <div className="divide-y divide-border">
       {data.riskItems.map((r, i) => (
         <div key={i} className="flex items-center gap-2.5 py-3">
