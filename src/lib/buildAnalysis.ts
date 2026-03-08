@@ -441,24 +441,38 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   ];
 
 
-  const getValuationVerdict = (score: number, retPct: number): string => {
-    if (score >= 90) return "Exceptional Opportunity";
-    if (retPct > 15 && score >= 70) return "Strong Buy";
-    if (retPct > 5 && score >= 65) return "Buy";
-    if (retPct > 0 && score >= 60) return "Buy / Accumulate";
-    if (Math.abs(retPct) <= 5) return "Hold";
-    if (retPct < -5 && retPct >= -15) return "Hold / Reduce";
-    if (retPct < -15) return "Reduce / Wait for Pullback";
-    if (score >= 60) return "Hold / Accumulate on Dips";
-    if (score >= 50) return "Weak Hold";
-    return "Avoid";
-  };
-  const verdict = getValuationVerdict(totalScore, expectedReturnPct);
+  // === Target Price = Fair Value Midpoint ===
+  const targetPrice = fvMid;
+  const targetReturnPct = ((targetPrice - price) / price) * 100;
+  const targetReturnAbs = Math.abs(targetReturnPct).toFixed(1);
+  const targetIsUpside = targetReturnPct >= 0;
+  const targetReturnStr = `${targetIsUpside ? '+' : '-'}${targetReturnAbs}%`;
+  const targetReturnLabel = targetIsUpside ? "Expected Upside" : "Expected Downside";
 
-  // Accumulation zone: use capped fair value midpoint
-  const showAccZone = price > fvMid;
-  const accZoneLow = Math.round(fvMid * 0.96);
-  const accZoneHigh = Math.round(fvMid * 1.02);
+  // === Recommendation based on expected return thresholds ===
+  const getValuationVerdict = (retPct: number): string => {
+    if (retPct > 15) return "Strong Buy";
+    if (retPct > 8) return "Buy";
+    if (retPct >= 0) return "Hold";
+    if (retPct >= -8) return "Hold / Reduce";
+    return "Reduce / Sell";
+  };
+  const verdict = getValuationVerdict(targetReturnPct);
+
+  // === Accumulation Zone: relative to CMP ===
+  // For Buy recs: zone includes/slightly below CMP using nearest support
+  // For Hold/Reduce: zone is a lower entry range
+  const support1 = techs ? Math.round(Math.min(price, low52 + (price - low52) * 0.7)) : Math.round(price * 0.95);
+  const isBuyVerdict = verdict === 'Strong Buy' || verdict === 'Buy';
+  const accZoneLow = isBuyVerdict ? Math.round(Math.min(price * 0.97, support1)) : Math.round(fvMid * 0.94);
+  const accZoneHigh = isBuyVerdict ? Math.round(price * 1.02) : Math.round(fvMid * 1.0);
+  const showAccZone = true; // Always show — entry guidance is always useful
+
+  // === Optimal Entry Zone: support-based ===
+  const support2 = techs ? Math.round(low52 + (price - low52) * 0.4) : Math.round(price * 0.90);
+  const optEntryLow = Math.round(Math.max(support1, support2));
+  const optEntryHigh = Math.round(price);
+  const optEntryBasis = techs ? "Based on nearest support levels and recent price structure" : "Based on estimated support range";
 
   // Model confidence — capped at 85%
   const confidenceFactors: string[] = [];
@@ -503,7 +517,8 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   if (keyDrivers.length === 0) keyDrivers.push("Limited fundamental drivers available");
   const finalKeyDrivers = keyDrivers.slice(0, 4);
 
-  // Expected return display string
+  // Keep scenario-level return for display (expectedPrice is probability-weighted)
+  // But the primary "target" and "return" shown to user = fair value midpoint
   const expectedReturnStr = `${isUpside ? '+' : '-'}${expectedReturnAbs}%`;
   const expectedReturnLabel = isUpside ? "Expected Upside" : "Expected Downside";
 
@@ -553,7 +568,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     ],
     totalScore,
     verdict,
-    verdictNote: totalScore < 70 ? `Entry below ${currency}${Math.round(price * 0.92)} upgrades to BUY` : 'Strong conviction level',
+    verdictNote: isBuyVerdict ? 'Strong conviction — accumulate at current levels' : targetReturnPct < 0 ? `Wait for pullback to ${currency}${accZoneLow}–${currency}${accZoneHigh}` : 'Fair value — hold existing positions',
     scoreRange: v.range,
     scores: [
       { step: 1, name: "Fundamental Quality", subtitle: fund.subtitle, score: weightedScores[0], maxScore: 20, weight: `${Math.round(weights[0] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
@@ -568,7 +583,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     executiveSummary: [
       `<strong>${companyName}</strong> is currently trading at <strong>${currency}${fmt(price)}</strong> with a ${pctSign}${fmt(pctChange)}% change today. The stock operates in the <strong>${sector}</strong> sector${profile?.country ? ` based in <strong>${profile.country}</strong>` : ''}.`,
       `From a valuation perspective, the stock trades at <strong>${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'}</strong>. ${profitMargins != null ? `Net profit margin is <strong>${(profitMargins * 100).toFixed(1)}%</strong>.` : ''} ${revenueGrowth != null ? `Revenue growth stands at <strong>${(revenueGrowth * 100).toFixed(1)}%</strong> YoY.` : ''} The 52-week range of ${currency}${fmt(high52, 0)} to ${currency}${fmt(low52, 0)} suggests the stock is <strong>${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its annual range</strong>.`,
-      `Our multi-factor analysis yields a total score of <strong>${totalScore}/100</strong>, resulting in a <strong>${verdict}</strong> recommendation. The expected 12-month price target is <strong>${currency}${expectedPrice}</strong>, representing a <strong>${expectedReturnStr} ${expectedReturnLabel.toLowerCase()}</strong> from current levels.`,
+      `Our multi-factor analysis yields a total score of <strong>${totalScore}/100</strong>, resulting in a <strong>${verdict}</strong> recommendation. The 12-month target price is <strong>${currency}${targetPrice}</strong> (fair value midpoint), representing a <strong>${targetReturnStr} ${targetReturnLabel.toLowerCase()}</strong> from current levels.`,
     ],
     modelSummaries: [
       { num: "01", model: "Stock Screener", firm: "Goldman Sachs", abstract: `P/E at ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}, ${pctChange >= 0 ? 'positive' : 'negative'} momentum. Fundamental score: ${fund.score}/20.`, sentiment: fund.score >= 14 ? "positive" : fund.score >= 10 ? "neutral" : "negative" },
@@ -626,7 +641,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: "Base Case", price: `${currency}${adjBase}`, note: "Steady growth, stable margins", type: "base" },
       { label: "Bull Case", price: `${currency}${adjBull}`, note: "Expansion, re-rating catalyst", type: "bull" },
     ],
-    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our probability-weighted expected value of ${currency}${expectedPrice} represents a ${expectedReturnStr} potential ${isUpside ? 'return' : 'decline'}.`,
+    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our target price of ${currency}${targetPrice} (fair value midpoint) represents a ${targetReturnStr} potential ${targetIsUpside ? 'return' : 'decline'}.`,
     priceScenarios: [
       { label: "▲ Bull Case", price: `${currency}${adjBull}`, probability: "Probability: 25%", change: `${((adjBull - price) / price * 100) >= 0 ? '+' : ''}${((adjBull - price) / price * 100).toFixed(0)}% ${(adjBull >= price) ? 'upside' : 'downside'}`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull", assumptions: { revenueGrowth: `${(scenarios.bull.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.bull.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.bull.peMultiple}x`, projectedEps: `${currency}${bullProjEps}` } },
       { label: "◆ Base Case", price: `${currency}${adjBase}`, probability: "Probability: 50%", change: `${((adjBase - price) / price * 100) >= 0 ? '+' : ''}${((adjBase - price) / price * 100).toFixed(0)}% ${(adjBase >= price) ? 'upside' : 'downside'}`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base", assumptions: { revenueGrowth: `${(scenarios.base.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.base.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.base.peMultiple}x`, projectedEps: `${currency}${baseProjEps}` } },
@@ -634,9 +649,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     ],
     expectedPrice: `${currency}${expectedPrice}`,
     expectedFormula: `(${currency}${adjBull}×25%) + (${currency}${adjBase}×50%) + (${currency}${adjBear}×25%)`,
-    expectedUpside: expectedReturnStr,
-    expectedUpsideNote: `${expectedReturnLabel} from ${currency}${fmt(price)}`,
-    priceNote: `Based on our multi-factor analysis, the probability-weighted expected price of ${currency}${expectedPrice} suggests ${expectedReturnAbs}% ${isUpside ? 'upside' : 'downside'} from current levels. ${fin?.targetMeanPrice ? `Analyst consensus target: ${currency}${fmt(fin.targetMeanPrice)}.` : ''} ${showAccZone ? `For conservative investors, an accumulation zone around ${currency}${accZoneLow}–${currency}${accZoneHigh} offers better risk-reward.` : `Current price is within fair value range.`}`,
+    expectedUpside: targetReturnStr,
+    expectedUpsideNote: `${targetReturnLabel} from ${currency}${fmt(price)}`,
+    priceNote: `Target price of ${currency}${targetPrice} equals the fair value midpoint (${currency}${fvLow}–${currency}${fvHigh}). Probability-weighted expected price: ${currency}${expectedPrice}. ${fin?.targetMeanPrice ? `Analyst consensus: ${currency}${fmt(fin.targetMeanPrice)}.` : ''} Optimal entry zone: ${currency}${optEntryLow}–${currency}${optEntryHigh}.`,
     macroItems: [
       { icon: "📈", title: "Market Trend", detail: `Stock is ${pctChange >= 0 ? 'up' : 'down'} ${fmt(Math.abs(pctChange))}% today. ${price > (techs?.sma200 || 0) ? 'Trading above 200 DMA — bullish trend.' : 'Trading below 200 DMA — caution.'}`, sentiment: pctChange >= 0 ? "positive" : "negative", sentimentLabel: pctChange >= 0 ? "POSITIVE" : "HEADWIND" },
       { icon: "📊", title: "Valuation Context", detail: pe > 40 ? 'Premium valuation at current P/E — growth expectations priced in' : pe > 20 ? 'Fair valuation relative to broader market' : pe > 0 ? 'Attractive valuation on P/E basis' : 'P/E data unavailable', sentiment: pe > 40 ? "negative" : pe > 20 ? "neutral" : "positive", sentimentLabel: pe > 40 ? "RICH" : pe > 20 ? "FAIR" : pe > 0 ? "ATTRACTIVE" : "N/A" },
@@ -825,6 +840,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     },
     fairValueRange: { low: `${currency}${fvLow}`, high: `${currency}${fvHigh}`, midpoint: `${currency}${fvMid}` },
     accumulationZone: { low: `${currency}${accZoneLow}`, high: `${currency}${accZoneHigh}`, show: showAccZone },
+    optimalEntry: { low: `${currency}${optEntryLow}`, high: `${currency}${optEntryHigh}`, basis: optEntryBasis },
     modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
     modelAgreement: { level: agreementLevel, models: agreementModels },
     keyDrivers: finalKeyDrivers,
@@ -877,13 +893,14 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       return catalysts;
     })(),
     finalVerdict: verdict,
-    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedReturnStr} ${expectedReturnLabel.toLowerCase()}). Market regime: <strong>${marketRegime.regime}</strong>.`,
-    finalAction: `<strong>Recommendation:</strong> ${isUpside && totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : isUpside && totalScore >= 60 ? 'Accumulate on dips near ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Hold with 12-month view.' : !isUpside ? 'Hold existing positions. Wait for pullback to ' + currency + accZoneLow + '–' + currency + accZoneHigh + ' for better entry.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
+    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with a 12-month target price of ${currency}${targetPrice} (${targetReturnStr} ${targetReturnLabel.toLowerCase()}). Market regime: <strong>${marketRegime.regime}</strong>.`,
+    finalAction: `<strong>Recommendation:</strong> ${isBuyVerdict ? 'Initiate position within ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Targets: ' + currency + t1 + ' / ' + currency + t2 + '.' : targetReturnPct >= 0 ? 'Hold existing positions. Current price near fair value.' : 'Reduce exposure. Wait for pullback to ' + currency + optEntryLow + '–' + currency + optEntryHigh + ' for better risk-reward.'}`,
     finalFooter: [
       { label: "SCORE", value: `${totalScore} / 100` },
-      { label: "TARGET", value: `${currency}${expectedPrice}` },
-      { label: "RETURN", value: expectedReturnStr },
+      { label: "TARGET", value: `${currency}${targetPrice}` },
+      { label: "RETURN", value: targetReturnStr },
       { label: "FAIR VALUE", value: `${currency}${fvLow} – ${currency}${fvHigh}` },
+      { label: "ENTRY ZONE", value: `${currency}${optEntryLow} – ${currency}${optEntryHigh}` },
       { label: "CONFIDENCE", value: `${confidenceScore}% (${confidenceLevel})` },
       { label: "REGIME", value: marketRegime.regime },
     ],

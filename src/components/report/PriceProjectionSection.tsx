@@ -41,12 +41,12 @@ const PriceProjectionSection = ({ data }: { data: StockAnalysis }) => (
       })}
     </div>
 
-    {/* Expected Price Box */}
+    {/* Target Price Box */}
     <div className="bg-ink text-cream p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-sm">
       <div>
-        <p className="font-mono text-[10px] tracking-[3px] uppercase text-gold mb-1">Expected Price (Probability-Weighted)</p>
-        <p className="font-display text-3xl sm:text-[40px] font-bold">{data.expectedPrice}</p>
-        <p className="font-mono text-[11px] text-cream/50 mt-1 break-all sm:break-normal">{data.expectedFormula}</p>
+        <p className="font-mono text-[10px] tracking-[3px] uppercase text-gold mb-1">Target Price (Fair Value Midpoint)</p>
+        <p className="font-display text-3xl sm:text-[40px] font-bold">{data.fairValueRange.midpoint}</p>
+        <p className="font-mono text-[11px] text-cream/50 mt-1">Prob-Weighted: {data.expectedPrice} · {data.expectedFormula}</p>
       </div>
       <div className="sm:text-right">
         <p className={`font-mono text-xl sm:text-[28px] font-medium ${data.expectedUpside.startsWith('-') ? 'text-red-data' : 'text-gold'}`}>{data.expectedUpside}</p>
@@ -71,9 +71,15 @@ const PriceProjectionSection = ({ data }: { data: StockAnalysis }) => (
       <div className="mt-2 p-2.5 bg-bull-light border-l-[3px] border-green-dark rounded-sm">
         <p className="font-mono text-[9px] tracking-[2px] text-green-dark uppercase mb-0.5">Accumulation Zone</p>
         <p className="font-mono text-sm font-semibold text-green-dark">{data.accumulationZone.low} – {data.accumulationZone.high}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Better risk-reward entry range below current price</p>
       </div>
     )}
+
+    {/* Optimal Entry Zone */}
+    <div className="mt-2 p-2.5 bg-accent-area border-l-[3px] border-gold rounded-sm">
+      <p className="font-mono text-[9px] tracking-[2px] text-gold uppercase mb-0.5">Optimal Entry Zone</p>
+      <p className="font-mono text-sm font-semibold text-ink">{data.optimalEntry.low} – {data.optimalEntry.high}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">{data.optimalEntry.basis}</p>
+    </div>
 
     <div className="mt-3.5 text-[12px] text-muted-foreground p-3 border-l-[3px] border-ink bg-accent-area leading-[1.7] rounded-sm">
       <strong>Conservative Note:</strong> {data.priceNote}
