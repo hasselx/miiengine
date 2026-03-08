@@ -254,7 +254,7 @@ html {
 
 @media (max-width: 640px) {
   .ticker-scroll {
-    animation-duration: 25s;
+    animation-duration: 50s; /* Slower on mobile for better readability */
   }
 }
 
