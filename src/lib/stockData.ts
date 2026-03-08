@@ -198,7 +198,7 @@ export interface StockAnalysis {
   disclaimer: string;
 }
 
-export function getAnalysis(company: string, country: string): StockAnalysis {
+// Legacy mock getAnalysis function removed — all data now comes from real API via buildAnalysisFromRealData
   return {
     company,
     subtitle: `${company} · ${country} · Multi-Institutional Intelligence Engine`,
