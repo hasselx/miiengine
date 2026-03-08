@@ -442,10 +442,10 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       const exDate = divData?.exDate || null;
       const rate = divData?.rate != null ? divData.rate : null;
       return [
-        { label: "Dividend Yield", value: dy != null ? `${(dy * 100).toFixed(2)}%` : 'N/A', note: rate != null ? `${currency}${fmt(rate)}/share` : 'No dividend data', color: (dy != null && dy > 0.02 ? 'green' : 'muted') as const },
+        { label: "Dividend Yield", value: dy != null ? `${(dy * 100).toFixed(2)}%` : 'N/A', note: rate != null ? `${currency}${fmt(rate)}/share` : 'No dividend data', color: (dy != null && dy > 0.02 ? 'green' as const : 'muted' as const) },
         { label: "Payout Ratio", value: pr != null ? `${(pr * 100).toFixed(1)}%` : 'N/A', note: pe > 0 ? `Earnings coverage: ${fmt(pe, 1)}x P/E` : 'N/A', color: 'muted' as const },
         { label: "Ex-Dividend Date", value: exDate || 'N/A', note: "Most recent ex-date", color: 'muted' as const },
-        { label: "Dividend Sustainability", value: dy != null && dy > 0.03 ? 'Strong' : dy != null && dy > 0.01 ? 'Moderate' : 'Minimal', note: "Based on payout and earnings", color: (dy != null && dy > 0.02 ? 'green' : 'gold') as const },
+        { label: "Dividend Sustainability", value: dy != null && dy > 0.03 ? 'Strong' : dy != null && dy > 0.01 ? 'Moderate' : 'Minimal', note: "Based on payout and earnings", color: (dy != null && dy > 0.02 ? 'green' as const : 'gold' as const) },
       ];
     })(),
     dividendNote: (() => {
