@@ -9,22 +9,27 @@ const corsHeaders = {
 // Yahoo Finance symbols for major indices — grouped by region
 const INDICES = [
   // India
-  { symbol: "^NSEI", name: "NIFTY 50", exchange: "NSE", region: "India", tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
-  { symbol: "^BSESN", name: "SENSEX", exchange: "BSE", region: "India", tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
+  { symbol: "^NSEI", name: "NIFTY 50", exchange: "NSE", region: "India", country: "India", flag: "🇮🇳", weight: 3, tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
+  { symbol: "^BSESN", name: "SENSEX", exchange: "BSE", region: "India", country: "India", flag: "🇮🇳", weight: 3, tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
   // United States
-  { symbol: "^GSPC", name: "S&P 500", exchange: "NYSE", region: "United States", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
-  { symbol: "^IXIC", name: "NASDAQ", exchange: "NASDAQ", region: "United States", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
-  { symbol: "^DJI", name: "DOW JONES", exchange: "NYSE", region: "United States", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  { symbol: "^GSPC", name: "S&P 500", exchange: "NYSE", region: "United States", country: "United States", flag: "🇺🇸", weight: 5, tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  { symbol: "^IXIC", name: "NASDAQ", exchange: "NASDAQ", region: "United States", country: "United States", flag: "🇺🇸", weight: 5, tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  { symbol: "^DJI", name: "DOW JONES", exchange: "NYSE", region: "United States", country: "United States", flag: "🇺🇸", weight: 5, tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
   // Europe
-  { symbol: "^FTSE", name: "FTSE 100", exchange: "LSE", region: "Europe", tz: "Europe/London", openH: 8, openM: 0, closeH: 16, closeM: 30 },
-  { symbol: "^GDAXI", name: "DAX", exchange: "XETRA", region: "Europe", tz: "Europe/Berlin", openH: 9, openM: 0, closeH: 17, closeM: 30 },
-  { symbol: "^FCHI", name: "CAC 40", exchange: "EPA", region: "Europe", tz: "Europe/Paris", openH: 9, openM: 0, closeH: 17, closeM: 30 },
+  { symbol: "^FTSE", name: "FTSE 100", exchange: "LSE", region: "Europe", country: "United Kingdom", flag: "🇬🇧", weight: 3, tz: "Europe/London", openH: 8, openM: 0, closeH: 16, closeM: 30 },
+  { symbol: "^GDAXI", name: "DAX", exchange: "XETRA", region: "Europe", country: "Germany", flag: "🇩🇪", weight: 3, tz: "Europe/Berlin", openH: 9, openM: 0, closeH: 17, closeM: 30 },
+  { symbol: "^FCHI", name: "CAC 40", exchange: "EPA", region: "Europe", country: "France", flag: "🇫🇷", weight: 3, tz: "Europe/Paris", openH: 9, openM: 0, closeH: 17, closeM: 30 },
   // Asia
-  { symbol: "^N225", name: "NIKKEI 225", exchange: "TSE", region: "Asia", tz: "Asia/Tokyo", openH: 9, openM: 0, closeH: 15, closeM: 0 },
-  { symbol: "^HSI", name: "HANG SENG", exchange: "HKEX", region: "Asia", tz: "Asia/Hong_Kong", openH: 9, openM: 30, closeH: 16, closeM: 0 },
-  { symbol: "000001.SS", name: "SHANGHAI", exchange: "SSE", region: "Asia", tz: "Asia/Shanghai", openH: 9, openM: 30, closeH: 15, closeM: 0 },
+  { symbol: "^N225", name: "NIKKEI 225", exchange: "TSE", region: "Asia", country: "Japan", flag: "🇯🇵", weight: 4, tz: "Asia/Tokyo", openH: 9, openM: 0, closeH: 15, closeM: 0 },
+  { symbol: "^HSI", name: "HANG SENG", exchange: "HKEX", region: "Asia", country: "Hong Kong", flag: "🇭🇰", weight: 3, tz: "Asia/Hong_Kong", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  { symbol: "000001.SS", name: "SHANGHAI", exchange: "SSE", region: "Asia", country: "China", flag: "🇨🇳", weight: 4, tz: "Asia/Shanghai", openH: 9, openM: 30, closeH: 15, closeM: 0 },
+  { symbol: "^KS11", name: "KOSPI", exchange: "KRX", region: "Asia", country: "South Korea", flag: "🇰🇷", weight: 2, tz: "Asia/Seoul", openH: 9, openM: 0, closeH: 15, closeM: 30 },
   // Middle East
-  { symbol: "^TASI", name: "TADAWUL", exchange: "SAU", region: "Middle East", tz: "Asia/Riyadh", openH: 10, openM: 0, closeH: 15, closeM: 0 },
+  { symbol: "^TASI", name: "TADAWUL", exchange: "SAU", region: "Middle East", country: "Saudi Arabia", flag: "🇸🇦", weight: 2, tz: "Asia/Riyadh", openH: 10, openM: 0, closeH: 15, closeM: 0 },
+  // Oceania
+  { symbol: "^AXJO", name: "ASX 200", exchange: "ASX", region: "Oceania", country: "Australia", flag: "🇦🇺", weight: 2, tz: "Australia/Sydney", openH: 10, openM: 0, closeH: 16, closeM: 0 },
+  // Americas
+  { symbol: "^GSPTSE", name: "TSX", exchange: "TSX", region: "Americas", country: "Canada", flag: "🇨🇦", weight: 2, tz: "America/Toronto", openH: 9, openM: 30, closeH: 16, closeM: 0 },
 ];
 
 function isMarketOpen(idx: typeof INDICES[0]): boolean {
@@ -145,6 +150,9 @@ serve(async (req) => {
           name: idx.name,
           exchange: idx.exchange,
           region: idx.region,
+          country: idx.country,
+          flag: idx.flag,
+          weight: idx.weight,
           price: Number(data.price.toFixed(2)),
           change: Number(data.change.toFixed(2)),
           changePct: Number(data.changePct.toFixed(2)),
