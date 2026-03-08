@@ -11,7 +11,9 @@ const ReportHeader = ({ data, onToggleHoldings, holdingsOpen }: { data: StockAna
   const { user } = useAuth();
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
+  const [addedToWatchlist, setAddedToWatchlist] = useState(false);
   const [showDownload, setShowDownload] = useState(false);
+  const { setOpen: setWatchlistOpen } = useWatchlist();
 
   const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const brandHeader = `<div style="border-bottom:2px solid #c9a84c;padding:24px 32px;background:#0a0a0a;display:flex;justify-content:space-between;align-items:center">
