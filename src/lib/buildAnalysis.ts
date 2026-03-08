@@ -575,7 +575,11 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   // Model agreement
   const dcfSignal: 'Bullish' | 'Bearish' | 'Neutral' = price < adjBase ? 'Bullish' : price > adjBull ? 'Bearish' : 'Neutral';
   const relValSignal: 'Bullish' | 'Bearish' | 'Neutral' = pe > 0 ? (pe < 20 ? 'Bullish' : pe > 40 ? 'Bearish' : 'Neutral') : 'Neutral';
-  const techTrendSignal: 'Bullish' | 'Bearish' | 'Neutral' = techs ? (price > (techs.sma200 || 0) && techs.rsi > 40 ? 'Bullish' : price < (techs.sma200 || 0) && techs.rsi < 60 ? 'Bearish' : 'Neutral') : 'Neutral';
+  // Technical signal consistency: death cross blocks bullish, golden cross blocks bearish
+  const hasDeathCross = !!(techs && techs.sma50 && techs.sma200 && techs.sma50 < techs.sma200);
+  const hasGoldenCross = !!(techs && techs.sma50 && techs.sma200 && techs.sma50 > techs.sma200);
+  const rawTechSignal: 'Bullish' | 'Bearish' | 'Neutral' = techs ? (price > (techs.sma200 || 0) && techs.rsi > 40 ? 'Bullish' : price < (techs.sma200 || 0) && techs.rsi < 60 ? 'Bearish' : 'Neutral') : 'Neutral';
+  const techTrendSignal: 'Bullish' | 'Bearish' | 'Neutral' = hasDeathCross && rawTechSignal === 'Bullish' ? 'Neutral' : hasGoldenCross && rawTechSignal === 'Bearish' ? 'Neutral' : rawTechSignal;
   const sectorMomSignal: 'Bullish' | 'Bearish' | 'Neutral' = pctChange > 1 ? 'Bullish' : pctChange < -1 ? 'Bearish' : 'Neutral';
   const agreementModels = [
     { name: "DCF Valuation", signal: dcfSignal },
