@@ -209,7 +209,7 @@ const HoverTooltip = ({ idx, mouseX, mouseY, containerRect }: { idx: IndexData; 
 /* ══════════════════════════════════════════════
    Main Component
    ══════════════════════════════════════════════ */
-const GlobalHeatmap = () => {
+const GlobalHeatmap = ({ inline }: { inline?: boolean }) => {
   const [indices, setIndices] = useState<IndexData[]>([]);
   const [selected, setSelected] = useState<IndexData | null>(null);
   const [hovered, setHovered] = useState<{ idx: IndexData; mx: number; my: number } | null>(null);
