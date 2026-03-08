@@ -237,6 +237,27 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+/* ── Market Ticker Scroll ── */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-scroll {
+  animation: ticker-scroll 40s linear infinite;
+  width: max-content;
+}
+
+.ticker-paused {
+  animation-play-state: paused;
+}
+
+@media (max-width: 640px) {
+  .ticker-scroll {
+    animation-duration: 25s;
+  }
+}
+
 @media print {
   body { background: white !important; color: black !important; margin: 0; }
   [data-report-root] { break-inside: auto; }
