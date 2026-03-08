@@ -6,17 +6,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Yahoo Finance symbols for major indices
+// Yahoo Finance symbols for major indices — grouped by region
 const INDICES = [
-  { symbol: "^NSEI", name: "NIFTY 50", exchange: "NSE", tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
-  { symbol: "^BSESN", name: "SENSEX", exchange: "BSE", tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
-  { symbol: "^IXIC", name: "NASDAQ", exchange: "NASDAQ", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
-  { symbol: "^GSPC", name: "S&P 500", exchange: "NYSE", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
-  { symbol: "^DJI", name: "DOW JONES", exchange: "NYSE", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
-  { symbol: "^FTSE", name: "FTSE 100", exchange: "LSE", tz: "Europe/London", openH: 8, openM: 0, closeH: 16, closeM: 30 },
-  { symbol: "^GDAXI", name: "DAX", exchange: "XETRA", tz: "Europe/Berlin", openH: 9, openM: 0, closeH: 17, closeM: 30 },
-  { symbol: "^N225", name: "NIKKEI 225", exchange: "TSE", tz: "Asia/Tokyo", openH: 9, openM: 0, closeH: 15, closeM: 0 },
-  { symbol: "^HSI", name: "HANG SENG", exchange: "HKEX", tz: "Asia/Hong_Kong", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  // India
+  { symbol: "^NSEI", name: "NIFTY 50", exchange: "NSE", region: "India", tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
+  { symbol: "^BSESN", name: "SENSEX", exchange: "BSE", region: "India", tz: "Asia/Kolkata", openH: 9, openM: 15, closeH: 15, closeM: 30 },
+  // United States
+  { symbol: "^GSPC", name: "S&P 500", exchange: "NYSE", region: "United States", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  { symbol: "^IXIC", name: "NASDAQ", exchange: "NASDAQ", region: "United States", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  { symbol: "^DJI", name: "DOW JONES", exchange: "NYSE", region: "United States", tz: "America/New_York", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  // Europe
+  { symbol: "^FTSE", name: "FTSE 100", exchange: "LSE", region: "Europe", tz: "Europe/London", openH: 8, openM: 0, closeH: 16, closeM: 30 },
+  { symbol: "^GDAXI", name: "DAX", exchange: "XETRA", region: "Europe", tz: "Europe/Berlin", openH: 9, openM: 0, closeH: 17, closeM: 30 },
+  { symbol: "^FCHI", name: "CAC 40", exchange: "EPA", region: "Europe", tz: "Europe/Paris", openH: 9, openM: 0, closeH: 17, closeM: 30 },
+  // Asia
+  { symbol: "^N225", name: "NIKKEI 225", exchange: "TSE", region: "Asia", tz: "Asia/Tokyo", openH: 9, openM: 0, closeH: 15, closeM: 0 },
+  { symbol: "^HSI", name: "HANG SENG", exchange: "HKEX", region: "Asia", tz: "Asia/Hong_Kong", openH: 9, openM: 30, closeH: 16, closeM: 0 },
+  { symbol: "000001.SS", name: "SHANGHAI", exchange: "SSE", region: "Asia", tz: "Asia/Shanghai", openH: 9, openM: 30, closeH: 15, closeM: 0 },
+  // Middle East
+  { symbol: "^TASI", name: "TADAWUL", exchange: "SAU", region: "Middle East", tz: "Asia/Riyadh", openH: 10, openM: 0, closeH: 15, closeM: 0 },
 ];
 
 function isMarketOpen(idx: typeof INDICES[0]): boolean {
@@ -33,7 +41,12 @@ function isMarketOpen(idx: typeof INDICES[0]): boolean {
   const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0");
   const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0");
 
-  if (["Sat", "Sun"].includes(weekday)) return false;
+  // Friday is a weekend day for Saudi market
+  if (idx.region === "Middle East") {
+    if (["Fri", "Sat"].includes(weekday)) return false;
+  } else {
+    if (["Sat", "Sun"].includes(weekday)) return false;
+  }
 
   const nowMins = hour * 60 + minute;
   const openMins = idx.openH * 60 + idx.openM;
@@ -57,9 +70,13 @@ async function fetchFromYahoo(symbol: string) {
   const change = price - prevClose;
   const changePct = prevClose ? (change / prevClose) * 100 : 0;
 
-  // Get mini chart data (last ~78 5-min candles = 1 day)
-  const closes = result.indicators?.quote?.[0]?.close || [];
+  const quote = result.indicators?.quote?.[0] || {};
+  const closes = quote.close || [];
+  const highs = quote.high || [];
+  const lows = quote.low || [];
+  const volumes = quote.volume || [];
   const timestamps = result.timestamp || [];
+
   const chartData: { t: number; v: number }[] = [];
   for (let i = 0; i < closes.length; i++) {
     if (closes[i] != null) {
@@ -67,14 +84,22 @@ async function fetchFromYahoo(symbol: string) {
     }
   }
 
-  return { price, change, changePct, chartData };
+  // Calculate daily high, low, volume
+  const validHighs = highs.filter((h: number | null) => h != null) as number[];
+  const validLows = lows.filter((l: number | null) => l != null) as number[];
+  const validVols = volumes.filter((v: number | null) => v != null) as number[];
+
+  const dayHigh = validHighs.length ? Math.max(...validHighs) : price;
+  const dayLow = validLows.length ? Math.min(...validLows) : price;
+  const totalVolume = validVols.reduce((a: number, b: number) => a + b, 0);
+
+  return { price, change, changePct, chartData, dayHigh, dayLow, volume: totalVolume };
 }
 
 async function fetchFromFinnhub(symbol: string) {
   const apiKey = Deno.env.get("FINNHUB_API_KEY");
   if (!apiKey) throw new Error("No Finnhub key");
 
-  // Finnhub doesn't support ^ symbols for indices, try mapped symbols
   const finnhubMap: Record<string, string> = {
     "^GSPC": "SPY",
     "^DJI": "DIA",
@@ -95,6 +120,9 @@ async function fetchFromFinnhub(symbol: string) {
     change: data.d,
     changePct: data.dp,
     chartData: [] as { t: number; v: number }[],
+    dayHigh: data.h || data.c,
+    dayLow: data.l || data.c,
+    volume: 0,
   };
 }
 
@@ -110,18 +138,21 @@ serve(async (req) => {
         try {
           data = await fetchFromYahoo(idx.symbol);
         } catch {
-          // Fallback to Finnhub for US indices
           data = await fetchFromFinnhub(idx.symbol);
         }
         return {
           symbol: idx.symbol,
           name: idx.name,
           exchange: idx.exchange,
+          region: idx.region,
           price: Number(data.price.toFixed(2)),
           change: Number(data.change.toFixed(2)),
           changePct: Number(data.changePct.toFixed(2)),
           isOpen: isMarketOpen(idx),
-          chartData: data.chartData.slice(-78), // Last day of 5-min candles
+          chartData: data.chartData.slice(-78),
+          dayHigh: Number(data.dayHigh.toFixed(2)),
+          dayLow: Number(data.dayLow.toFixed(2)),
+          volume: data.volume,
         };
       })
     );
