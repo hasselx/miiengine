@@ -269,29 +269,117 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const weightedScores = rawScores.map((s, i) => Math.min(maxScores[i], Math.round(s * weights[i])));
   const totalScore = weightedScores.reduce((a, b) => a + b, 0);
 
-  const getVerdict = (s: number) => {
-    if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", verdict: "Exceptional Opportunity", range: "90–100 = EXCEPTIONAL" };
-    if (s >= 80) return { badge: "⬛ STRONG BUY", verdict: "Strong Buy", range: "80–89 = STRONG BUY" };
-    if (s >= 70) return { badge: "⬛ BUY", verdict: "Buy", range: "70–79 = BUY" };
-    if (s >= 60) return { badge: "⬛ HOLD / ACCUMULATE", verdict: "Hold / Accumulate on Dips", range: "60–69 = HOLD" };
-    if (s >= 50) return { badge: "⬛ WEAK HOLD", verdict: "Weak Hold", range: "50–59 = WEAK HOLD" };
-    return { badge: "⬛ AVOID", verdict: "Avoid", range: "Below 50 = AVOID" };
+  const getScoreVerdict = (s: number) => {
+    if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", range: "90–100 = EXCEPTIONAL" };
+    if (s >= 80) return { badge: "⬛ STRONG BUY", range: "80–89 = STRONG BUY" };
+    if (s >= 70) return { badge: "⬛ BUY", range: "70–79 = BUY" };
+    if (s >= 60) return { badge: "⬛ HOLD / ACCUMULATE", range: "60–69 = HOLD" };
+    if (s >= 50) return { badge: "⬛ WEAK HOLD", range: "50–59 = WEAK HOLD" };
+    return { badge: "⬛ AVOID", range: "Below 50 = AVOID" };
   };
-  const v = getVerdict(totalScore);
+  const v = getScoreVerdict(totalScore);
 
   // Price projections - use analyst targets if available
   const bullPrice = fin?.targetHighPrice ? Math.round(fin.targetHighPrice) : Math.round(price * 1.35);
   const basePrice = fin?.targetMeanPrice ? Math.round(fin.targetMeanPrice) : Math.round(price * 1.18);
   const bearPrice = fin?.targetLowPrice ? Math.round(fin.targetLowPrice) : Math.round(price * 0.82);
-  const expectedPrice = Math.round(bullPrice * 0.25 + basePrice * 0.50 + bearPrice * 0.25);
-  const expectedUpside = (((expectedPrice - price) / price) * 100).toFixed(1);
+  // Ensure scenarios are distinct: bull > base > bear
+  const sortedPrices = [bullPrice, basePrice, bearPrice].sort((a, b) => b - a);
+  const finalBull = sortedPrices[0];
+  const finalBase = sortedPrices[1];
+  const finalBear = sortedPrices[2];
+  // If all same (no analyst data differentiation), create spread from price
+  const allSame = finalBull === finalBase && finalBase === finalBear;
+  const adjBull = allSame ? Math.round(price * 1.25) : finalBull;
+  const adjBase = allSame ? Math.round(price * 1.05) : finalBase;
+  const adjBear = allSame ? Math.round(price * 0.80) : finalBear;
+
+  const expectedPrice = Math.round(adjBull * 0.25 + adjBase * 0.50 + adjBear * 0.25);
+  const expectedReturnPct = ((expectedPrice - price) / price) * 100;
+  const expectedReturnAbs = Math.abs(expectedReturnPct).toFixed(1);
+  const isUpside = expectedReturnPct >= 0;
+
+  // Valuation-based verdict (overrides score-only verdict)
+  const getValuationVerdict = (score: number, retPct: number): string => {
+    if (score >= 90) return "Exceptional Opportunity";
+    if (retPct > 15 && score >= 70) return "Strong Buy";
+    if (retPct > 5 && score >= 65) return "Buy";
+    if (retPct > 0 && score >= 60) return "Buy / Accumulate";
+    if (Math.abs(retPct) <= 5) return "Hold";
+    if (retPct < -5 && retPct >= -15) return "Hold / Reduce";
+    if (retPct < -15) return "Reduce / Wait for Pullback";
+    if (score >= 60) return "Hold / Accumulate on Dips";
+    if (score >= 50) return "Weak Hold";
+    return "Avoid";
+  };
+  const verdict = getValuationVerdict(totalScore, expectedReturnPct);
+
+  // Fair value range
+  const fairValueLow = adjBear;
+  const fairValueHigh = adjBull;
+  const fairValueMid = adjBase;
+
+  // Accumulation zone: suggest lower entry if price > fair value midpoint
+  const showAccZone = price > fairValueMid;
+  const accZoneLow = Math.round(fairValueMid * 0.96);
+  const accZoneHigh = Math.round(fairValueMid * 1.02);
+
+  // Model confidence
+  const confidenceFactors: string[] = [];
+  let confidenceScore = 50;
+  // Earnings predictability
+  if (earningsHist.length >= 3) { confidenceScore += 10; confidenceFactors.push("Earnings history available"); }
+  // Volatility stability
+  const vol52 = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
+  if (vol52 < 0.4) { confidenceScore += 10; confidenceFactors.push("Low volatility"); } else { confidenceFactors.push("High volatility reduces confidence"); }
+  // Data completeness
+  if (pe > 0) confidenceScore += 5;
+  if (profitMargins != null) confidenceScore += 5;
+  if (revenueGrowth != null) confidenceScore += 5;
+  if (fin?.targetMeanPrice) { confidenceScore += 10; confidenceFactors.push("Analyst targets available"); }
+  if (debtToEquity != null) confidenceScore += 3;
+  if (returnOnEquity != null) confidenceScore += 2;
+  // Model agreement boost
+  confidenceScore = Math.min(95, Math.max(20, confidenceScore));
+  const confidenceLevel: 'Low' | 'Moderate' | 'High' = confidenceScore >= 70 ? 'High' : confidenceScore >= 50 ? 'Moderate' : 'Low';
+
+  // Model agreement
+  const dcfSignal: 'Bullish' | 'Bearish' | 'Neutral' = price < adjBase ? 'Bullish' : price > adjBull ? 'Bearish' : 'Neutral';
+  const relValSignal: 'Bullish' | 'Bearish' | 'Neutral' = pe > 0 ? (pe < 20 ? 'Bullish' : pe > 40 ? 'Bearish' : 'Neutral') : 'Neutral';
+  const techTrendSignal: 'Bullish' | 'Bearish' | 'Neutral' = techs ? (price > (techs.sma200 || 0) && techs.rsi > 40 ? 'Bullish' : price < (techs.sma200 || 0) && techs.rsi < 60 ? 'Bearish' : 'Neutral') : 'Neutral';
+  const sectorMomSignal: 'Bullish' | 'Bearish' | 'Neutral' = pctChange > 1 ? 'Bullish' : pctChange < -1 ? 'Bearish' : 'Neutral';
+  const agreementModels = [
+    { name: "DCF Valuation", signal: dcfSignal },
+    { name: "Relative Valuation", signal: relValSignal },
+    { name: "Technical Trend", signal: techTrendSignal },
+    { name: "Sector Momentum", signal: sectorMomSignal },
+  ];
+  const bullCount = agreementModels.filter(m => m.signal === 'Bullish').length;
+  const bearCount = agreementModels.filter(m => m.signal === 'Bearish').length;
+  const agreementLevel: 'Low' | 'Moderate' | 'High' = (bullCount >= 3 || bearCount >= 3) ? 'High' : (bullCount >= 2 || bearCount >= 2) ? 'Moderate' : 'Low';
+  if (agreementLevel === 'High') confidenceScore = Math.min(95, confidenceScore + 5);
+
+  // Key drivers
+  const keyDrivers: string[] = [];
+  if (revenueGrowth != null) keyDrivers.push(revenueGrowth > 0 ? "Revenue growth expectations" : "Revenue contraction risk");
+  if (pe > 0) keyDrivers.push(pe > 30 ? "Valuation premium vs sector" : "Reasonable valuation");
+  if (pctChange > 2 || pctChange < -2) keyDrivers.push("Sector rotation trends");
+  if (profitMargins != null && profitMargins < 0.08) keyDrivers.push("Margin compression risk");
+  else if (profitMargins != null && profitMargins > 0.15) keyDrivers.push("Strong profit margins");
+  if (beta > 1.3) keyDrivers.push("High beta amplifies market moves");
+  if (keyDrivers.length === 0) keyDrivers.push("Limited fundamental drivers available");
+  const finalKeyDrivers = keyDrivers.slice(0, 4);
+
+  // Expected return display string
+  const expectedReturnStr = `${isUpside ? '+' : '-'}${expectedReturnAbs}%`;
+  const expectedReturnLabel = isUpside ? "Expected Upside" : "Expected Downside";
 
   const entryLow = Math.round(price * 0.95);
   const entryHigh = Math.round(price * 1.0);
   const stopLoss = Math.round(price * 0.88);
   const t1 = Math.round(price * 1.15);
   const t2 = Math.round(price * 1.25);
-  const t3 = bullPrice;
+  const t3 = adjBull;
   const riskAmt = entryLow - stopLoss;
   const rewardAmt = t2 - entryLow;
   const rrRatio = riskAmt > 0 ? `1 : ${(rewardAmt / riskAmt).toFixed(1)}` : '1 : N/A';
@@ -331,7 +419,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: "Volume", value: safe(quote?.volume, 'N/A'), change: `Avg: ${safe(quote?.average_volume, 'N/A')}` },
     ],
     totalScore,
-    verdict: v.verdict,
+    verdict,
     verdictNote: totalScore < 70 ? `Entry below ${currency}${Math.round(price * 0.92)} upgrades to BUY` : 'Strong conviction level',
     scoreRange: v.range,
     scores: [
@@ -347,14 +435,14 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     executiveSummary: [
       `<strong>${companyName}</strong> is currently trading at <strong>${currency}${fmt(price)}</strong> with a ${pctSign}${fmt(pctChange)}% change today. The stock operates in the <strong>${sector}</strong> sector${profile?.country ? ` based in <strong>${profile.country}</strong>` : ''}.`,
       `From a valuation perspective, the stock trades at <strong>${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'}</strong>. ${profitMargins != null ? `Net profit margin is <strong>${(profitMargins * 100).toFixed(1)}%</strong>.` : ''} ${revenueGrowth != null ? `Revenue growth stands at <strong>${(revenueGrowth * 100).toFixed(1)}%</strong> YoY.` : ''} The 52-week range of ${currency}${fmt(high52, 0)} to ${currency}${fmt(low52, 0)} suggests the stock is <strong>${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its annual range</strong>.`,
-      `Our multi-factor analysis yields a total score of <strong>${totalScore}/100</strong>, resulting in a <strong>${v.verdict}</strong> recommendation. The expected 12-month price target is <strong>${currency}${expectedPrice}</strong>, representing a <strong>${expectedUpside}% expected return</strong> from current levels.`,
+      `Our multi-factor analysis yields a total score of <strong>${totalScore}/100</strong>, resulting in a <strong>${verdict}</strong> recommendation. The expected 12-month price target is <strong>${currency}${expectedPrice}</strong>, representing a <strong>${expectedReturnStr} ${expectedReturnLabel.toLowerCase()}</strong> from current levels.`,
     ],
     modelSummaries: [
       { num: "01", model: "Stock Screener", firm: "Goldman Sachs", abstract: `P/E at ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}, ${pctChange >= 0 ? 'positive' : 'negative'} momentum. Fundamental score: ${fund.score}/20.`, sentiment: fund.score >= 14 ? "positive" : fund.score >= 10 ? "neutral" : "negative" },
-      { num: "02", model: "DCF Valuation", firm: "Morgan Stanley", abstract: `Intrinsic value range ${currency}${bearPrice}–${currency}${bullPrice}. Current price ${price > basePrice ? 'above' : 'below'} base estimate of ${currency}${basePrice}.`, sentiment: price <= basePrice ? "positive" : "negative" },
+      { num: "02", model: "DCF Valuation", firm: "Morgan Stanley", abstract: `Intrinsic value range ${currency}${adjBear}–${currency}${adjBull}. Current price ${price > adjBase ? 'above' : 'below'} base estimate of ${currency}${adjBase}.`, sentiment: price <= adjBase ? "positive" : "negative" },
       { num: "03", model: "Risk Analysis", firm: "Bridgewater", abstract: `${debtToEquity != null ? `D/E: ${debtToEquity.toFixed(1)}.` : ''} 52W range spread: ${((high52 - low52) / low52 * 100).toFixed(0)}%. Risk score: ${risk.score}/10.`, sentiment: risk.score >= 7 ? "positive" : risk.score >= 5 ? "neutral" : "negative" },
       { num: "04", model: "Earnings Breakdown", firm: "JPMorgan", abstract: `EPS: ${num(quote?.eps) > 0 ? currency + fmt(num(quote?.eps)) : 'N/A'}. ${pctChange >= 0 ? 'Positive price action' : 'Negative momentum'} today at ${pctSign}${fmt(pctChange)}%.`, sentiment: pctChange >= 0 ? "positive" : "negative" },
-      { num: "05", model: "Portfolio Construction", firm: "BlackRock", abstract: `Expected return: ${expectedUpside}%. Risk/Reward: ${rrRatio}. ${totalScore >= 70 ? 'Portfolio-worthy' : 'Position sizing caution advised'}.`, sentiment: totalScore >= 70 ? "positive" : "neutral" },
+      { num: "05", model: "Portfolio Construction", firm: "BlackRock", abstract: `Expected return: ${expectedReturnStr}. Risk/Reward: ${rrRatio}. ${totalScore >= 70 ? 'Portfolio-worthy' : 'Position sizing caution advised'}.`, sentiment: totalScore >= 70 ? "positive" : "neutral" },
       { num: "06", model: "Technical Analysis", firm: "Citadel", abstract: `${techs ? `RSI: ${fmt(techs.rsi, 0)}. ${price > (techs.sma200 || 0) ? 'Above' : 'Below'} 200 DMA. ${price > (techs.sma50 || 0) ? 'Short-term bullish' : 'Short-term bearish'}.` : 'Insufficient data.'}`, sentiment: tech.score >= 10 ? "positive" : tech.score >= 7 ? "neutral" : "negative" },
       { num: "07", model: "Dividend Strategy", firm: "Harvard Endowment", abstract: `Yield: ${dividendYieldStr}. ${divData?.yield != null && divData.yield > 0.02 ? 'Income-grade yield' : 'Capital appreciation focus'}.`, sentiment: divData?.yield != null && divData.yield > 0.02 ? "positive" : "neutral" },
       { num: "08", model: "Competitive Advantage", firm: "Bain & Company", abstract: `Moat score: ${moat.score}/10. Sector: ${sector}. ${moat.score >= 7 ? 'Strong competitive position' : 'Moderate competitive standing'}.`, sentiment: moat.score >= 7 ? "positive" : "neutral" },
@@ -366,7 +454,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: safe(profile?.country || country), highlighted: true },
       { label: pe > 40 ? 'Premium Valuation' : pe > 20 ? 'Fair Valuation' : 'Value', highlighted: false },
       { label: pctChange > 0 ? 'Positive Momentum' : 'Negative Momentum', highlighted: false },
-      { label: v.verdict, highlighted: false },
+      { label: verdict, highlighted: false },
     ],
     fundamentalMetrics: (() => {
       const metrics: any[] = [
@@ -395,27 +483,27 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       return items;
     })(),
     revenueProjections: [
-      { label: "Bear Estimate", value: `${currency}${bearPrice}` },
-      { label: "Base Estimate", value: `${currency}${basePrice}` },
-      { label: "Bull Estimate", value: `${currency}${bullPrice}` },
+      { label: "Bear Estimate", value: `${currency}${adjBear}` },
+      { label: "Base Estimate", value: `${currency}${adjBase}` },
+      { label: "Bull Estimate", value: `${currency}${adjBull}` },
       { label: "Expected Value", value: `${currency}${expectedPrice}`, highlight: true },
     ],
     dcfScenarios: [
-      { label: "Bear Case", price: `${currency}${bearPrice}`, note: "Margin compression, sector downturn", type: "bear" },
-      { label: "Base Case", price: `${currency}${basePrice}`, note: "Steady growth, stable margins", type: "base" },
-      { label: "Bull Case", price: `${currency}${bullPrice}`, note: "Expansion, re-rating catalyst", type: "bull" },
+      { label: "Bear Case", price: `${currency}${adjBear}`, note: "Margin compression, sector downturn", type: "bear" },
+      { label: "Base Case", price: `${currency}${adjBase}`, note: "Steady growth, stable margins", type: "base" },
+      { label: "Bull Case", price: `${currency}${adjBull}`, note: "Expansion, re-rating catalyst", type: "bull" },
     ],
-    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our probability-weighted expected value of ${currency}${expectedPrice} represents a ${expectedUpside}% potential return.`,
+    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our probability-weighted expected value of ${currency}${expectedPrice} represents a ${expectedReturnStr} potential ${isUpside ? 'return' : 'decline'}.`,
     priceScenarios: [
-      { label: "▲ Bull Case", price: `${currency}${bullPrice}`, probability: "Probability: 25%", change: `+${((bullPrice - price) / price * 100).toFixed(0)}% upside`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull" },
-      { label: "◆ Base Case", price: `${currency}${basePrice}`, probability: "Probability: 50%", change: `+${((basePrice - price) / price * 100).toFixed(0)}% upside`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base" },
-      { label: "▼ Bear Case", price: `${currency}${bearPrice}`, probability: "Probability: 25%", change: `${((bearPrice - price) / price * 100).toFixed(0)}% downside`, description: "Margin compression, macro headwinds, sector rotation", type: "bear" },
+      { label: "▲ Bull Case", price: `${currency}${adjBull}`, probability: "Probability: 25%", change: `${((adjBull - price) / price * 100) >= 0 ? '+' : ''}${((adjBull - price) / price * 100).toFixed(0)}% ${(adjBull >= price) ? 'upside' : 'downside'}`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull" },
+      { label: "◆ Base Case", price: `${currency}${adjBase}`, probability: "Probability: 50%", change: `${((adjBase - price) / price * 100) >= 0 ? '+' : ''}${((adjBase - price) / price * 100).toFixed(0)}% ${(adjBase >= price) ? 'upside' : 'downside'}`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base" },
+      { label: "▼ Bear Case", price: `${currency}${adjBear}`, probability: "Probability: 25%", change: `${((adjBear - price) / price * 100).toFixed(0)}% downside`, description: "Margin compression, macro headwinds, sector rotation", type: "bear" },
     ],
     expectedPrice: `${currency}${expectedPrice}`,
-    expectedFormula: `(${currency}${bullPrice}×25%) + (${currency}${basePrice}×50%) + (${currency}${bearPrice}×25%)`,
-    expectedUpside: `+${expectedUpside}%`,
-    expectedUpsideNote: `Expected Upside from ${currency}${fmt(price)}`,
-    priceNote: `Based on our multi-factor analysis, the probability-weighted expected price of ${currency}${expectedPrice} suggests ${expectedUpside}% upside from current levels. ${fin?.targetMeanPrice ? `Analyst consensus target: ${currency}${fmt(fin.targetMeanPrice)}.` : ''} For conservative investors, an accumulation zone around ${currency}${entryLow}–${currency}${entryHigh} offers better risk-reward.`,
+    expectedFormula: `(${currency}${adjBull}×25%) + (${currency}${adjBase}×50%) + (${currency}${adjBear}×25%)`,
+    expectedUpside: expectedReturnStr,
+    expectedUpsideNote: `${expectedReturnLabel} from ${currency}${fmt(price)}`,
+    priceNote: `Based on our multi-factor analysis, the probability-weighted expected price of ${currency}${expectedPrice} suggests ${expectedReturnAbs}% ${isUpside ? 'upside' : 'downside'} from current levels. ${fin?.targetMeanPrice ? `Analyst consensus target: ${currency}${fmt(fin.targetMeanPrice)}.` : ''} ${showAccZone ? `For conservative investors, an accumulation zone around ${currency}${accZoneLow}–${currency}${accZoneHigh} offers better risk-reward.` : `Current price is within fair value range.`}`,
     macroItems: [
       { icon: "📈", title: "Market Trend", detail: `Stock is ${pctChange >= 0 ? 'up' : 'down'} ${fmt(Math.abs(pctChange))}% today. ${price > (techs?.sma200 || 0) ? 'Trading above 200 DMA — bullish trend.' : 'Trading below 200 DMA — caution.'}`, sentiment: pctChange >= 0 ? "positive" : "negative", sentimentLabel: pctChange >= 0 ? "POSITIVE" : "HEADWIND" },
       { icon: "📊", title: "Valuation Context", detail: pe > 40 ? 'Premium valuation at current P/E — growth expectations priced in' : pe > 20 ? 'Fair valuation relative to broader market' : pe > 0 ? 'Attractive valuation on P/E basis' : 'P/E data unavailable', sentiment: pe > 40 ? "negative" : pe > 20 ? "neutral" : "positive", sentimentLabel: pe > 40 ? "RICH" : pe > 20 ? "FAIR" : pe > 0 ? "ATTRACTIVE" : "N/A" },
@@ -594,12 +682,19 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     sectorRotation: sector && sector !== 'N/A'
       ? [{ sector, direction: (pctChange >= 0.5 ? "up" : pctChange <= -0.5 ? "down" : "neutral") as 'up' | 'down' | 'neutral', performance: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange)}%` }]
       : [{ sector: "N/A", direction: "neutral" as const, performance: "Data unavailable" }],
-    finalVerdict: v.verdict,
-    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedUpside}% upside).`,
-    finalAction: `<strong>Recommendation:</strong> ${totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : totalScore >= 60 ? 'Accumulate on dips near ' + currency + entryLow + '–' + currency + entryHigh + '. Hold with 12-month view.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
+    fairValueRange: { low: `${currency}${adjBear}`, high: `${currency}${adjBull}`, midpoint: `${currency}${adjBase}` },
+    accumulationZone: { low: `${currency}${accZoneLow}`, high: `${currency}${accZoneHigh}`, show: showAccZone },
+    modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
+    modelAgreement: { level: agreementLevel, models: agreementModels },
+    keyDrivers: finalKeyDrivers,
+    finalVerdict: verdict,
+    finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedReturnStr} ${expectedReturnLabel.toLowerCase()}).`,
+    finalAction: `<strong>Recommendation:</strong> ${isUpside && totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : isUpside && totalScore >= 60 ? 'Accumulate on dips near ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Hold with 12-month view.' : !isUpside ? 'Hold existing positions. Wait for pullback to ' + currency + accZoneLow + '–' + currency + accZoneHigh + ' for better entry.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
     finalFooter: [
       { label: "SCORE", value: `${totalScore} / 100` },
       { label: "TARGET", value: `${currency}${expectedPrice}` },
+      { label: "FAIR VALUE", value: `${currency}${adjBear} – ${currency}${adjBull}` },
+      { label: "CONFIDENCE", value: `${confidenceScore}% (${confidenceLevel})` },
       { label: "HORIZON", value: "12 Months" },
     ],
     priceExtremes: {
