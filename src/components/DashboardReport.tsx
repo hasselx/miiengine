@@ -32,6 +32,7 @@ import SectorRotation from "./report/SectorRotation";
 import BacktestSimulator from "./report/BacktestSimulator";
 import AIStockSummary from "./report/AIStockSummary";
 import FactorExposure from "./report/FactorExposure";
+import CatalystTimeline from "./report/CatalystTimeline";
 
 interface DashboardReportProps {
   data: StockAnalysis;
@@ -49,6 +50,7 @@ const SECTION_IDS: Record<string, string> = {
   valuation: "section-valuation",
   "valuation-triangle": "section-valuation-triangle",
   price: "section-price",
+  "catalyst-timeline": "section-catalyst-timeline",
   "price-extremes": "section-price-extremes",
   "trading-plan": "section-trading-plan",
   technical: "section-technical",
@@ -123,41 +125,43 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           {/* 09 */}
           <div id="section-price"><PriceProjectionSection data={data} /></div>
           {/* 10 */}
-          <div id="section-price-extremes"><PriceExtremes data={data} /></div>
+          <div id="section-catalyst-timeline"><CatalystTimeline data={data} /></div>
           {/* 11 */}
-          <div id="section-trading-plan"><TradingPlanSection data={data} /></div>
+          <div id="section-price-extremes"><PriceExtremes data={data} /></div>
           {/* 12 */}
-          <div id="section-technical"><TechnicalSection data={data} /></div>
+          <div id="section-trading-plan"><TradingPlanSection data={data} /></div>
           {/* 13 */}
-          <div id="section-support-resistance"><SupportResistance data={data} /></div>
+          <div id="section-technical"><TechnicalSection data={data} /></div>
           {/* 14 */}
-          <div id="section-pattern"><PatternFinder data={data} /></div>
+          <div id="section-support-resistance"><SupportResistance data={data} /></div>
           {/* 15 */}
-          <div id="section-institutional"><InstitutionalOwnership data={data} /></div>
+          <div id="section-pattern"><PatternFinder data={data} /></div>
           {/* 16 */}
-          <div id="section-insider"><InsiderActivity data={data} /></div>
+          <div id="section-institutional"><InstitutionalOwnership data={data} /></div>
           {/* 17 */}
-          <div id="section-sentiment"><MarketSentiment data={data} /></div>
+          <div id="section-insider"><InsiderActivity data={data} /></div>
           {/* 18 */}
-          <div id="section-macro"><MacroSection data={data} /></div>
+          <div id="section-sentiment"><MarketSentiment data={data} /></div>
           {/* 19 */}
-          <div id="section-sector-rotation"><SectorRotation data={data} /></div>
+          <div id="section-macro"><MacroSection data={data} /></div>
           {/* 20 */}
-          <div id="section-correlation"><CorrelationAnalyzer data={data} /></div>
+          <div id="section-sector-rotation"><SectorRotation data={data} /></div>
           {/* 21 */}
-          <div id="section-moat"><MoatSection data={data} /></div>
+          <div id="section-correlation"><CorrelationAnalyzer data={data} /></div>
           {/* 22 */}
-          <div id="section-factor-exposure"><FactorExposure data={data} /></div>
+          <div id="section-moat"><MoatSection data={data} /></div>
           {/* 23 */}
+          <div id="section-factor-exposure"><FactorExposure data={data} /></div>
+          {/* 24 */}
           <div id="section-risk">
             <RiskMeter data={data} />
             <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
           </div>
-          {/* 24 */}
-          <div id="section-dividend"><DividendStrategy data={data} /></div>
           {/* 25 */}
-          <div id="section-backtest"><BacktestSimulator data={data} /></div>
+          <div id="section-dividend"><DividendStrategy data={data} /></div>
           {/* 26 */}
+          <div id="section-backtest"><BacktestSimulator data={data} /></div>
+          {/* 27 */}
           <div id="section-verdict"><FinalVerdict data={data} /></div>
         </div>
 

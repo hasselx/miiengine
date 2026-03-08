@@ -4,7 +4,7 @@ import SectionWrapper from "./SectionWrapper";
 const colorMap = { green: "text-green-data", red: "text-red-data", default: "text-ink" };
 
 const TradingPlanSection = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="11" title="Trading Plan">
+  <SectionWrapper num="12" title="Trading Plan">
     <div className="grid grid-cols-2 gap-px bg-border -mx-3 sm:-mx-5 -mt-3 sm:-mt-5 mb-0 rounded-sm overflow-hidden">
       {data.tradingCells.map((c, i) => (
         <div key={i} className="bg-card p-3 sm:p-3.5">

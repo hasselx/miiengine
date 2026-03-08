@@ -830,6 +830,52 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     keyDrivers: finalKeyDrivers,
     factorExposure,
     marketRegime,
+    catalystTimeline: (() => {
+      const now = new Date();
+      const catalysts: { date: string; event: string; category: 'earnings' | 'corporate' | 'industry' | 'product' | 'macro'; impact: 'High' | 'Moderate' | 'Low' }[] = [];
+      const monthName = (m: number) => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m];
+
+      // Next earnings (quarterly cycle — estimate next quarter)
+      const nextQ = new Date(now);
+      nextQ.setMonth(nextQ.getMonth() + Math.max(1, 3 - (nextQ.getMonth() % 3)));
+      catalysts.push({ date: `${monthName(nextQ.getMonth())} ${nextQ.getFullYear()}`, event: `Q${Math.ceil((nextQ.getMonth() + 1) / 3)} Earnings Release`, category: 'earnings', impact: 'High' });
+
+      // Following quarter earnings
+      const followQ = new Date(nextQ);
+      followQ.setMonth(followQ.getMonth() + 3);
+      catalysts.push({ date: `${monthName(followQ.getMonth())} ${followQ.getFullYear()}`, event: `Q${Math.ceil((followQ.getMonth() + 1) / 3)} Earnings Release`, category: 'earnings', impact: 'High' });
+
+      // Dividend event if applicable
+      if (divData?.yield != null && divData.yield > 0) {
+        const divMonth = new Date(now);
+        divMonth.setMonth(divMonth.getMonth() + 2);
+        catalysts.push({ date: `${monthName(divMonth.getMonth())} ${divMonth.getFullYear()}`, event: 'Dividend Declaration / Ex-Date', category: 'corporate', impact: 'Moderate' });
+      }
+
+      // Macro events based on regime
+      const macroMonth = new Date(now);
+      macroMonth.setMonth(macroMonth.getMonth() + 1);
+      catalysts.push({ date: `${monthName(macroMonth.getMonth())} ${macroMonth.getFullYear()}`, event: 'Central Bank Interest Rate Decision', category: 'macro', impact: 'High' });
+
+      // Industry catalyst
+      const indMonth = new Date(now);
+      indMonth.setMonth(indMonth.getMonth() + 4);
+      catalysts.push({ date: `${monthName(indMonth.getMonth())} ${indMonth.getFullYear()}`, event: `${sector !== 'N/A' ? sector : 'Industry'} Sector Outlook Update`, category: 'industry', impact: 'Moderate' });
+
+      // Product/strategic (based on company size)
+      if (marketCap > 10e9) {
+        const prodMonth = new Date(now);
+        prodMonth.setMonth(prodMonth.getMonth() + 5);
+        catalysts.push({ date: `${monthName(prodMonth.getMonth())} ${prodMonth.getFullYear()}`, event: 'Annual Strategy / Product Roadmap', category: 'product', impact: 'Moderate' });
+      }
+
+      // Government budget/policy
+      const govMonth = new Date(now);
+      govMonth.setMonth(govMonth.getMonth() + 3);
+      catalysts.push({ date: `${monthName(govMonth.getMonth())} ${govMonth.getFullYear()}`, event: 'Government Budget / Policy Announcement', category: 'macro', impact: 'Moderate' });
+
+      return catalysts;
+    })(),
     finalVerdict: verdict,
     finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedReturnStr} ${expectedReturnLabel.toLowerCase()}). Market regime: <strong>${marketRegime.regime}</strong>.`,
     finalAction: `<strong>Recommendation:</strong> ${isUpside && totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : isUpside && totalScore >= 60 ? 'Accumulate on dips near ' + currency + accZoneLow + '–' + currency + accZoneHigh + '. Hold with 12-month view.' : !isUpside ? 'Hold existing positions. Wait for pullback to ' + currency + accZoneLow + '–' + currency + accZoneHigh + ' for better entry.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,

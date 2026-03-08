@@ -128,7 +128,7 @@ const BacktestSimulator = ({ data }: Props) => {
   };
 
   return (
-    <SectionWrapper num="25" title="Portfolio Backtest Simulator">
+    <SectionWrapper num="26" title="Portfolio Backtest Simulator">
       {/* Input Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         <div>

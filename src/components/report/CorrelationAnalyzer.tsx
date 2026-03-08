@@ -6,7 +6,7 @@ const barColor = (v: number) =>
   v >= 0.7 ? "bg-green-data" : v >= 0.3 ? "bg-gold" : v >= 0 ? "bg-muted-foreground" : "bg-destructive";
 
 const CorrelationAnalyzer = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="20" title="Correlation Analyzer">
+  <SectionWrapper num="21" title="Correlation Analyzer">
     <div className="space-y-3">
       {data.correlations.map((c, i) => (
         <div key={i} className="flex items-center gap-3">
