@@ -58,7 +58,7 @@ const Dashboard = () => {
       ]);
       if (searchRes.data) setSearches(searchRes.data);
       if (holdingRes.data) setHoldings(holdingRes.data);
-      if (profileRes.data) setProfile(profileRes.data);
+      if (profileRes.data) setProfile({ ...profileRes.data, investment_style: (profileRes.data.investment_style as InvestmentStyle) || null });
       setLoadingData(false);
     };
     fetchData();
