@@ -9,6 +9,9 @@ interface IndexData {
   name: string;
   exchange: string;
   region: string;
+  country: string;
+  flag: string;
+  weight: number;
   price: number;
   change: number;
   changePct: number;
@@ -23,30 +26,20 @@ const CACHE_KEY = "mii-heatmap";
 const CACHE_TTL = 30_000;
 const POLL_INTERVAL = 60_000;
 
-const REGION_ORDER = ["India", "United States", "Europe", "Asia", "Middle East"];
-const REGION_FLAGS: Record<string, string> = {
-  India: "🇮🇳",
-  "United States": "🇺🇸",
-  Europe: "🇪🇺",
-  Asia: "🌏",
-  "Middle East": "🇸🇦",
-};
-
-/* ── Color scale — maps changePct to heatmap bg + text ── */
-function heatColor(pct: number): { bg: string; text: string } {
+/* ── Color scale ── */
+function heatColor(pct: number): { bg: string; text: string; border: string } {
   const abs = Math.abs(pct);
-  if (abs < 0.05) return { bg: "bg-muted", text: "text-muted-foreground" };
+  if (abs < 0.05) return { bg: "bg-muted", text: "text-muted-foreground", border: "border-border" };
   if (pct > 0) {
-    if (abs < 0.5) return { bg: "bg-[hsl(142,40%,88%)] dark:bg-[hsl(142,30%,18%)]", text: "text-[hsl(142,55%,30%)] dark:text-[hsl(142,50%,55%)]" };
-    if (abs < 1.5) return { bg: "bg-[hsl(142,45%,78%)] dark:bg-[hsl(142,35%,22%)]", text: "text-[hsl(142,60%,25%)] dark:text-[hsl(142,55%,50%)]" };
-    if (abs < 3) return { bg: "bg-[hsl(142,50%,65%)] dark:bg-[hsl(142,40%,28%)]", text: "text-[hsl(142,70%,18%)] dark:text-[hsl(142,60%,70%)]" };
-    return { bg: "bg-[hsl(142,55%,50%)] dark:bg-[hsl(142,45%,32%)]", text: "text-[hsl(0,0%,100%)] dark:text-[hsl(142,65%,75%)]" };
+    if (abs < 0.5) return { bg: "bg-[hsl(142,40%,88%)] dark:bg-[hsl(142,30%,16%)]", text: "text-[hsl(142,55%,30%)] dark:text-[hsl(142,50%,55%)]", border: "border-[hsl(142,35%,75%)] dark:border-[hsl(142,25%,22%)]" };
+    if (abs < 1.5) return { bg: "bg-[hsl(142,45%,78%)] dark:bg-[hsl(142,35%,20%)]", text: "text-[hsl(142,60%,25%)] dark:text-[hsl(142,55%,50%)]", border: "border-[hsl(142,40%,65%)] dark:border-[hsl(142,30%,26%)]" };
+    if (abs < 3) return { bg: "bg-[hsl(142,50%,65%)] dark:bg-[hsl(142,40%,26%)]", text: "text-[hsl(142,70%,18%)] dark:text-[hsl(142,60%,70%)]", border: "border-[hsl(142,45%,55%)] dark:border-[hsl(142,35%,32%)]" };
+    return { bg: "bg-[hsl(142,55%,50%)] dark:bg-[hsl(142,45%,30%)]", text: "text-[hsl(0,0%,100%)] dark:text-[hsl(142,65%,75%)]", border: "border-[hsl(142,50%,42%)] dark:border-[hsl(142,40%,36%)]" };
   }
-  // Negative
-  if (abs < 0.5) return { bg: "bg-[hsl(0,40%,92%)] dark:bg-[hsl(0,30%,18%)]", text: "text-[hsl(0,55%,40%)] dark:text-[hsl(0,50%,55%)]" };
-  if (abs < 1.5) return { bg: "bg-[hsl(0,45%,82%)] dark:bg-[hsl(0,35%,22%)]", text: "text-[hsl(0,60%,35%)] dark:text-[hsl(0,55%,50%)]" };
-  if (abs < 3) return { bg: "bg-[hsl(0,50%,70%)] dark:bg-[hsl(0,40%,28%)]", text: "text-[hsl(0,70%,20%)] dark:text-[hsl(0,60%,70%)]" };
-  return { bg: "bg-[hsl(0,55%,55%)] dark:bg-[hsl(0,45%,32%)]", text: "text-[hsl(0,0%,100%)] dark:text-[hsl(0,65%,75%)]" };
+  if (abs < 0.5) return { bg: "bg-[hsl(0,40%,92%)] dark:bg-[hsl(0,30%,16%)]", text: "text-[hsl(0,55%,40%)] dark:text-[hsl(0,50%,55%)]", border: "border-[hsl(0,35%,82%)] dark:border-[hsl(0,25%,22%)]" };
+  if (abs < 1.5) return { bg: "bg-[hsl(0,45%,82%)] dark:bg-[hsl(0,35%,20%)]", text: "text-[hsl(0,60%,35%)] dark:text-[hsl(0,55%,50%)]", border: "border-[hsl(0,40%,72%)] dark:border-[hsl(0,30%,26%)]" };
+  if (abs < 3) return { bg: "bg-[hsl(0,50%,70%)] dark:bg-[hsl(0,40%,26%)]", text: "text-[hsl(0,70%,20%)] dark:text-[hsl(0,60%,70%)]", border: "border-[hsl(0,45%,60%)] dark:border-[hsl(0,35%,32%)]" };
+  return { bg: "bg-[hsl(0,55%,55%)] dark:bg-[hsl(0,45%,30%)]", text: "text-[hsl(0,0%,100%)] dark:text-[hsl(0,65%,75%)]", border: "border-[hsl(0,50%,47%)] dark:border-[hsl(0,40%,36%)]" };
 }
 
 /* ── Mini sparkline ── */
@@ -82,11 +75,14 @@ const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) 
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm p-5 animate-scale-in" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-display text-lg font-bold text-foreground">{idx.name}</h3>
-            <p className="text-xs text-muted-foreground font-mono">{idx.exchange} · {idx.region}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{idx.flag}</span>
+            <div>
+              <h3 className="font-display text-lg font-bold text-foreground">{idx.name}</h3>
+              <p className="text-xs text-muted-foreground font-mono">{idx.exchange} · {idx.country}</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-accent rounded-md touch-target">
+          <button onClick={onClose} className="p-1.5 hover:bg-accent rounded-md">
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
@@ -98,7 +94,6 @@ const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) 
           </span>
         </div>
 
-        {/* Chart */}
         <div className="bg-background rounded-lg p-3 border border-border mb-4">
           {idx.chartData.length > 2 ? (
             <Sparkline data={idx.chartData} positive={positive} />
@@ -107,76 +102,93 @@ const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) 
           )}
         </div>
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-background rounded-lg p-3 border border-border">
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">Day High</p>
-            <p className="text-sm font-mono font-semibold text-foreground">{idx.dayHigh.toLocaleString()}</p>
-          </div>
-          <div className="bg-background rounded-lg p-3 border border-border">
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">Day Low</p>
-            <p className="text-sm font-mono font-semibold text-foreground">{idx.dayLow.toLocaleString()}</p>
-          </div>
-          <div className="bg-background rounded-lg p-3 border border-border">
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">Volume</p>
-            <p className="text-sm font-mono font-semibold text-foreground">
-              {idx.volume > 1e9 ? `${(idx.volume / 1e9).toFixed(1)}B` : idx.volume > 1e6 ? `${(idx.volume / 1e6).toFixed(1)}M` : idx.volume > 1e3 ? `${(idx.volume / 1e3).toFixed(0)}K` : idx.volume || "—"}
-            </p>
-          </div>
-          <div className="bg-background rounded-lg p-3 border border-border">
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">Status</p>
-            <p className={cn("text-sm font-mono font-semibold", idx.isOpen ? "text-green-data" : "text-muted-foreground")}>
-              {idx.isOpen ? "Open" : "Closed"}
-            </p>
-          </div>
+          {[
+            { label: "Day High", value: idx.dayHigh.toLocaleString() },
+            { label: "Day Low", value: idx.dayLow.toLocaleString() },
+            { label: "Volume", value: idx.volume > 1e9 ? `${(idx.volume / 1e9).toFixed(1)}B` : idx.volume > 1e6 ? `${(idx.volume / 1e6).toFixed(1)}M` : idx.volume > 1e3 ? `${(idx.volume / 1e3).toFixed(0)}K` : idx.volume || "—" },
+            { label: "Status", value: idx.isOpen ? "Open" : "Closed", isStatus: true },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-background rounded-lg p-3 border border-border">
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">{stat.label}</p>
+              <p className={cn("text-sm font-mono font-semibold", stat.isStatus ? (idx.isOpen ? "text-green-data" : "text-muted-foreground") : "text-foreground")}>
+                {stat.value}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-/* ── Heatmap Tile ── */
-const HeatmapTile = ({ idx, onClick }: { idx: IndexData; onClick: () => void }) => {
+/* ── Treemap Tile ── */
+const TreemapTile = ({ idx, onClick, size }: { idx: IndexData; onClick: () => void; size: "xl" | "lg" | "md" | "sm" }) => {
   const positive = idx.changePct >= 0;
   const colors = heatColor(idx.changePct);
+
+  const sizeClasses = {
+    xl: "col-span-2 row-span-2 p-4 sm:p-5",
+    lg: "col-span-2 row-span-1 p-3 sm:p-4",
+    md: "col-span-1 row-span-1 p-3 sm:p-4",
+    sm: "col-span-1 row-span-1 p-2.5 sm:p-3",
+  };
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        "relative rounded-xl p-3 sm:p-4 transition-all duration-200 border border-transparent",
-        "hover:scale-[1.03] hover:shadow-lg hover:border-border active:scale-[0.98]",
-        "touch-target text-left w-full",
-        colors.bg
+        "relative rounded-lg transition-all duration-200 border overflow-hidden group",
+        "hover:scale-[1.02] hover:shadow-lg hover:z-10 active:scale-[0.98]",
+        "text-left w-full h-full min-h-[80px]",
+        sizeClasses[size],
+        colors.bg,
+        colors.border
       )}
     >
-      <div className="flex items-center justify-between mb-1.5">
-        <span className={cn("text-xs sm:text-sm font-bold font-mono truncate", colors.text)}>
-          {idx.name}
+      {/* Background trend icon */}
+      <div className="absolute bottom-2 right-2 opacity-[0.08] transition-opacity group-hover:opacity-[0.15]">
+        {positive ? <TrendingUp className={cn("h-10 w-10", size === "xl" && "h-16 w-16", size === "lg" && "h-12 w-12")} /> : <TrendingDown className={cn("h-10 w-10", size === "xl" && "h-16 w-16", size === "lg" && "h-12 w-12")} />}
+      </div>
+
+      {/* Flag + Country */}
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={cn("text-sm", size === "xl" && "text-xl", size === "lg" && "text-base")}>{idx.flag}</span>
+        <span className={cn("text-[9px] sm:text-[10px] font-mono uppercase tracking-wider opacity-70", colors.text, size === "xl" && "text-[11px] sm:text-xs")}>
+          {idx.country}
         </span>
         {!idx.isOpen && (
-          <span className="text-[8px] sm:text-[9px] font-mono bg-foreground/10 dark:bg-foreground/5 px-1.5 py-0.5 rounded text-muted-foreground shrink-0 ml-1">
+          <span className="text-[7px] sm:text-[8px] font-mono bg-foreground/10 dark:bg-foreground/5 px-1 py-0.5 rounded text-muted-foreground ml-auto">
             CLOSED
           </span>
         )}
       </div>
-      <div className="flex items-baseline gap-2">
-        <span className={cn("text-lg sm:text-xl font-bold font-mono", colors.text)}>
-          {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
-        </span>
+
+      {/* Index name */}
+      <div className={cn("font-bold font-mono truncate", colors.text, size === "xl" ? "text-sm sm:text-base mb-1.5" : size === "lg" ? "text-xs sm:text-sm mb-1" : "text-[11px] sm:text-xs mb-0.5")}>
+        {idx.name}
       </div>
-      <div className="mt-1">
-        <span className={cn("text-[10px] sm:text-xs font-mono opacity-70", colors.text)}>
-          {idx.price.toLocaleString()}
-        </span>
+
+      {/* Percentage */}
+      <div className={cn("font-bold font-mono", colors.text, size === "xl" ? "text-2xl sm:text-3xl" : size === "lg" ? "text-lg sm:text-xl" : "text-base sm:text-lg")}>
+        {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
       </div>
-      {/* Trend icon */}
-      <div className="absolute top-3 right-3 opacity-20">
-        {positive ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+
+      {/* Price - hidden on small tiles on mobile */}
+      <div className={cn("font-mono opacity-60 mt-0.5", colors.text, size === "xl" ? "text-xs sm:text-sm" : size === "lg" ? "text-[10px] sm:text-xs" : "text-[9px] sm:text-[10px] hidden sm:block")}>
+        {idx.price.toLocaleString()}
       </div>
     </button>
   );
 };
+
+/* ── Weight → tile size mapping ── */
+function getTileSize(weight: number): "xl" | "lg" | "md" | "sm" {
+  if (weight >= 5) return "xl";
+  if (weight >= 4) return "lg";
+  if (weight >= 3) return "md";
+  return "sm";
+}
 
 /* ── Main Component ── */
 const GlobalHeatmap = () => {
@@ -185,7 +197,6 @@ const GlobalHeatmap = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    // Check cache
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -218,24 +229,17 @@ const GlobalHeatmap = () => {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Group by region
-  const grouped = REGION_ORDER.reduce<Record<string, IndexData[]>>((acc, region) => {
-    const items = indices.filter((i) => i.region === region);
-    if (items.length) acc[region] = items;
-    return acc;
-  }, {});
-
   if (loading && indices.length === 0) {
     return (
       <div className="border-t border-border bg-card">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="flex items-center gap-3 mb-8">
             <Activity className="h-5 w-5 text-primary" />
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Global Market Heatmap</h2>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">Global Stock Exchange Heatmap</h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-24 sm:h-28 rounded-xl bg-muted animate-pulse" />
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className={cn("rounded-lg bg-muted animate-pulse", i < 3 ? "col-span-2 row-span-2 h-40" : i < 6 ? "col-span-2 h-20" : "col-span-1 h-20")} />
             ))}
           </div>
         </div>
@@ -245,9 +249,11 @@ const GlobalHeatmap = () => {
 
   if (indices.length === 0) return null;
 
-  // Overall sentiment
   const avgChange = indices.reduce((s, i) => s + i.changePct, 0) / indices.length;
   const positiveCount = indices.filter((i) => i.changePct > 0).length;
+
+  // Sort by weight descending for treemap-like placement
+  const sorted = [...indices].sort((a, b) => b.weight - a.weight);
 
   return (
     <>
@@ -259,10 +265,10 @@ const GlobalHeatmap = () => {
               <BarChart3 className="h-5 w-5 text-primary" />
               <div>
                 <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                  Global Market Heatmap
+                  Global Stock Exchange Heatmap
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  Real-time performance of major global indices
+                  Real-time performance · tile size reflects market weight
                 </p>
               </div>
             </div>
@@ -276,28 +282,15 @@ const GlobalHeatmap = () => {
             </div>
           </div>
 
-          {/* Region groups */}
-          <div className="space-y-6">
-            {Object.entries(grouped).map(([region, items]) => (
-              <div key={region}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-base">{REGION_FLAGS[region] || "🌐"}</span>
-                  <h3 className="font-mono text-[11px] sm:text-xs tracking-[3px] uppercase text-muted-foreground font-semibold">
-                    {region}
-                  </h3>
-                  <div className="flex-1 h-px bg-border ml-2" />
-                </div>
-                <div className={cn(
-                  "grid gap-2.5 sm:gap-3",
-                  items.length <= 2
-                    ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
-                    : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-                )}>
-                  {items.map((idx) => (
-                    <HeatmapTile key={idx.symbol} idx={idx} onClick={() => setSelected(idx)} />
-                  ))}
-                </div>
-              </div>
+          {/* Treemap Grid */}
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 sm:gap-2 auto-rows-[minmax(80px,auto)]">
+            {sorted.map((idx) => (
+              <TreemapTile
+                key={idx.symbol}
+                idx={idx}
+                size={getTileSize(idx.weight)}
+                onClick={() => setSelected(idx)}
+              />
             ))}
           </div>
 
