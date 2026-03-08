@@ -277,6 +277,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     totalScore = Math.round(totalScore * 0.88); // reduce by ~12%
   }
 
+  // Preliminary volatility for guardrails (full vol52 computed later with fair value)
+  const vol52Prelim = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
+
   // === Valuation Guardrail ===
   // Prevent inflated scores when price is well above fair value
 
