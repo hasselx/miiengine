@@ -102,7 +102,7 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
 
       {/* Main content grid */}
       <div className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 sm:gap-5 lg:gap-6 max-w-[1400px] mx-auto">
-        {/* Main column */}
+        {/* Main column — priority order */}
         <div className="space-y-4 sm:space-y-5 lg:space-y-6 min-w-0">
           <div id="section-ai-summary"><AIStockSummary data={data} /></div>
           <div id="section-summary"><ExecutiveSummary data={data} /></div>
@@ -112,26 +112,26 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-earnings-surprise"><EarningsSurpriseTracker data={data} /></div>
           <div id="section-valuation"><DCFValuation data={data} /></div>
           <div id="section-price"><PriceProjectionSection data={data} /></div>
-          <div id="section-backtest"><BacktestSimulator data={data} /></div>
-          <div id="section-macro"><MacroSection data={data} /></div>
-          <div id="section-dividend"><DividendStrategy data={data} /></div>
+          <div id="section-institutional"><InstitutionalOwnership data={data} /></div>
           <div id="section-insider"><InsiderActivity data={data} /></div>
+          <div id="section-macro"><MacroSection data={data} /></div>
           <div id="section-correlation"><CorrelationAnalyzer data={data} /></div>
+          <div id="section-dividend"><DividendStrategy data={data} /></div>
+          <div id="section-backtest"><BacktestSimulator data={data} /></div>
         </div>
 
-        {/* Sidebar column */}
+        {/* Sidebar column — priority order */}
         <div className="space-y-4 sm:space-y-5">
           <TradingPlanSection data={data} />
           <div id="section-technical"><TechnicalSection data={data} /></div>
           <div id="section-support-resistance"><SupportResistance data={data} /></div>
-          <div id="section-moat"><MoatSection data={data} /></div>
           <div id="section-pattern"><PatternFinder data={data} /></div>
+          <div id="section-sentiment"><MarketSentiment data={data} /></div>
+          <div id="section-moat"><MoatSection data={data} /></div>
           <div id="section-risk">
             <RiskMeter data={data} />
             <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
           </div>
-          <div id="section-sentiment"><MarketSentiment data={data} /></div>
-          <div id="section-institutional"><InstitutionalOwnership data={data} /></div>
           <div id="section-sector-rotation"><SectorRotation data={data} /></div>
           <FinalVerdict data={data} />
         </div>

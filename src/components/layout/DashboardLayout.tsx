@@ -15,27 +15,33 @@ interface DashboardLayoutProps {
 }
 
 const NAV_ITEMS = [
+  // — Overview —
   { id: "ai-summary", label: "AI Summary", icon: Brain },
-  { id: "summary", label: "Summary", icon: FileText },
+  { id: "summary", label: "Executive Summary", icon: FileText },
   { id: "scores", label: "Score Matrix", icon: BarChart3 },
+  // — Fundamentals & Earnings —
   { id: "fundamentals", label: "Fundamentals", icon: Layers },
   { id: "earnings", label: "Earnings", icon: DollarSign },
   { id: "earnings-surprise", label: "Earnings Surprise", icon: Zap },
   { id: "valuation", label: "Valuation", icon: TrendingUp },
-  { id: "price", label: "Price Targets", icon: Target },
-  { id: "backtest", label: "Backtest Simulator", icon: FlaskConical },
-  { id: "macro", label: "Macro", icon: Activity },
-  { id: "dividend", label: "Dividends", icon: PieChart },
-  { id: "insider", label: "Insider Activity", icon: Building2 },
-  { id: "correlation", label: "Correlation", icon: ArrowUpDown },
+  // — Technicals & Price —
   { id: "technical", label: "Technicals", icon: LineChart },
   { id: "support-resistance", label: "Support/Resistance", icon: Target },
-  { id: "moat", label: "Moat", icon: Shield },
   { id: "pattern", label: "Patterns", icon: Activity },
-  { id: "risk", label: "Risk Matrix", icon: AlertTriangle },
-  { id: "sentiment", label: "Sentiment", icon: Globe },
+  { id: "price", label: "Price Targets", icon: Target },
+  // — Ownership & Activity —
   { id: "institutional", label: "Institutional", icon: Building2 },
+  { id: "insider", label: "Insider Activity", icon: Building2 },
+  { id: "sentiment", label: "Sentiment", icon: Globe },
+  // — Macro & Strategy —
+  { id: "macro", label: "Macro", icon: Activity },
   { id: "sector-rotation", label: "Sector Rotation", icon: PieChart },
+  { id: "correlation", label: "Correlation", icon: ArrowUpDown },
+  { id: "moat", label: "Moat", icon: Shield },
+  { id: "risk", label: "Risk Matrix", icon: AlertTriangle },
+  // — Tools —
+  { id: "dividend", label: "Dividends", icon: PieChart },
+  { id: "backtest", label: "Backtest Simulator", icon: FlaskConical },
 ];
 
 const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen, companyName }: DashboardLayoutProps) => {
