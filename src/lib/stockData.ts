@@ -77,6 +77,37 @@ export interface EarningsItem {
   sentiment: 'positive' | 'negative' | 'neutral';
 }
 
+export interface EarningsSurprise {
+  quarter: string;
+  estimate: string;
+  actual: string;
+  result: 'Beat' | 'Miss' | 'Inline';
+}
+
+export interface InsiderTransaction {
+  role: string;
+  action: 'Buy' | 'Sell';
+  shares: string;
+  date: string;
+}
+
+export interface CorrelationItem {
+  asset: string;
+  correlation: number;
+}
+
+export interface SectorRotationItem {
+  sector: string;
+  direction: 'up' | 'down' | 'neutral';
+  performance: string;
+}
+
+export interface SentimentFactor {
+  name: string;
+  value: string;
+  signal: 'bullish' | 'bearish' | 'neutral';
+}
+
 export interface HeaderMetric {
   label: string;
   value: string;
