@@ -262,7 +262,12 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     return { score: Math.min(10, Math.max(0, score)), subtitle: revenueGrowth != null ? `Revenue growth: ${(revenueGrowth * 100).toFixed(1)}%` : 'Revenue growth data unavailable' };
   })();
 
-  const totalScore = fund.score + val.score + moat.score + momentum.score + tech.score + quant.score + risk.score + macro.score;
+  // Apply investment style weights
+  const weights = getStyleWeights(investmentStyle || null);
+  const rawScores = [fund.score, val.score, moat.score, momentum.score, tech.score, quant.score, risk.score, macro.score];
+  const maxScores = [20, 15, 10, 10, 15, 10, 10, 10];
+  const weightedScores = rawScores.map((s, i) => Math.min(maxScores[i], Math.round(s * weights[i])));
+  const totalScore = weightedScores.reduce((a, b) => a + b, 0);
 
   const getVerdict = (s: number) => {
     if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", verdict: "Exceptional Opportunity", range: "90–100 = EXCEPTIONAL" };
