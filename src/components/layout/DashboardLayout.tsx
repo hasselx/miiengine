@@ -108,7 +108,7 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 py-3 space-y-0.5 overflow-y-auto sidebar-scroll">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
