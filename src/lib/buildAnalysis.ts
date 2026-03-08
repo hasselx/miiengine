@@ -283,6 +283,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   // === Valuation Guardrail ===
   // Prevent inflated scores when price is well above fair value
 
+  // Score-to-verdict mapping (used later after all adjustments)
   const getScoreVerdict = (s: number) => {
     if (s >= 90) return { badge: "⬛ STRONG BUY", range: "90–100 = STRONG BUY" };
     if (s >= 75) return { badge: "⬛ BUY", range: "75–89 = BUY" };
@@ -291,7 +292,6 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     if (s >= 30) return { badge: "⬛ REDUCE", range: "30–44 = REDUCE" };
     return { badge: "⬛ SELL", range: "Below 30 = SELL" };
   };
-  const v = getScoreVerdict(totalScore);
 
   // === Scenario-Based Price Projection Engine ===
   // Derive base financial assumptions from real data
@@ -649,11 +649,18 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     return 'N/A';
   })();
 
+  // Derive badge and range from the FINAL adjusted verdict (single source of truth)
+  const verdictToBadge = (v: string) => `⬛ ${v.toUpperCase()}`;
+  const verdictToRange = (v: string) => {
+    const map: Record<string, string> = { 'Strong Buy': '90–100 = STRONG BUY', 'Buy': '75–89 = BUY', 'Accumulate': '60–74 = ACCUMULATE', 'Hold': '45–59 = HOLD', 'Reduce': '30–44 = REDUCE', 'Sell': 'Below 30 = SELL' };
+    return map[v] || `Score ${totalScore}`;
+  };
+
   return {
     company: companyName,
     investmentStyle: investmentStyle || null,
     subtitle: `${companyName} · ${safe(quote?.exchange, exchange)} · ${ticker}`,
-    verdictBadge: v.badge,
+    verdictBadge: verdictToBadge(verdict),
     reportType: `Institutional Equity Research · 12-Month Horizon · ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,
     headerMetrics: [
       { label: "CMP", value: `${currency}${fmt(price)}`, change: `${pctSign}${fmt(pctChange)}% today` },
@@ -666,7 +673,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     totalScore,
     verdict,
     verdictNote: isBuyVerdict ? 'Strong conviction — accumulate at current levels' : targetReturnPct < 0 ? `Wait for pullback to ${currency}${accZoneLow}–${currency}${accZoneHigh}` : 'Fair value — hold existing positions',
-    scoreRange: v.range,
+    scoreRange: verdictToRange(verdict),
     scores: [
       { step: 1, name: "Fundamental Quality", subtitle: fund.subtitle, score: weightedScores[0], maxScore: 20, weight: `${Math.round(weights[0] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
       { step: 2, name: "Intrinsic Valuation", subtitle: val.subtitle, score: weightedScores[1], maxScore: 15, weight: `${Math.round(weights[1] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
