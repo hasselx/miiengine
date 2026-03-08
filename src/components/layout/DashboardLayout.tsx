@@ -37,6 +37,7 @@ const NAV_ITEMS = [
   { id: "sentiment", label: "Market Sentiment", icon: Globe },
   { id: "macro", label: "Macro & Tailwinds", icon: Activity },
   { id: "sector-rotation", label: "Sector Rotation", icon: PieChart },
+  { id: "capital-flows", label: "Capital Flows", icon: Workflow },
   { id: "correlation", label: "Correlation", icon: ArrowUpDown },
   { id: "moat", label: "Competitive Moat", icon: Shield },
   { id: "factor-exposure", label: "Factor Exposure", icon: Gauge },

@@ -25,23 +25,11 @@ const FlowTile = ({ item }: { item: FlowItem }) => {
   const isInflow = item.direction === 'inflow';
   const isOutflow = item.direction === 'outflow';
 
-  const bgClass = isInflow
-    ? 'bg-[hsl(var(--bull-light))]'
-    : isOutflow
-    ? 'bg-[hsl(var(--bear-light))]'
-    : 'bg-accent';
-  const borderClass = isInflow
-    ? 'border-[hsl(var(--green-data))]'
-    : isOutflow
-    ? 'border-[hsl(var(--red-data))]'
-    : 'border-border';
-  const textClass = isInflow
-    ? 'text-[hsl(var(--green-data))]'
-    : isOutflow
-    ? 'text-[hsl(var(--red-data))]'
-    : 'text-muted-foreground';
+  const bgClass = isInflow ? 'bg-bull-light' : isOutflow ? 'bg-bear-light' : 'bg-accent';
+  const borderClass = isInflow ? 'border-green-data' : isOutflow ? 'border-red-data' : 'border-border';
+  const textClass = isInflow ? 'text-green-data' : isOutflow ? 'text-red-data' : 'text-muted-foreground';
 
-  // Intensity: stronger color for bigger moves
+  // Intensity: stronger opacity for bigger moves
   const intensity = Math.min(1, Math.abs(item.change) / 3);
   const opacityStyle = { opacity: 0.4 + intensity * 0.6 };
 
@@ -66,7 +54,7 @@ const CategorySection = ({ title, items }: { title: string; items: FlowItem[] })
   if (items.length === 0) return null;
   const totalFlow = items.reduce((s, i) => s + i.netFlow, 0);
   const netDir = totalFlow > 0 ? 'Net Inflow' : totalFlow < 0 ? 'Net Outflow' : 'Neutral';
-  const netColor = totalFlow > 0 ? 'text-[hsl(var(--green-data))]' : totalFlow < 0 ? 'text-[hsl(var(--red-data))]' : 'text-muted-foreground';
+  const netColor = totalFlow > 0 ? 'text-green-data' : totalFlow < 0 ? 'text-red-data' : 'text-muted-foreground';
 
   return (
     <div>
@@ -115,7 +103,7 @@ const CapitalFlowMap = ({ currentSector }: CapitalFlowMapProps) => {
   const assets = flows.filter(f => f.category === 'asset');
   const sectors = flows.filter(f => f.category === 'sector');
 
-  // Sector relevance note
+  // Sector relevance callout
   const matchingSector = currentSector
     ? sectors.find(s => s.label.toLowerCase().includes(currentSector.toLowerCase()))
     : null;
@@ -136,16 +124,20 @@ const CapitalFlowMap = ({ currentSector }: CapitalFlowMapProps) => {
           <CategorySection title="Asset Classes" items={assets} />
           <CategorySection title="Equity Sectors" items={sectors} />
 
-          {/* Sector relevance callout */}
           {matchingSector && (
             <div className={`p-2.5 border-l-[3px] rounded-sm text-[11px] sm:text-[12px] leading-relaxed ${
               matchingSector.direction === 'inflow'
-                ? 'bg-[hsl(var(--bull-light))] border-[hsl(var(--green-data))] text-[hsl(var(--green-data))]'
+                ? 'bg-bull-light border-green-data text-green-dark'
                 : matchingSector.direction === 'outflow'
-                ? 'bg-[hsl(var(--bear-light))] border-[hsl(var(--red-data))] text-[hsl(var(--red-data))]'
+                ? 'bg-bear-light border-red-data text-red-dark'
                 : 'bg-accent border-border text-muted-foreground'
             }`}>
-              <strong>{matchingSector.label} sector:</strong> {matchingSector.direction === 'inflow' ? `+${fmtFlow(matchingSector.netFlow)} capital inflow — positive sector momentum` : matchingSector.direction === 'outflow' ? `${fmtFlow(matchingSector.netFlow)} capital outflow — sector headwind` : 'Minimal capital movement — neutral momentum'}
+              <strong>{matchingSector.label} sector:</strong>{' '}
+              {matchingSector.direction === 'inflow'
+                ? `+${fmtFlow(matchingSector.netFlow)} capital inflow — positive sector momentum`
+                : matchingSector.direction === 'outflow'
+                ? `${fmtFlow(matchingSector.netFlow)} capital outflow — sector headwind`
+                : 'Minimal capital movement — neutral momentum'}
             </div>
           )}
 

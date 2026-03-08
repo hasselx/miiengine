@@ -167,6 +167,8 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-macro"><MacroSection data={data} /></div>
           {/* 20 */}
           <div id="section-sector-rotation"><SectorRotation data={data} /></div>
+          {/* Capital Flows */}
+          <div id="section-capital-flows"><CapitalFlowMap currentSector={data.tags?.[0]?.label} /></div>
           {/* 21 */}
           <div id="section-correlation"><CorrelationAnalyzer data={data} /></div>
           {/* 22 */}
