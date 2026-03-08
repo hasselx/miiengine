@@ -32,7 +32,7 @@ const INDICES = [
   { symbol: "^GSPTSE", name: "TSX", exchange: "TSX", region: "Americas", country: "Canada", flag: "🇨🇦", weight: 2, tz: "America/Toronto", openH: 9, openM: 30, closeH: 16, closeM: 0 },
 ];
 
-function isMarketOpen(idx: typeof INDICES[0]): boolean {
+function getMarketStatus(idx: typeof INDICES[0]): "live" | "pre-market" | "closed" {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: idx.tz,
@@ -46,17 +46,20 @@ function isMarketOpen(idx: typeof INDICES[0]): boolean {
   const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0");
   const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0");
 
-  // Friday is a weekend day for Saudi market
   if (idx.region === "Middle East") {
-    if (["Fri", "Sat"].includes(weekday)) return false;
+    if (["Fri", "Sat"].includes(weekday)) return "closed";
   } else {
-    if (["Sat", "Sun"].includes(weekday)) return false;
+    if (["Sat", "Sun"].includes(weekday)) return "closed";
   }
 
   const nowMins = hour * 60 + minute;
   const openMins = idx.openH * 60 + idx.openM;
   const closeMins = idx.closeH * 60 + idx.closeM;
-  return nowMins >= openMins && nowMins < closeMins;
+
+  if (nowMins >= openMins && nowMins < closeMins) return "live";
+  // Pre-market: 90 minutes before open
+  if (nowMins >= openMins - 90 && nowMins < openMins) return "pre-market";
+  return "closed";
 }
 
 async function fetchFromYahoo(symbol: string) {
