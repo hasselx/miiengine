@@ -99,8 +99,10 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-technical"><TechnicalSection data={data} /></div>
           <div id="section-moat"><MoatSection data={data} /></div>
           <div id="section-pattern"><PatternFinder data={data} /></div>
-          <div id="section-risk"><RiskMatrix data={data} /></div>
-          <FinalVerdict data={data} />
+          <div id="section-risk">
+            <RiskMeter data={data} />
+            <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
+          </div>
         </div>
       </div>
 
