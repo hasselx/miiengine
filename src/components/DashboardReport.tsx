@@ -69,6 +69,7 @@ const SECTION_IDS: Record<string, string> = {
   sentiment: "section-sentiment",
   macro: "section-macro",
   "sector-rotation": "section-sector-rotation",
+  "capital-flows": "section-capital-flows",
   correlation: "section-correlation",
   moat: "section-moat",
   "factor-exposure": "section-factor-exposure",
