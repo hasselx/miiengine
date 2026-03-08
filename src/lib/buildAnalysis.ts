@@ -455,15 +455,10 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   };
   const verdict = getValuationVerdict(totalScore, expectedReturnPct);
 
-  // Fair value range
-  const fairValueLow = adjBear;
-  const fairValueHigh = adjBull;
-  const fairValueMid = adjBase;
-
-  // Accumulation zone: suggest lower entry if price > fair value midpoint
-  const showAccZone = price > fairValueMid;
-  const accZoneLow = Math.round(fairValueMid * 0.96);
-  const accZoneHigh = Math.round(fairValueMid * 1.02);
+  // Accumulation zone: use capped fair value midpoint
+  const showAccZone = price > fvMid;
+  const accZoneLow = Math.round(fvMid * 0.96);
+  const accZoneHigh = Math.round(fvMid * 1.02);
 
   // Model confidence — capped at 85%
   const confidenceFactors: string[] = [];
