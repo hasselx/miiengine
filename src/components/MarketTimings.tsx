@@ -54,7 +54,7 @@ const MarketTimings = () => {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 60_000);
+    const interval = setInterval(() => setTick((t) => t + 1), 6 * 60 * 60_000);
     return () => clearInterval(interval);
   }, []);
 
