@@ -147,6 +147,8 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           {/* 21 */}
           <div id="section-moat"><MoatSection data={data} /></div>
           {/* 22 */}
+          <div id="section-factor-exposure"><FactorExposure data={data} /></div>
+          {/* 23 */}
           <div id="section-risk">
             <RiskMeter data={data} />
             <div className="mt-4 sm:mt-5"><RiskMatrix data={data} /></div>
