@@ -101,6 +101,14 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
         )}
         <ScoreBanner data={data} />
 
+        {/* Decision Stack + Factor Contribution + Confidence — below score banner */}
+        <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 max-w-[1000px] mx-auto space-y-4 sm:space-y-5">
+          <RecommendationStack data={data} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FactorContributionChart data={data} />
+            <ConfidenceMeter data={data} />
+          </div>
+        </div>
         {/* Holding Analysis — togglable */}
         {holdingsOpen && (
           <div className="px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 max-w-[1400px] mx-auto">
