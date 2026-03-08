@@ -270,12 +270,12 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const totalScore = weightedScores.reduce((a, b) => a + b, 0);
 
   const getScoreVerdict = (s: number) => {
-    if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", range: "90–100 = EXCEPTIONAL" };
-    if (s >= 80) return { badge: "⬛ STRONG BUY", range: "80–89 = STRONG BUY" };
-    if (s >= 70) return { badge: "⬛ BUY", range: "70–79 = BUY" };
-    if (s >= 60) return { badge: "⬛ HOLD / ACCUMULATE", range: "60–69 = HOLD" };
-    if (s >= 50) return { badge: "⬛ WEAK HOLD", range: "50–59 = WEAK HOLD" };
-    return { badge: "⬛ AVOID", range: "Below 50 = AVOID" };
+    if (s >= 90) return { badge: "⬛ STRONG BUY", range: "90–100 = STRONG BUY" };
+    if (s >= 75) return { badge: "⬛ BUY", range: "75–89 = BUY" };
+    if (s >= 60) return { badge: "⬛ ACCUMULATE", range: "60–74 = ACCUMULATE" };
+    if (s >= 45) return { badge: "⬛ HOLD", range: "45–59 = HOLD" };
+    if (s >= 30) return { badge: "⬛ REDUCE", range: "30–44 = REDUCE" };
+    return { badge: "⬛ SELL", range: "Below 30 = SELL" };
   };
   const v = getScoreVerdict(totalScore);
 
