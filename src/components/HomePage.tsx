@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ArrowRight, CheckCircle, User, ArrowDown } from "lucide-react";
+import { Search, ArrowRight, CheckCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,8 @@ import GlobalHeatmap from "@/components/GlobalHeatmap";
 import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 import MarketTimings from "@/components/MarketTimings";
 import HomeFeatures from "@/components/HomeFeatures";
+import HowItWorks from "@/components/HowItWorks";
+import Methodology from "@/components/Methodology";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
@@ -39,14 +41,6 @@ const HIGHLIGHTS = [
   "Aggregation of data from multiple financial sources",
   "Transparent valuation models and risk frameworks",
   "Automated equity research generation",
-];
-
-const WORKFLOW_STEPS = [
-  "Market Data",
-  "Multi-Factor Analysis",
-  "Valuation Models",
-  "Risk Assessment",
-  "Investment Verdict",
 ];
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
@@ -174,30 +168,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
       <SectorPerformanceTracker />
 
-      {/* Workflow */}
-      <div className="border-t border-border bg-background">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-          <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-6 text-center">How It Works</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-0">
-            {WORKFLOW_STEPS.map((step, i) => (
-              <div key={step} className="flex flex-col sm:flex-row items-center">
-                <div className="px-4 py-2.5 border border-border rounded-md bg-card">
-                  <span className="font-mono text-[11px] sm:text-[12px] tracking-wide text-foreground font-medium">{step}</span>
-                </div>
-                {i < WORKFLOW_STEPS.length - 1 && (
-                  <>
-                    <ArrowDown className="h-4 w-4 text-muted-foreground my-2 sm:hidden" />
-                    <ArrowRight className="h-4 w-4 text-muted-foreground mx-2 hidden sm:block" />
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="text-center mt-6 font-mono text-[10px] sm:text-[11px] text-muted-foreground tracking-wide">
-            Analyzing stocks across 10+ financial dimensions
-          </p>
-        </div>
-      </div>
+      <HowItWorks />
 
       {/* About + Features */}
       <div className="border-t border-border bg-card">
@@ -238,6 +209,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
           </div>
         </div>
       </div>
+
+      <Methodology />
 
       {/* Footer */}
       <div className="border-t border-border px-4 sm:px-6 py-6 text-center space-y-2">
