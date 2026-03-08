@@ -43,13 +43,6 @@ const HIGHLIGHTS = [
   "Automated equity research generation",
 ];
 
-const WORKFLOW_STEPS = [
-  "Market Data",
-  "Multi-Factor Analysis",
-  "Valuation Models",
-  "Risk Assessment",
-  "Investment Verdict",
-];
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   const [company, setCompany] = useState("");
