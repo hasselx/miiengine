@@ -1,9 +1,10 @@
-import { ReactNode, useState } from "react";
-import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X } from "lucide-react";
+import { ReactNode, useState, useRef, useEffect } from "react";
+import { Search, BarChart3, TrendingUp, Shield, Target, Activity, ChevronLeft, ChevronRight, LineChart, Layers, AlertTriangle, FileText, User, LogOut, Menu, X, Eye, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useWatchlist } from "@/App";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -28,9 +29,23 @@ const NAV_ITEMS = [
 const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen, companyName }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { setOpen: setWatchlistOpen } = useWatchlist();
+
+  // Close account menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -145,13 +160,37 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
               <span className="hidden sm:inline">Search stock…</span>
             </button>
             {user ? (
-              <div className="flex items-center gap-1">
-                <button onClick={() => navigate("/dashboard")} className="p-2 hover:bg-accent rounded-md transition-colors touch-target" title="My Account">
+              <div className="relative" ref={accountRef}>
+                <button
+                  onClick={() => setAccountMenuOpen(!accountMenuOpen)}
+                  className="p-2 hover:bg-accent rounded-md transition-colors touch-target"
+                  title="Account"
+                >
                   <User className="h-4 w-4 text-muted-foreground" />
                 </button>
-                <button onClick={signOut} className="p-2 hover:bg-accent rounded-md transition-colors touch-target" title="Sign out">
-                  <LogOut className="h-4 w-4 text-muted-foreground" />
-                </button>
+                {accountMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-50 min-w-[180px] py-1 animate-in fade-in-0 zoom-in-95">
+                    <button
+                      onClick={() => { navigate("/dashboard"); setAccountMenuOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
+                      <BookOpen className="h-3.5 w-3.5" /> Saved Searches
+                    </button>
+                    <button
+                      onClick={() => { setWatchlistOpen(true); setAccountMenuOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Watchlist
+                    </button>
+                    <div className="h-px bg-border mx-2 my-1" />
+                    <button
+                      onClick={() => { signOut(); setAccountMenuOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-destructive/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    >
+                      <LogOut className="h-3.5 w-3.5" /> Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <button

@@ -3,14 +3,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, Download, FileText, FileCode, Briefcase } from "lucide-react";
+import { Bookmark, Download, FileText, FileCode, Briefcase, Eye, Check } from "lucide-react";
 import { useState, useRef } from "react";
+import { useWatchlist } from "@/App";
 
 const ReportHeader = ({ data, onToggleHoldings, holdingsOpen }: { data: StockAnalysis; onToggleHoldings?: () => void; holdingsOpen?: boolean }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
+  const [addedToWatchlist, setAddedToWatchlist] = useState(false);
   const [showDownload, setShowDownload] = useState(false);
+  const { setOpen: setWatchlistOpen } = useWatchlist();
 
   const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const brandHeader = `<div style="border-bottom:2px solid #c9a84c;padding:24px 32px;background:#0a0a0a;display:flex;justify-content:space-between;align-items:center">
@@ -159,6 +162,34 @@ img,svg{max-width:100%;height:auto}
               </div>
             )}
           </div>
+          <button
+            onClick={async () => {
+              if (!user) {
+                toast({ title: "Sign in required", description: "Create an account to use the watchlist." });
+                navigate("/auth");
+                return;
+              }
+              if (addedToWatchlist) return;
+              const ticker = data.subtitle?.split('·')[2]?.trim() || data.company;
+              const { error } = await supabase.from('watchlist').insert({
+                user_id: user.id,
+                ticker,
+                company_name: data.company,
+              });
+              if (error) {
+                toast({ title: error.message.includes("duplicate") ? "Already in watchlist" : "Error", description: error.message, variant: "destructive" });
+                if (error.message.includes("duplicate")) setAddedToWatchlist(true);
+              } else {
+                setAddedToWatchlist(true);
+                toast({ title: "Added to Watchlist", description: `${data.company} is now in your watchlist.` });
+              }
+            }}
+            disabled={addedToWatchlist}
+            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors disabled:text-sidebar-primary p-2 touch-target"
+          >
+            {addedToWatchlist ? <Check className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <span className="hidden sm:inline">{addedToWatchlist ? "Watching" : "Watch"}</span>
+          </button>
           <button
             onClick={onToggleHoldings}
             className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] transition-colors p-2 touch-target ${holdingsOpen ? 'text-sidebar-primary' : 'text-sidebar-foreground/50 hover:text-sidebar-primary'}`}
