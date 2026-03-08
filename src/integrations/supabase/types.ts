@@ -119,6 +119,74 @@ export type Database = {
         }
         Relationships: []
       }
+      watchlist: {
+        Row: {
+          added_at: string
+          company_name: string
+          exchange: string | null
+          id: string
+          ticker: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          company_name: string
+          exchange?: string | null
+          id?: string
+          ticker: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          company_name?: string
+          exchange?: string | null
+          id?: string
+          ticker?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      watchlist_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          threshold: number | null
+          user_id: string
+          watchlist_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          threshold?: number | null
+          user_id: string
+          watchlist_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          threshold?: number | null
+          user_id?: string
+          watchlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_alerts_watchlist_id_fkey"
+            columns: ["watchlist_id"]
+            isOneToOne: false
+            referencedRelation: "watchlist"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

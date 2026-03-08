@@ -61,7 +61,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
     if (company.trim()) onAnalyze(company.trim());
   };
 
-  const marqueeItems = [...FEATURES, ...FEATURES];
+  // marquee removed
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
