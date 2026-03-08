@@ -399,6 +399,7 @@ const GlobalHeatmap = () => {
             {hovered && containerRef.current && (
               <HoverTooltip idx={hovered.idx} mouseX={hovered.mx} mouseY={hovered.my} containerRect={containerRef.current.getBoundingClientRect()} />
             )}
+            </div>
           </div>
 
           {/* Legend */}
