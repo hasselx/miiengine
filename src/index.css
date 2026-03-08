@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Scroll offset for fixed header + ticker on section targets */
+[id^="section-"] {
+  scroll-margin-top: 6.5rem; /* header (3.5rem) + ticker (2rem) + padding */
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
 @layer base {
