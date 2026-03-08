@@ -148,44 +148,46 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-8 flex gap-0">
-          <button
-            onClick={() => setTab("searches")}
-            className={`font-mono text-[11px] tracking-[2px] uppercase px-5 py-3 border-b-2 transition-colors ${
-              tab === "searches" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
-            }`}
-          >
-            <Search className="h-3.5 w-3.5 inline mr-2" />
-            Saved Searches ({searches.length})
-          </button>
-          <button
-            onClick={() => setTab("holdings")}
-            className={`font-mono text-[11px] tracking-[2px] uppercase px-5 py-3 border-b-2 transition-colors ${
-              tab === "holdings" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
-            }`}
-          >
-            <TrendingUp className="h-3.5 w-3.5 inline mr-2" />
-            My Holdings ({holdings.length})
-          </button>
-          <button
-            onClick={() => setTab("watchlist")}
-            className={`font-mono text-[11px] tracking-[2px] uppercase px-5 py-3 border-b-2 transition-colors ${
-              tab === "watchlist" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
-            }`}
-          >
-            <Eye className="h-3.5 w-3.5 inline mr-2" />
-            Watchlist
-          </button>
-          <button
-            onClick={() => setTab("settings")}
-            className={`font-mono text-[11px] tracking-[2px] uppercase px-5 py-3 border-b-2 transition-colors ${
-              tab === "settings" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
-            }`}
-          >
-            <Settings className="h-3.5 w-3.5 inline mr-2" />
-            Settings
-          </button>
+        {/* Tabs - scrollable on mobile */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 overflow-x-auto">
+          <div className="flex gap-0 min-w-max">
+            <button
+              onClick={() => setTab("searches")}
+              className={`font-mono text-[10px] sm:text-[11px] tracking-[1px] sm:tracking-[2px] uppercase px-3 sm:px-5 py-3 border-b-2 transition-colors whitespace-nowrap ${
+                tab === "searches" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
+              }`}
+            >
+              <Search className="h-3.5 w-3.5 inline mr-1.5 sm:mr-2" />
+              <span className="hidden sm:inline">Saved </span>Searches
+            </button>
+            <button
+              onClick={() => setTab("holdings")}
+              className={`font-mono text-[10px] sm:text-[11px] tracking-[1px] sm:tracking-[2px] uppercase px-3 sm:px-5 py-3 border-b-2 transition-colors whitespace-nowrap ${
+                tab === "holdings" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
+              }`}
+            >
+              <TrendingUp className="h-3.5 w-3.5 inline mr-1.5 sm:mr-2" />
+              Holdings
+            </button>
+            <button
+              onClick={() => setTab("watchlist")}
+              className={`font-mono text-[10px] sm:text-[11px] tracking-[1px] sm:tracking-[2px] uppercase px-3 sm:px-5 py-3 border-b-2 transition-colors whitespace-nowrap ${
+                tab === "watchlist" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
+              }`}
+            >
+              <Eye className="h-3.5 w-3.5 inline mr-1.5 sm:mr-2" />
+              Watchlist
+            </button>
+            <button
+              onClick={() => setTab("settings")}
+              className={`font-mono text-[10px] sm:text-[11px] tracking-[1px] sm:tracking-[2px] uppercase px-3 sm:px-5 py-3 border-b-2 transition-colors whitespace-nowrap ${
+                tab === "settings" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
+              }`}
+            >
+              <Settings className="h-3.5 w-3.5 inline mr-1.5 sm:mr-2" />
+              Settings
+            </button>
+          </div>
         </div>
       </header>
 
