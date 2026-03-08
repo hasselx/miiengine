@@ -960,7 +960,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       compositeReturn: `${compositeIsUpside ? '+' : '-'}${Math.abs(compositeReturnPct).toFixed(1)}%`,
       compositeLabel: `${compositeIsUpside ? 'Expected Upside' : 'Expected Downside'} from ${currency}${fmt(price)}`,
     },
-    fairValueRange: { low: `${currency}${fvLow}`, high: `${currency}${fvHigh}`, midpoint: `${currency}${fvMid}` },
+    fairValueRange: { low: `${currency}${fvLow}`, high: `${currency}${fvHigh}`, midpoint: `${currency}${targetPrice}` },
     accumulationZone: { low: `${currency}${accZoneLow}`, high: `${currency}${accZoneHigh}`, show: showAccZone },
     optimalEntry: { low: `${currency}${optEntryLow}`, high: `${currency}${optEntryHigh}`, basis: optEntryBasis },
     modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
