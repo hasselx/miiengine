@@ -269,15 +269,15 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const weightedScores = rawScores.map((s, i) => Math.min(maxScores[i], Math.round(s * weights[i])));
   const totalScore = weightedScores.reduce((a, b) => a + b, 0);
 
-  const getVerdict = (s: number) => {
-    if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", verdict: "Exceptional Opportunity", range: "90–100 = EXCEPTIONAL" };
-    if (s >= 80) return { badge: "⬛ STRONG BUY", verdict: "Strong Buy", range: "80–89 = STRONG BUY" };
-    if (s >= 70) return { badge: "⬛ BUY", verdict: "Buy", range: "70–79 = BUY" };
-    if (s >= 60) return { badge: "⬛ HOLD / ACCUMULATE", verdict: "Hold / Accumulate on Dips", range: "60–69 = HOLD" };
-    if (s >= 50) return { badge: "⬛ WEAK HOLD", verdict: "Weak Hold", range: "50–59 = WEAK HOLD" };
-    return { badge: "⬛ AVOID", verdict: "Avoid", range: "Below 50 = AVOID" };
+  const getScoreVerdict = (s: number) => {
+    if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", range: "90–100 = EXCEPTIONAL" };
+    if (s >= 80) return { badge: "⬛ STRONG BUY", range: "80–89 = STRONG BUY" };
+    if (s >= 70) return { badge: "⬛ BUY", range: "70–79 = BUY" };
+    if (s >= 60) return { badge: "⬛ HOLD / ACCUMULATE", range: "60–69 = HOLD" };
+    if (s >= 50) return { badge: "⬛ WEAK HOLD", range: "50–59 = WEAK HOLD" };
+    return { badge: "⬛ AVOID", range: "Below 50 = AVOID" };
   };
-  const v = getVerdict(totalScore);
+  const v = getScoreVerdict(totalScore);
 
   // Price projections - use analyst targets if available
   const bullPrice = fin?.targetHighPrice ? Math.round(fin.targetHighPrice) : Math.round(price * 1.35);
