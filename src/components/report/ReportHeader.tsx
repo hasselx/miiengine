@@ -3,8 +3,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, Download, FileText, FileCode, Briefcase } from "lucide-react";
+import { Bookmark, Download, FileText, FileCode, Briefcase, Eye, Check } from "lucide-react";
 import { useState, useRef } from "react";
+import { useWatchlist } from "@/App";
 
 const ReportHeader = ({ data, onToggleHoldings, holdingsOpen }: { data: StockAnalysis; onToggleHoldings?: () => void; holdingsOpen?: boolean }) => {
   const { user } = useAuth();
