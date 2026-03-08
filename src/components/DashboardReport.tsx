@@ -136,6 +136,8 @@ const DashboardReport = ({ data, onSearchOpen, savedSnapshot }: DashboardReportP
           <div id="section-valuation-triangle"><ValuationTriangle data={data} /></div>
           {/* 09 */}
           <div id="section-price"><PriceProjectionSection data={data} /></div>
+          {/* Price Distribution */}
+          <div id="section-price-distribution"><PriceDistribution data={data} /></div>
           {/* 10 */}
           <div id="section-catalyst-timeline"><CatalystTimeline data={data} /></div>
           {/* 11 */}
