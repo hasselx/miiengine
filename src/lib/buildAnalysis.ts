@@ -364,7 +364,21 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const baseProjEps = sorted[1].calc.projEps;
   const bearProjEps = sorted[2].calc.projEps;
 
-  const expectedPrice = Math.round(adjBull * 0.25 + adjBase * 0.50 + adjBear * 0.25);
+  // === Probability Assignment & Normalization ===
+  // Raw probabilities based on market conditions
+  let probBear = 25, probBase = 50, probBull = 25;
+  // Adjust for market regime
+  if (vol52Prelim > 0.50) { probBear += 5; probBull -= 5; }
+  if (pctChange > 2) { probBull += 3; probBear -= 3; }
+  else if (pctChange < -2) { probBear += 3; probBull -= 3; }
+  // Normalize to exactly 100%
+  const probTotal = probBear + probBase + probBull;
+  probBear = Math.round((probBear / probTotal) * 100);
+  probBull = Math.round((probBull / probTotal) * 100);
+  probBase = 100 - probBear - probBull; // ensures exact sum = 100
+
+  // === Unified Target Price = Probability-Weighted Expected Price ===
+  const expectedPrice = Math.round(adjBull * (probBull / 100) + adjBase * (probBase / 100) + adjBear * (probBear / 100));
   const expectedReturnPct = ((expectedPrice - price) / price) * 100;
   const expectedReturnAbs = Math.abs(expectedReturnPct).toFixed(1);
   const isUpside = expectedReturnPct >= 0;
@@ -462,8 +476,8 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   ];
 
 
-  // === Target Price = Fair Value Midpoint ===
-  const targetPrice = fvMid;
+  // === Target Price = Probability-Weighted Expected Price ===
+  const targetPrice = expectedPrice;
   const targetReturnPct = ((targetPrice - price) / price) * 100;
   const targetReturnAbs = Math.abs(targetReturnPct).toFixed(1);
   const targetIsUpside = targetReturnPct >= 0;
@@ -561,7 +575,11 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   // Model agreement
   const dcfSignal: 'Bullish' | 'Bearish' | 'Neutral' = price < adjBase ? 'Bullish' : price > adjBull ? 'Bearish' : 'Neutral';
   const relValSignal: 'Bullish' | 'Bearish' | 'Neutral' = pe > 0 ? (pe < 20 ? 'Bullish' : pe > 40 ? 'Bearish' : 'Neutral') : 'Neutral';
-  const techTrendSignal: 'Bullish' | 'Bearish' | 'Neutral' = techs ? (price > (techs.sma200 || 0) && techs.rsi > 40 ? 'Bullish' : price < (techs.sma200 || 0) && techs.rsi < 60 ? 'Bearish' : 'Neutral') : 'Neutral';
+  // Technical signal consistency: death cross blocks bullish, golden cross blocks bearish
+  const hasDeathCross = !!(techs && techs.sma50 && techs.sma200 && techs.sma50 < techs.sma200);
+  const hasGoldenCross = !!(techs && techs.sma50 && techs.sma200 && techs.sma50 > techs.sma200);
+  const rawTechSignal: 'Bullish' | 'Bearish' | 'Neutral' = techs ? (price > (techs.sma200 || 0) && techs.rsi > 40 ? 'Bullish' : price < (techs.sma200 || 0) && techs.rsi < 60 ? 'Bearish' : 'Neutral') : 'Neutral';
+  const techTrendSignal: 'Bullish' | 'Bearish' | 'Neutral' = hasDeathCross && rawTechSignal === 'Bullish' ? 'Neutral' : hasGoldenCross && rawTechSignal === 'Bearish' ? 'Neutral' : rawTechSignal;
   const sectorMomSignal: 'Bullish' | 'Bearish' | 'Neutral' = pctChange > 1 ? 'Bullish' : pctChange < -1 ? 'Bearish' : 'Neutral';
   const agreementModels = [
     { name: "DCF Valuation", signal: dcfSignal },
@@ -715,7 +733,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
         { label: "Market Cap", value: marketCap > 0 ? `${currency}${fmtLarge(marketCap)}` : 'N/A', note: sector !== 'N/A' ? sector : '', color: 'muted' as any },
       ];
       if (returnOnEquity != null) metrics.push({ label: "ROE", value: `${(returnOnEquity * 100).toFixed(1)}%`, note: "Return on equity", color: (returnOnEquity > 0.15 ? 'green' : returnOnEquity > 0.08 ? 'gold' : 'red') as any });
-      if (debtToEquity != null) metrics.push({ label: "Debt/Equity", value: `${debtToEquity.toFixed(1)}`, note: debtToEquity < 50 ? "Conservative leverage" : "High leverage", color: (debtToEquity < 50 ? 'green' : debtToEquity < 100 ? 'gold' : 'red') as any });
+      if (debtToEquity != null) metrics.push({ label: "Debt/Equity", value: `${debtToEquity.toFixed(1)}`, note: debtToEquity < 150 ? "Conservative leverage" : debtToEquity < 300 ? "Moderate leverage" : debtToEquity < 600 ? "High leverage" : "Extremely high leverage risk", color: (debtToEquity < 150 ? 'green' : debtToEquity < 300 ? 'gold' : 'red') as any });
       if (profitMargins != null) metrics.push({ label: "Profit Margin", value: `${(profitMargins * 100).toFixed(1)}%`, note: "Net profit margin", color: (profitMargins > 0.15 ? 'green' : profitMargins > 0.05 ? 'gold' : 'red') as any });
       if (revenueGrowth != null) metrics.push({ label: "Revenue Growth", value: `${(revenueGrowth * 100).toFixed(1)}%`, note: "Year-over-year", color: (revenueGrowth > 0.1 ? 'green' : revenueGrowth > 0 ? 'gold' : 'red') as any });
       metrics.push({ label: "52-Week Range", value: `${currency}${fmt(low52, 0)} – ${currency}${fmt(high52, 0)}`, note: `${((price - high52) / high52 * 100).toFixed(1)}% from peak`, color: 'muted' as any });
@@ -745,17 +763,17 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: "Base Case", price: `${currency}${adjBase}`, note: "Steady growth, stable margins", type: "base" },
       { label: "Bull Case", price: `${currency}${adjBull}`, note: "Expansion, re-rating catalyst", type: "bull" },
     ],
-    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our target price of ${currency}${targetPrice} (fair value midpoint) represents a ${targetReturnStr} potential ${targetIsUpside ? 'return' : 'decline'}.`,
+    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our target price of ${currency}${targetPrice} (probability-weighted) represents a ${targetReturnStr} potential ${targetIsUpside ? 'return' : 'decline'}.`,
     priceScenarios: [
-      { label: "▲ Bull Case", price: `${currency}${adjBull}`, probability: "Probability: 25%", change: `${((adjBull - price) / price * 100) >= 0 ? '+' : ''}${((adjBull - price) / price * 100).toFixed(0)}% ${(adjBull >= price) ? 'upside' : 'downside'}`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull", assumptions: { revenueGrowth: `${(scenarios.bull.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.bull.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.bull.peMultiple}x`, projectedEps: `${currency}${bullProjEps}` } },
-      { label: "◆ Base Case", price: `${currency}${adjBase}`, probability: "Probability: 50%", change: `${((adjBase - price) / price * 100) >= 0 ? '+' : ''}${((adjBase - price) / price * 100).toFixed(0)}% ${(adjBase >= price) ? 'upside' : 'downside'}`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base", assumptions: { revenueGrowth: `${(scenarios.base.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.base.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.base.peMultiple}x`, projectedEps: `${currency}${baseProjEps}` } },
-      { label: "▼ Bear Case", price: `${currency}${adjBear}`, probability: "Probability: 25%", change: `${((adjBear - price) / price * 100).toFixed(0)}% downside`, description: "Margin compression, macro headwinds, sector rotation", type: "bear", assumptions: { revenueGrowth: `${(scenarios.bear.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.bear.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.bear.peMultiple}x`, projectedEps: `${currency}${bearProjEps}` } },
+      { label: "▲ Bull Case", price: `${currency}${adjBull}`, probability: `Probability: ${probBull}%`, change: `${((adjBull - price) / price * 100) >= 0 ? '+' : ''}${((adjBull - price) / price * 100).toFixed(0)}% ${(adjBull >= price) ? 'upside' : 'downside'}`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull", assumptions: { revenueGrowth: `${(scenarios.bull.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.bull.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.bull.peMultiple}x`, projectedEps: `${currency}${bullProjEps}` } },
+      { label: "◆ Base Case", price: `${currency}${adjBase}`, probability: `Probability: ${probBase}%`, change: `${((adjBase - price) / price * 100) >= 0 ? '+' : ''}${((adjBase - price) / price * 100).toFixed(0)}% ${(adjBase >= price) ? 'upside' : 'downside'}`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base", assumptions: { revenueGrowth: `${(scenarios.base.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.base.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.base.peMultiple}x`, projectedEps: `${currency}${baseProjEps}` } },
+      { label: "▼ Bear Case", price: `${currency}${adjBear}`, probability: `Probability: ${probBear}%`, change: `${((adjBear - price) / price * 100).toFixed(0)}% downside`, description: "Margin compression, macro headwinds, sector rotation", type: "bear", assumptions: { revenueGrowth: `${(scenarios.bear.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.bear.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.bear.peMultiple}x`, projectedEps: `${currency}${bearProjEps}` } },
     ],
     expectedPrice: `${currency}${expectedPrice}`,
-    expectedFormula: `(${currency}${adjBull}×25%) + (${currency}${adjBase}×50%) + (${currency}${adjBear}×25%)`,
+    expectedFormula: `(${currency}${adjBull}×${probBull}%) + (${currency}${adjBase}×${probBase}%) + (${currency}${adjBear}×${probBear}%)`,
     expectedUpside: targetReturnStr,
     expectedUpsideNote: `${targetReturnLabel} from ${currency}${fmt(price)}`,
-    priceNote: `Target price of ${currency}${targetPrice} equals the fair value midpoint (${currency}${fvLow}–${currency}${fvHigh}). Probability-weighted expected price: ${currency}${expectedPrice}. ${fin?.targetMeanPrice ? `Analyst consensus: ${currency}${fmt(fin.targetMeanPrice)}.` : ''} Optimal entry zone: ${currency}${optEntryLow}–${currency}${optEntryHigh}.`,
+    priceNote: `Target price of ${currency}${targetPrice} is the probability-weighted expected price. Fair value range: ${currency}${fvLow}–${currency}${fvHigh}. ${fin?.targetMeanPrice ? `Analyst consensus: ${currency}${fmt(fin.targetMeanPrice)}.` : ''} Optimal entry zone: ${currency}${optEntryLow}–${currency}${optEntryHigh}.`,
     macroItems: [
       { icon: "📈", title: "Market Trend", detail: `Stock is ${pctChange >= 0 ? 'up' : 'down'} ${fmt(Math.abs(pctChange))}% today. ${price > (techs?.sma200 || 0) ? 'Trading above 200 DMA — bullish trend.' : 'Trading below 200 DMA — caution.'}`, sentiment: pctChange >= 0 ? "positive" : "negative", sentimentLabel: pctChange >= 0 ? "POSITIVE" : "HEADWIND" },
       { icon: "📊", title: "Valuation Context", detail: pe > 40 ? 'Premium valuation at current P/E — growth expectations priced in' : pe > 20 ? 'Fair valuation relative to broader market' : pe > 0 ? 'Attractive valuation on P/E basis' : 'P/E data unavailable', sentiment: pe > 40 ? "negative" : pe > 20 ? "neutral" : "positive", sentimentLabel: pe > 40 ? "RICH" : pe > 20 ? "FAIR" : pe > 0 ? "ATTRACTIVE" : "N/A" },
@@ -791,7 +809,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
         { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.5 ? "HIGH" : "MEDIUM") as any, filled: (high52 - low52) / low52 > 0.5 ? 4 : 3 },
         { name: "Technical Risk", level: price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM", filled: price < (techs?.sma200 || price) ? 4 : 2 },
       ];
-      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 100 ? "HIGH" : debtToEquity > 50 ? "MEDIUM" : "LOW", filled: debtToEquity > 100 ? 4 : debtToEquity > 50 ? 3 : 1 });
+      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 300 ? "HIGH" : debtToEquity > 150 ? "MEDIUM" : "LOW", filled: debtToEquity > 300 ? 4 : debtToEquity > 150 ? 3 : 1 });
       if (beta > 0) items.push({ name: "Beta Risk", level: beta > 1.5 ? "HIGH" : beta > 1 ? "MEDIUM" : "LOW", filled: beta > 1.5 ? 4 : beta > 1 ? 3 : 2 });
       items.push({ name: "Momentum Risk", level: pctChange < -3 ? "HIGH" : pctChange < 0 ? "MEDIUM" : "LOW", filled: pctChange < -3 ? 4 : pctChange < 0 ? 3 : 1 });
       return items;
@@ -942,7 +960,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       compositeReturn: `${compositeIsUpside ? '+' : '-'}${Math.abs(compositeReturnPct).toFixed(1)}%`,
       compositeLabel: `${compositeIsUpside ? 'Expected Upside' : 'Expected Downside'} from ${currency}${fmt(price)}`,
     },
-    fairValueRange: { low: `${currency}${fvLow}`, high: `${currency}${fvHigh}`, midpoint: `${currency}${fvMid}` },
+    fairValueRange: { low: `${currency}${fvLow}`, high: `${currency}${fvHigh}`, midpoint: `${currency}${targetPrice}` },
     accumulationZone: { low: `${currency}${accZoneLow}`, high: `${currency}${accZoneHigh}`, show: showAccZone },
     optimalEntry: { low: `${currency}${optEntryLow}`, high: `${currency}${optEntryHigh}`, basis: optEntryBasis },
     modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
@@ -981,7 +999,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       stack.push({ factor: 'Fundamentals', signal: fundPct >= 60 ? 'Bullish' : fundPct < 40 ? 'Bearish' : 'Neutral', detail: `Score: ${weightedScores[0]}/${maxScores[0]}` });
       const valPct = (weightedScores[1] / maxScores[1]) * 100;
       stack.push({ factor: 'Valuation', signal: valPct >= 60 ? 'Bullish' : valPct < 40 ? 'Bearish' : 'Neutral', detail: pe > 0 ? `P/E: ${fmt(pe, 1)}x` : 'N/A' });
-      stack.push({ factor: 'Technical Trend', signal: techPct >= 60 ? 'Bullish' : techPct < 40 ? 'Bearish' : 'Neutral', detail: techs ? `RSI: ${fmt(techs.rsi, 0)}` : 'N/A' });
+      // Technical trend respects signal consistency (death cross blocks bullish)
+      const techStackSignal = hasDeathCross ? (techPct >= 60 ? 'Neutral' : 'Bearish') : (techPct >= 60 ? 'Bullish' : techPct < 40 ? 'Bearish' : 'Neutral');
+      stack.push({ factor: 'Technical Trend', signal: techStackSignal as any, detail: techs ? `RSI: ${fmt(techs.rsi, 0)}${hasDeathCross ? ' · Death Cross' : hasGoldenCross ? ' · Golden Cross' : ''}` : 'N/A' });
       stack.push({ factor: 'Sector Momentum', signal: pctChange > 1 ? 'Bullish' : pctChange < -1 ? 'Bearish' : 'Neutral', detail: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange)}% today` });
       if (isBearRegime) stack.push({ factor: 'Macro Regime', signal: 'Adjustment', detail: 'Bear Market — downgrade applied' });
       else stack.push({ factor: 'Macro Regime', signal: marketRegime.regime === 'Bull Market' ? 'Bullish' : 'Neutral', detail: marketRegime.regime });
@@ -999,7 +1019,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     priceDistribution: {
       bear: {
         price: `${currency}${adjBear}`,
-        probability: 25,
+        probability: probBear,
         drivers: (() => {
           const d: string[] = [];
           if (profitMargins != null) d.push('Margin compression');
@@ -1010,7 +1030,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       },
       base: {
         price: `${currency}${adjBase}`,
-        probability: 50,
+        probability: probBase,
         drivers: (() => {
           const d: string[] = [];
           d.push('Steady earnings growth');
@@ -1022,7 +1042,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       },
       bull: {
         price: `${currency}${adjBull}`,
-        probability: 30,
+        probability: probBull,
         drivers: (() => {
           const d: string[] = [];
           if (revenueGrowth != null) d.push('Strong revenue growth');

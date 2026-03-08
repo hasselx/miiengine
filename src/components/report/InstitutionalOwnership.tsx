@@ -16,18 +16,22 @@ const InstitutionalOwnership = ({ data }: { data: StockAnalysis }) => {
       </div>
       {/* Top holders */}
       <h4 className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Top Holders</h4>
-      <div className="space-y-2">
-        {data.topHolders.map((h, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <span className="font-mono text-[10px] text-muted-foreground w-4">{i + 1}</span>
-            <span className="text-[12px] text-foreground flex-1 truncate">{h.name}</span>
-            <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary/60 rounded-full" style={{ width: `${h.percentage * 8}%` }} />
+      {data.topHolders.length === 1 && data.topHolders[0].name === 'Data unavailable' ? (
+        <p className="text-[12px] text-muted-foreground italic">Top holder data unavailable.</p>
+      ) : (
+        <div className="space-y-2">
+          {data.topHolders.map((h, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <span className="font-mono text-[10px] text-muted-foreground w-4">{i + 1}</span>
+              <span className="text-[12px] text-foreground flex-1 truncate">{h.name}</span>
+              <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary/60 rounded-full" style={{ width: `${h.percentage * 8}%` }} />
+              </div>
+              <span className="font-mono text-[12px] font-semibold text-foreground w-12 text-right">{h.percentage}%</span>
             </div>
-            <span className="font-mono text-[12px] font-semibold text-foreground w-12 text-right">{h.percentage}%</span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </SectionWrapper>
   );
 };
