@@ -126,7 +126,15 @@ img,svg{max-width:100%;height:auto}
 
         {/* Compact action bar */}
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-          <div className="bg-sidebar-primary text-sidebar-primary-foreground font-mono text-[10px] sm:text-[11px] font-semibold tracking-[2px] px-3 sm:px-4 py-1.5 sm:py-2 uppercase rounded mr-1">
+          <div className={`font-mono text-[10px] sm:text-[11px] font-semibold tracking-[2px] px-3 sm:px-4 py-1.5 sm:py-2 uppercase rounded mr-1 text-white ${
+            data.verdictBadge?.toLowerCase().includes('strong buy') ? 'bg-[hsl(142,60%,30%)]' :
+            data.verdictBadge?.toLowerCase().includes('buy') ? 'bg-[hsl(142,45%,40%)]' :
+            data.verdictBadge?.toLowerCase().includes('accumulate') ? 'bg-[hsl(170,40%,38%)]' :
+            data.verdictBadge?.toLowerCase().includes('hold') ? 'bg-[hsl(45,60%,42%)]' :
+            data.verdictBadge?.toLowerCase().includes('reduce') ? 'bg-[hsl(20,70%,45%)]' :
+            data.verdictBadge?.toLowerCase().includes('sell') ? 'bg-[hsl(0,65%,42%)]' :
+            'bg-sidebar-primary text-sidebar-primary-foreground'
+          }`}>
             {data.verdictBadge}
           </div>
           <div className="flex items-center gap-0.5 bg-sidebar-accent/30 border border-sidebar-border rounded-lg p-0.5">
