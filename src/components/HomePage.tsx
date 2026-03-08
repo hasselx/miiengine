@@ -88,22 +88,22 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
       </div>
 
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-12 pt-4">
         {/* Brand */}
-        <div className="text-center mb-6 animate-fade-in">
-          <p className="font-mono text-[10px] sm:text-[11px] tracking-[4px] sm:tracking-[6px] uppercase text-primary mb-4 sm:mb-5">
+        <div className="text-center mb-8 sm:mb-10">
+          <p className="font-mono text-[10px] sm:text-[11px] tracking-[4px] sm:tracking-[6px] uppercase text-muted-foreground mb-5 sm:mb-6">
             Multi-Institutional Intelligence Engine
           </p>
-          <h1 className="font-display text-4xl sm:text-6xl lg:text-[5.5rem] font-black text-foreground mb-4 sm:mb-5 tracking-tight leading-none">
+          <h1 className="font-display text-4xl sm:text-6xl lg:text-[5.5rem] font-black text-foreground mb-5 sm:mb-6 tracking-tight leading-none">
             MII Engine
           </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed px-2">
-            Generate comprehensive, multi-factor stock analysis reports in seconds.
+          <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto leading-relaxed px-2">
+            Professional-grade, multi-factor equity research reports — generated in seconds.
           </p>
         </div>
 
         {/* Verdict pills */}
-        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8 animate-fade-in px-2" style={{ animationDelay: "0.05s" }}>
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-8 sm:mb-10 px-2">
           {VERDICTS.map((v) => (
             <span
               key={v.label}
@@ -114,14 +114,12 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
           ))}
         </div>
 
-
         {/* Search form */}
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-lg px-2 animate-fade-in"
-          style={{ animationDelay: "0.15s" }}
+          className="w-full max-w-xl px-2"
         >
-          <div className="flex items-center bg-card border border-border rounded-lg shadow-lg overflow-hidden transition-all focus-within:border-primary focus-within:shadow-xl">
+          <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden transition-colors focus-within:border-primary">
             <div className="pl-4 sm:pl-5">
               <Search className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -129,14 +127,14 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
               placeholder="Enter stock or company name..."
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              className="flex-1 bg-transparent text-foreground text-base sm:text-lg font-medium outline-none placeholder:text-muted-foreground px-3 sm:px-4 py-3.5 sm:py-4"
+              className="flex-1 bg-transparent text-foreground text-base font-medium outline-none placeholder:text-muted-foreground px-3 sm:px-4 py-3.5 sm:py-4"
               autoFocus
             />
             <button
               type="submit"
               disabled={isLoading || !company.trim()}
               className={cn(
-                "flex items-center gap-2 px-4 sm:px-6 py-3.5 sm:py-4 text-sm font-semibold tracking-[1.5px] uppercase transition-all touch-target",
+                "flex items-center gap-2 px-5 sm:px-7 py-3.5 sm:py-4 text-sm font-semibold tracking-[1.5px] uppercase transition-colors touch-target",
                 "bg-primary text-primary-foreground hover:bg-primary/90",
                 "disabled:opacity-30 disabled:cursor-not-allowed"
               )}
@@ -153,11 +151,11 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
         {/* Error */}
         {error && (
-          <p className="mt-4 text-sm text-destructive font-mono animate-fade-in px-4 text-center">{error}</p>
+          <p className="mt-4 text-sm text-destructive font-mono px-4 text-center">{error}</p>
         )}
 
         {/* Example tickers */}
-        <div className="mt-6 text-center animate-fade-in px-2" style={{ animationDelay: "0.2s" }}>
+        <div className="mt-8 text-center px-2">
           <p className="text-[10px] font-mono tracking-[3px] uppercase text-muted-foreground mb-3">Try these</p>
           <div className="flex flex-wrap justify-center gap-2">
             {EXAMPLES.map((ex) => (
@@ -165,7 +163,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
                 key={ex.label}
                 onClick={() => setCompany(ex.company)}
                 disabled={isLoading}
-                className="px-3 py-2 text-xs font-mono border border-border text-muted-foreground hover:text-foreground hover:border-primary hover:bg-primary/5 rounded-md transition-all disabled:opacity-40 touch-target"
+                className="px-3 py-2 text-xs font-mono border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 rounded-md transition-colors disabled:opacity-40 touch-target"
               >
                 {ex.label}
               </button>
