@@ -1,4 +1,4 @@
-import { StockAnalysis } from "./stockData";
+import { StockAnalysis, MoatItem, RiskItem, PatternSignal, SentimentFactor } from "./stockData";
 import { StockRawData } from "./stockApi";
 
 function safe(val: any, fallback: string = 'N/A'): string {
@@ -39,7 +39,6 @@ function getCurrency(exchange: string): string {
 }
 
 function getCurrencyFromData(quote: any, exchange: string): string {
-  // Try currency field from API first
   const cur = (quote?.currency || '').toUpperCase();
   if (cur === 'INR') return '₹';
   if (cur === 'GBP' || cur === 'GBX') return '£';
@@ -51,18 +50,14 @@ function getCurrencyFromData(quote: any, exchange: string): string {
   if (cur === 'AUD') return 'A$';
   if (cur === 'CAD') return 'C$';
   if (cur === 'USD') return '$';
-  // Try exchange from API response
   const apiExchange = (quote?.exchange || '').toUpperCase();
   if (apiExchange) return getCurrency(apiExchange);
-  // Fallback to provided exchange
   return getCurrency(exchange);
 }
 
-// Compute technical indicators from time series
 function computeTechnicals(timeSeries: any[]) {
   if (!timeSeries || timeSeries.length === 0) return null;
-
-  const closes = timeSeries.map((d: any) => num(d.close)).reverse(); // oldest to newest
+  const closes = timeSeries.map((d: any) => num(d.close)).reverse();
   const currentPrice = closes[closes.length - 1];
 
   const sma = (period: number) => {
@@ -75,7 +70,6 @@ function computeTechnicals(timeSeries: any[]) {
   const sma100 = sma(100);
   const sma200 = sma(200);
 
-  // RSI (14)
   let rsi = 50;
   if (closes.length >= 15) {
     const changes = [];
@@ -90,13 +84,11 @@ function computeTechnicals(timeSeries: any[]) {
     else rsi = 100 - (100 / (1 + avgGain / avgLoss));
   }
 
-  // 52-week high/low (all available data = ATH/ATL proxy)
   const yearData = closes.slice(-252);
   const high52 = Math.max(...yearData);
   const low52 = Math.min(...yearData);
 
-  // All-time high/low from all available data with dates
-  const tsReversed = [...timeSeries].reverse(); // oldest to newest
+  const tsReversed = [...timeSeries].reverse();
   let allHigh = closes[0], allLow = closes[0], allHighDate = '', allLowDate = '';
   for (const d of tsReversed as any[]) {
     const c = num(d.close);
@@ -105,7 +97,6 @@ function computeTechnicals(timeSeries: any[]) {
     if (c <= allLow) { allLow = c; allLowDate = dt; }
   }
 
-  // Current year high/low with dates
   const now = new Date();
   const currentYear = now.getFullYear();
   let ytdHigh = -Infinity, ytdLow = Infinity, ytdHighDate = '', ytdLowDate = '';
@@ -126,33 +117,25 @@ function computeTechnicals(timeSeries: any[]) {
     return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`;
   };
 
-  // Recent volume
   const volumes = timeSeries.slice(0, 3).map((d: any) => num(d.volume));
   const avgVol3 = volumes.reduce((a: number, b: number) => a + b, 0) / 3;
 
   return { currentPrice, sma50, sma100, sma200, rsi, high52, low52, allHigh, allLow, allHighDate: fmtDate(allHighDate), allLowDate: fmtDate(allLowDate), ytdHigh, ytdLow, ytdHighDate: fmtDate(ytdHighDate), ytdLowDate: fmtDate(ytdLowDate), avgVol3 };
 }
 
-// Score calculation functions
 function scoreFundamentals(quote: any, stats: any): { score: number; subtitle: string } {
-  let score = 10; // base
+  let score = 10;
   const pe = num(quote.pe);
   const eps = num(quote.eps);
-
   if (pe > 0 && pe < 15) score += 4;
   else if (pe >= 15 && pe < 25) score += 3;
   else if (pe >= 25 && pe < 40) score += 2;
-  else if (pe >= 40) score += 0;
-
   if (eps > 0) score += 2;
-
   const fiftyTwoChange = num(quote.percent_change);
   if (fiftyTwoChange > 10) score += 2;
   else if (fiftyTwoChange > 0) score += 1;
-
   score = Math.min(20, Math.max(0, score));
-  const subtitle = `P/E: ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}; EPS: ${eps > 0 ? fmt(eps) : 'N/A'}`;
-  return { score, subtitle };
+  return { score, subtitle: `P/E: ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}; EPS: ${eps > 0 ? fmt(eps) : 'N/A'}` };
 }
 
 function scoreValuation(quote: any, techs: any): { score: number; subtitle: string } {
@@ -161,13 +144,12 @@ function scoreValuation(quote: any, techs: any): { score: number; subtitle: stri
   if (pe > 0 && pe < 20) score += 4;
   else if (pe < 30) score += 2;
   else if (pe > 50) score -= 2;
-
   score = Math.min(15, Math.max(0, score));
-  return { score, subtitle: `P/E based valuation assessment; current P/E: ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}` };
+  return { score, subtitle: `P/E based valuation; current P/E: ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}` };
 }
 
 function scoreMoat(profile: any): { score: number; subtitle: string } {
-  let score = 5; // neutral
+  let score = 5;
   if (profile && profile.sector) score += 2;
   if (profile && profile.employees && num(profile.employees) > 1000) score += 1;
   score = Math.min(10, Math.max(0, score));
@@ -180,15 +162,14 @@ function scoreTechnical(techs: any): { score: number; subtitle: string } {
   if (techs.sma50 && techs.currentPrice > techs.sma50) score += 2;
   if (techs.sma200 && techs.currentPrice > techs.sma200) score += 2;
   if (techs.rsi > 30 && techs.rsi < 70) score += 2;
-  else if (techs.rsi <= 30) score += 1; // oversold can be opportunity
+  else if (techs.rsi <= 30) score += 1;
   score = Math.min(15, Math.max(0, score));
-
   const smaStatus = techs.sma200 ? (techs.currentPrice > techs.sma200 ? 'Above' : 'Below') + ' 200 DMA' : 'N/A';
   return { score, subtitle: `RSI: ${fmt(techs.rsi, 0)}; ${smaStatus}` };
 }
 
 export function buildAnalysisFromRealData(raw: StockRawData, company: string, country: string, exchange: string): StockAnalysis {
-  const { quote, profile, statistics, timeSeries } = raw;
+  const { quote, profile, statistics, timeSeries, fundamentals } = raw;
   const techs = computeTechnicals(timeSeries);
   const currency = getCurrencyFromData(quote, exchange);
   const price = num(quote.close || quote.price);
@@ -204,15 +185,68 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const ticker = safe(quote?.symbol, company.toUpperCase());
   const sector = safe(profile?.sector, 'N/A');
 
-  // Compute scores
+  // Real financial data from API
+  const fin = statistics?.financials || {};
+  const divData = statistics?.dividends_and_splits || {};
+  const fundData = fundamentals || {};
+  const earningsHist = fundData?.earningsHistory || [];
+  const insiderTxnData = fundData?.insiderTransactions || [];
+  const instData = fundData?.institutionalOwnership || {};
+  const recData = fundData?.recommendation || null;
+  const beta = num(quote?.beta);
+  const debtToEquity: number | null = fin?.debtToEquity ?? null;
+  const returnOnEquity: number | null = fin?.returnOnEquity ?? null;
+  const revenueGrowth: number | null = fin?.revenueGrowth ?? null;
+  const profitMargins: number | null = fin?.profitMargins ?? null;
+  const grossMargins: number | null = fin?.grossMargins ?? null;
+
+  // Scores
   const fund = scoreFundamentals(quote, statistics);
   const val = scoreValuation(quote, techs);
   const moat = scoreMoat(profile);
-  const momentum = { score: 6, subtitle: 'Based on recent price action and earnings data' };
+
+  const momentum = (() => {
+    let score = 5;
+    if (earningsHist.length > 0) {
+      const beats = earningsHist.filter((e: any) => e.epsActual != null && e.epsEstimate != null && e.epsActual > e.epsEstimate).length;
+      score = Math.min(10, 3 + Math.round(beats * 2));
+      return { score, subtitle: `${beats}/${earningsHist.length} earnings beats` };
+    }
+    if (pctChange > 2) score = 7; else if (pctChange < -2) score = 4;
+    return { score, subtitle: 'Based on recent price action' };
+  })();
+
   const tech = scoreTechnical(techs);
-  const quant = { score: 6, subtitle: 'Institutional data limited via current API' };
-  const risk = { score: 7, subtitle: 'Risk assessed from volatility and sector' };
-  const macro = { score: 7, subtitle: 'Macro environment based on current conditions' };
+
+  const quant = (() => {
+    let score = 5;
+    const instPct = num(instData?.percentage);
+    if (instPct > 60) score += 3; else if (instPct > 30) score += 2; else if (instPct > 10) score += 1;
+    if (recData) {
+      const buySignals = (recData.strongBuy || 0) + (recData.buy || 0);
+      const sellSignals = (recData.sell || 0) + (recData.strongSell || 0);
+      if (buySignals > sellSignals * 2) score += 2; else if (buySignals > sellSignals) score += 1;
+    }
+    return { score: Math.min(10, Math.max(0, score)), subtitle: num(instData?.percentage) > 0 ? `Institutional ownership: ${num(instData?.percentage).toFixed(1)}%` : 'Institutional data limited' };
+  })();
+
+  const risk = (() => {
+    let score = 7;
+    if (debtToEquity != null) { if (debtToEquity < 30) score += 2; else if (debtToEquity > 100) score -= 2; }
+    const vol52 = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
+    if (vol52 > 0.6) score -= 1;
+    if (beta > 0) { if (beta > 1.5) score -= 1; else if (beta < 0.8) score += 1; }
+    score = Math.min(10, Math.max(0, score));
+    return { score, subtitle: `${debtToEquity != null ? `D/E: ${debtToEquity.toFixed(1)}` : 'D/E: N/A'}; 52W range: ${(vol52 * 100).toFixed(0)}%` };
+  })();
+
+  const macro = (() => {
+    let score = 6;
+    if (revenueGrowth != null && revenueGrowth > 0.1) score += 2; else if (revenueGrowth != null && revenueGrowth > 0) score += 1;
+    if (profitMargins != null && profitMargins > 0.15) score += 1;
+    if (pctChange >= 0) score += 1;
+    return { score: Math.min(10, Math.max(0, score)), subtitle: revenueGrowth != null ? `Revenue growth: ${(revenueGrowth * 100).toFixed(1)}%` : 'Revenue growth data unavailable' };
+  })();
 
   const totalScore = fund.score + val.score + moat.score + momentum.score + tech.score + quant.score + risk.score + macro.score;
 
@@ -224,17 +258,15 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     if (s >= 50) return { badge: "⬛ WEAK HOLD", verdict: "Weak Hold", range: "50–59 = WEAK HOLD" };
     return { badge: "⬛ AVOID", verdict: "Avoid", range: "Below 50 = AVOID" };
   };
-
   const v = getVerdict(totalScore);
 
-  // Price projections
-  const bullPrice = Math.round(price * 1.35);
-  const basePrice = Math.round(price * 1.18);
-  const bearPrice = Math.round(price * 0.82);
+  // Price projections - use analyst targets if available
+  const bullPrice = fin?.targetHighPrice ? Math.round(fin.targetHighPrice) : Math.round(price * 1.35);
+  const basePrice = fin?.targetMeanPrice ? Math.round(fin.targetMeanPrice) : Math.round(price * 1.18);
+  const bearPrice = fin?.targetLowPrice ? Math.round(fin.targetLowPrice) : Math.round(price * 0.82);
   const expectedPrice = Math.round(bullPrice * 0.25 + basePrice * 0.50 + bearPrice * 0.25);
   const expectedUpside = (((expectedPrice - price) / price) * 100).toFixed(1);
 
-  // Trading plan
   const entryLow = Math.round(price * 0.95);
   const entryHigh = Math.round(price * 1.0);
   const stopLoss = Math.round(price * 0.88);
@@ -245,11 +277,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const rewardAmt = t2 - entryLow;
   const rrRatio = riskAmt > 0 ? `1 : ${(rewardAmt / riskAmt).toFixed(1)}` : '1 : N/A';
 
-  // Format change sign
   const changeSign = change >= 0 ? '+' : '';
   const pctSign = pctChange >= 0 ? '+' : '';
 
-  // Technical signals
   const techSignals = techs ? [
     { name: "50-Day SMA", value: techs.sma50 ? (price > techs.sma50 ? "ABOVE ✓" : "BELOW ✗") : "N/A", status: (techs.sma50 && price > techs.sma50 ? "positive" : techs.sma50 ? "negative" : "neutral") as 'positive' | 'negative' | 'neutral' },
     { name: "100-Day SMA", value: techs.sma100 ? (price > techs.sma100 ? "ABOVE ✓" : "BELOW ✗") : "N/A", status: (techs.sma100 && price > techs.sma100 ? "positive" : techs.sma100 ? "negative" : "neutral") as 'positive' | 'negative' | 'neutral' },
@@ -259,9 +289,13 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     { name: "Key Resistance", value: `${currency}${Math.round(high52)}`, status: "neutral" as const },
     { name: "52W from Peak", value: `${((price - high52) / high52 * 100).toFixed(1)}%`, status: (price > high52 * 0.9 ? "positive" : "negative") as 'positive' | 'negative' },
     { name: "Avg Volume (3D)", value: techs.avgVol3 > 0 ? fmtLarge(techs.avgVol3) : "N/A", status: "neutral" as const },
-  ] : [
-    { name: "Technical Data", value: "Insufficient historical data", status: "neutral" as const },
-  ];
+  ] : [{ name: "Technical Data", value: "Insufficient historical data", status: "neutral" as const }];
+
+  const dividendYieldStr = (() => {
+    const dy = divData?.yield;
+    if (dy != null && dy > 0) return `${(dy * 100).toFixed(2)}%`;
+    return 'N/A';
+  })();
 
   return {
     company: companyName,
@@ -272,7 +306,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: "CMP", value: `${currency}${fmt(price)}`, change: `${pctSign}${fmt(pctChange)}% today` },
       { label: "Market Cap", value: marketCap > 0 ? `${currency}${fmtLarge(marketCap)}` : 'N/A', change: sector },
       { label: "52W Range", value: `${currency}${fmt(high52, 0)} / ${currency}${fmt(low52, 0)}`, change: `${((price - high52) / high52 * 100).toFixed(1)}% from peak` },
-      { label: "P/E (TTM)", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A', change: `EPS: ${safe(quote?.eps)}` },
+      { label: "P/E (TTM)", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A', change: `EPS: ${num(quote?.eps) > 0 ? currency + fmt(num(quote?.eps)) : 'N/A'}` },
       { label: "Prev Close", value: `${currency}${fmt(prevClose)}`, change: `Change: ${changeSign}${fmt(change)}` },
       { label: "Volume", value: safe(quote?.volume, 'N/A'), change: `Avg: ${safe(quote?.average_volume, 'N/A')}` },
     ],
@@ -292,20 +326,20 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     ],
     executiveSummary: [
       `<strong>${companyName}</strong> is currently trading at <strong>${currency}${fmt(price)}</strong> with a ${pctSign}${fmt(pctChange)}% change today. The stock operates in the <strong>${sector}</strong> sector${profile?.country ? ` based in <strong>${profile.country}</strong>` : ''}.`,
-      `From a valuation perspective, the stock trades at <strong>${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'}</strong>. The 52-week range of ${currency}${fmt(high52, 0)} to ${currency}${fmt(low52, 0)} suggests the stock is <strong>${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its annual range</strong>.`,
+      `From a valuation perspective, the stock trades at <strong>${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'}</strong>. ${profitMargins != null ? `Net profit margin is <strong>${(profitMargins * 100).toFixed(1)}%</strong>.` : ''} ${revenueGrowth != null ? `Revenue growth stands at <strong>${(revenueGrowth * 100).toFixed(1)}%</strong> YoY.` : ''} The 52-week range of ${currency}${fmt(high52, 0)} to ${currency}${fmt(low52, 0)} suggests the stock is <strong>${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its annual range</strong>.`,
       `Our multi-factor analysis yields a total score of <strong>${totalScore}/100</strong>, resulting in a <strong>${v.verdict}</strong> recommendation. The expected 12-month price target is <strong>${currency}${expectedPrice}</strong>, representing a <strong>${expectedUpside}% expected return</strong> from current levels.`,
     ],
     modelSummaries: [
       { num: "01", model: "Stock Screener", firm: "Goldman Sachs", abstract: `P/E at ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}, ${pctChange >= 0 ? 'positive' : 'negative'} momentum. Fundamental score: ${fund.score}/20.`, sentiment: fund.score >= 14 ? "positive" : fund.score >= 10 ? "neutral" : "negative" },
       { num: "02", model: "DCF Valuation", firm: "Morgan Stanley", abstract: `Intrinsic value range ${currency}${bearPrice}–${currency}${bullPrice}. Current price ${price > basePrice ? 'above' : 'below'} base estimate of ${currency}${basePrice}.`, sentiment: price <= basePrice ? "positive" : "negative" },
-      { num: "03", model: "Risk Analysis", firm: "Bridgewater", abstract: `${pe > 40 ? 'High valuation risk' : 'Moderate risk profile'}. 52W range spread: ${((high52 - low52) / low52 * 100).toFixed(0)}%. Risk score: ${risk.score}/10.`, sentiment: risk.score >= 7 ? "positive" : risk.score >= 5 ? "neutral" : "negative" },
-      { num: "04", model: "Earnings Breakdown", firm: "JPMorgan", abstract: `EPS: ${currency}${safe(quote?.eps, 'N/A')}. ${pctChange >= 0 ? 'Positive price action' : 'Negative momentum'} today at ${pctSign}${fmt(pctChange)}%.`, sentiment: pctChange >= 0 ? "positive" : "negative" },
+      { num: "03", model: "Risk Analysis", firm: "Bridgewater", abstract: `${debtToEquity != null ? `D/E: ${debtToEquity.toFixed(1)}.` : ''} 52W range spread: ${((high52 - low52) / low52 * 100).toFixed(0)}%. Risk score: ${risk.score}/10.`, sentiment: risk.score >= 7 ? "positive" : risk.score >= 5 ? "neutral" : "negative" },
+      { num: "04", model: "Earnings Breakdown", firm: "JPMorgan", abstract: `EPS: ${num(quote?.eps) > 0 ? currency + fmt(num(quote?.eps)) : 'N/A'}. ${pctChange >= 0 ? 'Positive price action' : 'Negative momentum'} today at ${pctSign}${fmt(pctChange)}%.`, sentiment: pctChange >= 0 ? "positive" : "negative" },
       { num: "05", model: "Portfolio Construction", firm: "BlackRock", abstract: `Expected return: ${expectedUpside}%. Risk/Reward: ${rrRatio}. ${totalScore >= 70 ? 'Portfolio-worthy' : 'Position sizing caution advised'}.`, sentiment: totalScore >= 70 ? "positive" : "neutral" },
       { num: "06", model: "Technical Analysis", firm: "Citadel", abstract: `${techs ? `RSI: ${fmt(techs.rsi, 0)}. ${price > (techs.sma200 || 0) ? 'Above' : 'Below'} 200 DMA. ${price > (techs.sma50 || 0) ? 'Short-term bullish' : 'Short-term bearish'}.` : 'Insufficient data.'}`, sentiment: tech.score >= 10 ? "positive" : tech.score >= 7 ? "neutral" : "negative" },
-      { num: "07", model: "Dividend Strategy", firm: "Harvard Endowment", abstract: `Yield: ${safe(statistics?.dividends_and_splits?.dividend_yield, 'N/A')}. ${num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'Income-grade yield' : 'Capital appreciation focus'}.`, sentiment: num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? "positive" : "neutral" },
+      { num: "07", model: "Dividend Strategy", firm: "Harvard Endowment", abstract: `Yield: ${dividendYieldStr}. ${divData?.yield != null && divData.yield > 0.02 ? 'Income-grade yield' : 'Capital appreciation focus'}.`, sentiment: divData?.yield != null && divData.yield > 0.02 ? "positive" : "neutral" },
       { num: "08", model: "Competitive Advantage", firm: "Bain & Company", abstract: `Moat score: ${moat.score}/10. Sector: ${sector}. ${moat.score >= 7 ? 'Strong competitive position' : 'Moderate competitive standing'}.`, sentiment: moat.score >= 7 ? "positive" : "neutral" },
       { num: "09", model: "Pattern Finder", firm: "Renaissance", abstract: `${techs ? `${techs.sma50 && techs.sma200 ? (techs.sma50 > techs.sma200 ? 'Golden cross — bullish' : 'Death cross — bearish') : 'SMA data limited'}. Price ${((price - high52) / high52 * 100).toFixed(1)}% from 52W high.` : 'Insufficient data.'}`, sentiment: techs?.sma50 && techs?.sma200 && techs.sma50 > techs.sma200 ? "positive" : "negative" },
-      { num: "10", model: "Macro Impact", firm: "McKinsey", abstract: `${pctChange >= 0 ? 'Positive' : 'Negative'} market sentiment. ${pe > 40 ? 'Premium valuation in current cycle' : 'Reasonable valuation for macro environment'}. Macro score: ${macro.score}/10.`, sentiment: macro.score >= 7 ? "positive" : "neutral" },
+      { num: "10", model: "Macro Impact", firm: "McKinsey", abstract: `${revenueGrowth != null ? `Revenue growth: ${(revenueGrowth * 100).toFixed(1)}%.` : ''} ${pe > 40 ? 'Premium valuation in current cycle' : 'Reasonable valuation for macro environment'}. Macro score: ${macro.score}/10.`, sentiment: macro.score >= 7 ? "positive" : "neutral" },
     ],
     tags: [
       { label: sector, highlighted: true },
@@ -314,28 +348,36 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: pctChange > 0 ? 'Positive Momentum' : 'Negative Momentum', highlighted: false },
       { label: v.verdict, highlighted: false },
     ],
-    fundamentalMetrics: [
-      { label: "P/E Ratio (TTM)", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A', note: `EPS: ${safe(quote?.eps)}`, color: (pe > 40 ? 'red' : pe > 20 ? 'gold' : 'green') as any },
-      { label: "Current Price", value: `${currency}${fmt(price)}`, note: `${pctSign}${fmt(pctChange)}% today`, color: (pctChange >= 0 ? 'green' : 'red') as any },
-      { label: "Previous Close", value: `${currency}${fmt(prevClose)}`, note: `Change: ${changeSign}${currency}${fmt(Math.abs(change))}`, color: 'muted' as any },
-      { label: "52-Week High", value: `${currency}${fmt(high52, 0)}`, note: `${((price - high52) / high52 * 100).toFixed(1)}% from peak`, color: 'red' as any },
-      { label: "52-Week Low", value: `${currency}${fmt(low52, 0)}`, note: `${((price - low52) / low52 * 100).toFixed(1)}% from low`, color: 'green' as any },
-      { label: "Volume", value: safe(quote?.volume, 'N/A'), note: `Avg: ${safe(quote?.average_volume, 'N/A')}`, color: 'muted' as any },
-    ],
-    fundamentalNote: `${companyName} is currently priced at ${currency}${fmt(price)} with a P/E ratio of ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}. The stock has moved ${pctSign}${fmt(pctChange)}% today from a previous close of ${currency}${fmt(prevClose)}. It's trading ${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its 52-week range.`,
-    dcfAssumptions: [
-      { label: "Current Price", value: `${currency}${fmt(price)}` },
-      { label: "P/E (TTM)", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A' },
-      { label: "EPS (TTM)", value: safe(quote?.eps) },
-      { label: "52W High", value: `${currency}${fmt(high52, 0)}` },
-      { label: "52W Low", value: `${currency}${fmt(low52, 0)}` },
-      { label: "Estimated WACC", value: "10–13%" },
-      { label: "Terminal Growth", value: "3–5%" },
-    ],
+    fundamentalMetrics: (() => {
+      const metrics: any[] = [
+        { label: "P/E Ratio (TTM)", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A', note: `EPS: ${num(quote?.eps) > 0 ? currency + fmt(num(quote?.eps)) : 'N/A'}`, color: (pe > 40 ? 'red' : pe > 20 ? 'gold' : pe > 0 ? 'green' : 'muted') as any },
+        { label: "Current Price", value: `${currency}${fmt(price)}`, note: `${pctSign}${fmt(pctChange)}% today`, color: (pctChange >= 0 ? 'green' : 'red') as any },
+        { label: "Market Cap", value: marketCap > 0 ? `${currency}${fmtLarge(marketCap)}` : 'N/A', note: sector !== 'N/A' ? sector : '', color: 'muted' as any },
+      ];
+      if (returnOnEquity != null) metrics.push({ label: "ROE", value: `${(returnOnEquity * 100).toFixed(1)}%`, note: "Return on equity", color: (returnOnEquity > 0.15 ? 'green' : returnOnEquity > 0.08 ? 'gold' : 'red') as any });
+      if (debtToEquity != null) metrics.push({ label: "Debt/Equity", value: `${debtToEquity.toFixed(1)}`, note: debtToEquity < 50 ? "Conservative leverage" : "High leverage", color: (debtToEquity < 50 ? 'green' : debtToEquity < 100 ? 'gold' : 'red') as any });
+      if (profitMargins != null) metrics.push({ label: "Profit Margin", value: `${(profitMargins * 100).toFixed(1)}%`, note: "Net profit margin", color: (profitMargins > 0.15 ? 'green' : profitMargins > 0.05 ? 'gold' : 'red') as any });
+      if (revenueGrowth != null) metrics.push({ label: "Revenue Growth", value: `${(revenueGrowth * 100).toFixed(1)}%`, note: "Year-over-year", color: (revenueGrowth > 0.1 ? 'green' : revenueGrowth > 0 ? 'gold' : 'red') as any });
+      metrics.push({ label: "52-Week Range", value: `${currency}${fmt(low52, 0)} – ${currency}${fmt(high52, 0)}`, note: `${((price - high52) / high52 * 100).toFixed(1)}% from peak`, color: 'muted' as any });
+      return metrics;
+    })(),
+    fundamentalNote: `${companyName} is currently priced at ${currency}${fmt(price)} with a P/E ratio of ${pe > 0 ? fmt(pe, 1) + 'x' : 'N/A'}. ${profitMargins != null ? `Net profit margin stands at ${(profitMargins * 100).toFixed(1)}%.` : ''} ${revenueGrowth != null ? `Revenue growth is ${(revenueGrowth * 100).toFixed(1)}% YoY.` : ''} The stock is trading ${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its 52-week range.`,
+    dcfAssumptions: (() => {
+      const items = [
+        { label: "Current Price", value: `${currency}${fmt(price)}` },
+        { label: "P/E (TTM)", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A' },
+        { label: "EPS (TTM)", value: num(quote?.eps) > 0 ? `${currency}${fmt(num(quote?.eps))}` : 'N/A' },
+        { label: "52W High", value: `${currency}${fmt(high52, 0)}` },
+        { label: "52W Low", value: `${currency}${fmt(low52, 0)}` },
+      ];
+      if (fin?.targetMeanPrice) items.push({ label: "Analyst Target", value: `${currency}${fmt(fin.targetMeanPrice)}` });
+      if (beta > 0) items.push({ label: "Beta", value: fmt(beta, 2) });
+      return items;
+    })(),
     revenueProjections: [
-      { label: "Bear Estimate", value: `${currency}${Math.round(price * 0.82)}` },
-      { label: "Base Estimate", value: `${currency}${Math.round(price * 1.18)}` },
-      { label: "Bull Estimate", value: `${currency}${Math.round(price * 1.35)}` },
+      { label: "Bear Estimate", value: `${currency}${bearPrice}` },
+      { label: "Base Estimate", value: `${currency}${basePrice}` },
+      { label: "Bull Estimate", value: `${currency}${bullPrice}` },
       { label: "Expected Value", value: `${currency}${expectedPrice}`, highlight: true },
     ],
     dcfScenarios: [
@@ -343,7 +385,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       { label: "Base Case", price: `${currency}${basePrice}`, note: "Steady growth, stable margins", type: "base" },
       { label: "Bull Case", price: `${currency}${bullPrice}`, note: "Expansion, re-rating catalyst", type: "bull" },
     ],
-    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. Our probability-weighted expected value of ${currency}${expectedPrice} represents a ${expectedUpside}% potential return. The bull case of ${currency}${bullPrice} assumes expansion and re-rating, while the bear case of ${currency}${bearPrice} accounts for margin pressure and sector headwinds.`,
+    valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our probability-weighted expected value of ${currency}${expectedPrice} represents a ${expectedUpside}% potential return.`,
     priceScenarios: [
       { label: "▲ Bull Case", price: `${currency}${bullPrice}`, probability: "Probability: 25%", change: `+${((bullPrice - price) / price * 100).toFixed(0)}% upside`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull" },
       { label: "◆ Base Case", price: `${currency}${basePrice}`, probability: "Probability: 50%", change: `+${((basePrice - price) / price * 100).toFixed(0)}% upside`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base" },
@@ -353,12 +395,12 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     expectedFormula: `(${currency}${bullPrice}×25%) + (${currency}${basePrice}×50%) + (${currency}${bearPrice}×25%)`,
     expectedUpside: `+${expectedUpside}%`,
     expectedUpsideNote: `Expected Upside from ${currency}${fmt(price)}`,
-    priceNote: `Based on our multi-factor analysis, the probability-weighted expected price of ${currency}${expectedPrice} suggests ${expectedUpside}% upside from current levels. For conservative investors, an accumulation zone around ${currency}${entryLow}–${currency}${entryHigh} offers better risk-reward.`,
+    priceNote: `Based on our multi-factor analysis, the probability-weighted expected price of ${currency}${expectedPrice} suggests ${expectedUpside}% upside from current levels. ${fin?.targetMeanPrice ? `Analyst consensus target: ${currency}${fmt(fin.targetMeanPrice)}.` : ''} For conservative investors, an accumulation zone around ${currency}${entryLow}–${currency}${entryHigh} offers better risk-reward.`,
     macroItems: [
       { icon: "📈", title: "Market Trend", detail: `Stock is ${pctChange >= 0 ? 'up' : 'down'} ${fmt(Math.abs(pctChange))}% today. ${price > (techs?.sma200 || 0) ? 'Trading above 200 DMA — bullish trend.' : 'Trading below 200 DMA — caution.'}`, sentiment: pctChange >= 0 ? "positive" : "negative", sentimentLabel: pctChange >= 0 ? "POSITIVE" : "HEADWIND" },
-      { icon: "📊", title: "Valuation Context", detail: pe > 40 ? 'Premium valuation at current P/E — growth expectations priced in' : pe > 20 ? 'Fair valuation relative to broader market' : 'Attractive valuation on P/E basis', sentiment: pe > 40 ? "negative" : pe > 20 ? "neutral" : "positive", sentimentLabel: pe > 40 ? "RICH" : pe > 20 ? "FAIR" : "ATTRACTIVE" },
-      { icon: "🔄", title: "52-Week Position", detail: `Currently ${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through the 52-week range. ${price > high52 * 0.9 ? 'Near highs — momentum strong.' : price < low52 * 1.1 ? 'Near lows — potential bounce.' : 'Mid-range trading.'}`, sentiment: price > high52 * 0.9 ? "positive" : price < low52 * 1.1 ? "neutral" : "neutral", sentimentLabel: price > high52 * 0.9 ? "STRONG" : "NEUTRAL" },
-      { icon: "📉", title: "Volatility Assessment", detail: `52-week range of ${((high52 - low52) / low52 * 100).toFixed(0)}% suggests ${(high52 - low52) / low52 > 0.5 ? 'high volatility — position sizing important' : 'moderate volatility'}`, sentiment: (high52 - low52) / low52 > 0.5 ? "negative" : "neutral", sentimentLabel: (high52 - low52) / low52 > 0.5 ? "HIGH VOL" : "MODERATE" },
+      { icon: "📊", title: "Valuation Context", detail: pe > 40 ? 'Premium valuation at current P/E — growth expectations priced in' : pe > 20 ? 'Fair valuation relative to broader market' : pe > 0 ? 'Attractive valuation on P/E basis' : 'P/E data unavailable', sentiment: pe > 40 ? "negative" : pe > 20 ? "neutral" : "positive", sentimentLabel: pe > 40 ? "RICH" : pe > 20 ? "FAIR" : pe > 0 ? "ATTRACTIVE" : "N/A" },
+      { icon: "🔄", title: "52-Week Position", detail: `Currently ${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through the 52-week range.`, sentiment: price > high52 * 0.9 ? "positive" : "neutral", sentimentLabel: price > high52 * 0.9 ? "STRONG" : "NEUTRAL" },
+      { icon: "📉", title: "Volatility Assessment", detail: `${beta > 0 ? `Beta: ${fmt(beta, 2)}. ` : ''}52-week range spread: ${((high52 - low52) / low52 * 100).toFixed(0)}%.`, sentiment: (high52 - low52) / low52 > 0.5 ? "negative" : "neutral", sentimentLabel: (high52 - low52) / low52 > 0.5 ? "HIGH VOL" : "MODERATE" },
     ],
     tradingCells: [
       { label: "Entry Zone", value: `${currency}${entryLow}–${currency}${entryHigh}`, note: "Ideal accumulation band", color: "green" },
@@ -371,68 +413,90 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     riskReward: { ratio: rrRatio, detail: `Risk ${currency}${riskAmt} · Reward ${currency}${rewardAmt} (to T2)` },
     technicalSignals: techSignals,
     technicalNote: techs ? `The stock is ${price > (techs.sma50 || 0) ? 'above' : 'below'} its 50-day SMA and ${price > (techs.sma200 || 0) ? 'above' : 'below'} its 200-day SMA. RSI at ${fmt(techs.rsi, 0)} indicates ${techs.rsi > 70 ? 'overbought conditions' : techs.rsi < 30 ? 'oversold conditions — potential bounce' : 'neutral momentum'}.` : 'Insufficient data for detailed technical analysis.',
-    moatItems: [
-      { name: "Brand Recognition", score: moat.score > 7 ? 8 : 6, maxScore: 10 },
-      { name: "Market Position", score: moat.score > 7 ? 7.5 : 5.5, maxScore: 10 },
-      { name: "Switching Costs", score: 6, maxScore: 10 },
-      { name: "Scale Advantage", score: moat.score > 7 ? 7 : 5, maxScore: 10 },
-      { name: "IP / Technology", score: 5.5, maxScore: 10 },
-    ],
-    riskItems: [
-      { name: "Valuation Risk", level: pe > 40 ? "HIGH" : pe > 20 ? "MEDIUM" : "LOW", filled: pe > 40 ? 4 : pe > 20 ? 3 : 2 },
-      { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.5 ? "HIGH" : "MEDIUM") as any, filled: (high52 - low52) / low52 > 0.5 ? 4 : 3 },
-      { name: "Technical Risk", level: price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM", filled: price < (techs?.sma200 || price) ? 4 : 2 },
-      { name: "Momentum Risk", level: pctChange < -3 ? "HIGH" : pctChange < 0 ? "MEDIUM" : "LOW", filled: pctChange < -3 ? 4 : pctChange < 0 ? 3 : 1 },
-      { name: "Liquidity Risk", level: "LOW" as any, filled: 2 },
-    ],
-    dividendMetrics: [
-      { label: "Dividend Yield", value: safe(statistics?.dividends_and_splits?.dividend_yield, 'N/A'), note: "Annual dividend yield", color: num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'green' as const : 'muted' as const },
-      { label: "Payout Ratio", value: safe(statistics?.dividends_and_splits?.payout_ratio, 'N/A'), note: pe > 0 ? `Earnings coverage: ${fmt(pe, 1)}x P/E` : 'N/A', color: 'muted' as const },
-      { label: "Ex-Dividend Date", value: safe(statistics?.dividends_and_splits?.ex_dividend_date, 'N/A'), note: "Most recent ex-date", color: 'muted' as const },
-      { label: "Dividend Sustainability", value: num(statistics?.dividends_and_splits?.dividend_yield) > 3 ? 'Strong' : num(statistics?.dividends_and_splits?.dividend_yield) > 1 ? 'Moderate' : 'Minimal', note: "Based on payout and earnings", color: num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'green' as const : 'gold' as const },
-    ],
-    dividendNote: `${companyName} ${num(statistics?.dividends_and_splits?.dividend_yield) > 2 ? 'offers a meaningful dividend yield suitable for income strategies' : 'has minimal dividend yield — this is primarily a capital appreciation play rather than an income generator'}.`,
+    moatItems: (() => {
+      const items: MoatItem[] = [];
+      const brandScore = num(profile?.employees) > 10000 ? 8 : num(profile?.employees) > 1000 ? 6.5 : 5;
+      const marginScore = grossMargins != null ? Math.min(9, Math.round(grossMargins * 100) / 10) : 5;
+      const scaleScore = marketCap > 100e9 ? 8 : marketCap > 10e9 ? 6.5 : marketCap > 1e9 ? 5 : 4;
+      items.push({ name: "Brand Recognition", score: brandScore, maxScore: 10 });
+      items.push({ name: "Market Position", score: scaleScore, maxScore: 10 });
+      items.push({ name: "Profit Margins", score: marginScore, maxScore: 10 });
+      items.push({ name: "Scale Advantage", score: scaleScore > 6 ? 7 : 5, maxScore: 10 });
+      if (returnOnEquity != null) items.push({ name: "Capital Efficiency", score: Math.min(9, Math.round(returnOnEquity * 300) / 10), maxScore: 10 });
+      return items;
+    })(),
+    riskItems: (() => {
+      const items: RiskItem[] = [
+        { name: "Valuation Risk", level: pe > 40 ? "HIGH" : pe > 20 ? "MEDIUM" : pe > 0 ? "LOW" : "MEDIUM", filled: pe > 40 ? 4 : pe > 20 ? 3 : 2 },
+        { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.5 ? "HIGH" : "MEDIUM") as any, filled: (high52 - low52) / low52 > 0.5 ? 4 : 3 },
+        { name: "Technical Risk", level: price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM", filled: price < (techs?.sma200 || price) ? 4 : 2 },
+      ];
+      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 100 ? "HIGH" : debtToEquity > 50 ? "MEDIUM" : "LOW", filled: debtToEquity > 100 ? 4 : debtToEquity > 50 ? 3 : 1 });
+      if (beta > 0) items.push({ name: "Beta Risk", level: beta > 1.5 ? "HIGH" : beta > 1 ? "MEDIUM" : "LOW", filled: beta > 1.5 ? 4 : beta > 1 ? 3 : 2 });
+      items.push({ name: "Momentum Risk", level: pctChange < -3 ? "HIGH" : pctChange < 0 ? "MEDIUM" : "LOW", filled: pctChange < -3 ? 4 : pctChange < 0 ? 3 : 1 });
+      return items;
+    })(),
+    dividendMetrics: (() => {
+      const dy = divData?.yield != null ? divData.yield : null;
+      const pr = divData?.payoutRatio != null ? divData.payoutRatio : null;
+      const exDate = divData?.exDate || null;
+      const rate = divData?.rate != null ? divData.rate : null;
+      return [
+        { label: "Dividend Yield", value: dy != null ? `${(dy * 100).toFixed(2)}%` : 'N/A', note: rate != null ? `${currency}${fmt(rate)}/share` : 'No dividend data', color: (dy != null && dy > 0.02 ? 'green' as const : 'muted' as const) },
+        { label: "Payout Ratio", value: pr != null ? `${(pr * 100).toFixed(1)}%` : 'N/A', note: pe > 0 ? `Earnings coverage: ${fmt(pe, 1)}x P/E` : 'N/A', color: 'muted' as const },
+        { label: "Ex-Dividend Date", value: exDate || 'N/A', note: "Most recent ex-date", color: 'muted' as const },
+        { label: "Dividend Sustainability", value: dy != null && dy > 0.03 ? 'Strong' : dy != null && dy > 0.01 ? 'Moderate' : 'Minimal', note: "Based on payout and earnings", color: (dy != null && dy > 0.02 ? 'green' as const : 'gold' as const) },
+      ];
+    })(),
+    dividendNote: (() => {
+      const dy = divData?.yield;
+      if (dy != null && dy > 0.02) return `${companyName} offers a meaningful dividend yield of ${(dy * 100).toFixed(2)}%, suitable for income strategies.`;
+      if (dy != null && dy > 0) return `${companyName} pays a modest dividend yield of ${(dy * 100).toFixed(2)}% — primarily a capital appreciation play.`;
+      return `${companyName} has minimal or no dividend yield — primarily a capital appreciation play.`;
+    })(),
     patternSignals: (() => {
-      const signals: { name: string; signal: string; confidence: number; type: 'bullish' | 'bearish' | 'neutral' }[] = [];
+      const signals: PatternSignal[] = [];
       if (techs) {
-        // Mean reversion
         const fromHigh = (price - high52) / high52;
         signals.push({ name: "Mean Reversion", signal: fromHigh < -0.3 ? "Deep Discount" : fromHigh < -0.1 ? "Below Mean" : "Near Fair Value", confidence: Math.round(Math.abs(fromHigh) > 0.2 ? 70 : 50), type: fromHigh < -0.2 ? "bullish" : "neutral" });
-        // Momentum
         signals.push({ name: "Momentum Score", signal: techs.rsi > 60 ? "Positive" : techs.rsi < 40 ? "Negative" : "Neutral", confidence: Math.round(Math.min(99, Math.abs(techs.rsi - 50) + 50)), type: techs.rsi > 60 ? "bullish" : techs.rsi < 40 ? "bearish" : "neutral" });
-        // SMA crossover
         if (techs.sma50 && techs.sma200) {
           const golden = techs.sma50 > techs.sma200;
           signals.push({ name: "SMA Crossover", signal: golden ? "Golden Cross" : "Death Cross", confidence: golden ? 72 : 68, type: golden ? "bullish" : "bearish" });
         }
-        // Volume pattern
         signals.push({ name: "Volume Pattern", signal: techs.avgVol3 > 0 ? "Active Trading" : "Low Volume", confidence: 55, type: "neutral" });
       } else {
         signals.push({ name: "Pattern Analysis", signal: "Insufficient Data", confidence: 0, type: "neutral" });
       }
       return signals;
     })(),
-    patternNote: techs ? `Quantitative pattern analysis based on ${timeSeries.length} data points. RSI at ${fmt(techs.rsi, 0)} with price ${((price - high52) / high52 * 100).toFixed(1)}% from 52-week high. ${techs.sma50 && techs.sma200 ? (techs.sma50 > techs.sma200 ? 'Golden cross detected — bullish signal.' : 'Death cross active — bearish pressure.') : ''}` : 'Insufficient historical data for pattern analysis.',
+    patternNote: techs ? `Quantitative analysis based on ${timeSeries.length} data points. RSI at ${fmt(techs.rsi, 0)} with price ${((price - high52) / high52 * 100).toFixed(1)}% from 52-week high. ${techs.sma50 && techs.sma200 ? (techs.sma50 > techs.sma200 ? 'Golden cross detected — bullish signal.' : 'Death cross active — bearish pressure.') : ''}` : 'Insufficient historical data for pattern analysis.',
     earningsBreakdown: [
       { label: "Current Price", value: `${currency}${fmt(price)}`, change: `${pctSign}${fmt(pctChange)}% today`, sentiment: (pctChange >= 0 ? "positive" : "negative") as 'positive' | 'negative' },
-      { label: "P/E Ratio", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A', sentiment: (pe > 40 ? "negative" : pe > 20 ? "neutral" : "positive") as any },
-      { label: "EPS (TTM)", value: `${currency}${safe(quote?.eps, 'N/A')}`, sentiment: num(quote?.eps) > 0 ? "positive" : "negative" },
+      { label: "P/E Ratio", value: pe > 0 ? `${fmt(pe, 1)}x` : 'N/A', sentiment: (pe > 40 ? "negative" : pe > 20 ? "neutral" : pe > 0 ? "positive" : "neutral") as any },
+      { label: "EPS (TTM)", value: num(quote?.eps) > 0 ? `${currency}${fmt(num(quote?.eps))}` : 'N/A', sentiment: num(quote?.eps) > 0 ? "positive" : "neutral" },
       { label: "52W Performance", value: `${((price - low52) / low52 * 100).toFixed(1)}% from low`, change: `${((price - high52) / high52 * 100).toFixed(1)}% from high`, sentiment: price > (high52 + low52) / 2 ? "positive" : "negative" },
       { label: "Volume vs Avg", value: safe(quote?.volume, 'N/A'), change: `Avg: ${safe(quote?.average_volume, 'N/A')}`, sentiment: "neutral" },
     ],
-    earningsNote: `${companyName} reports earnings at ${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'} with EPS of ${currency}${safe(quote?.eps, 'N/A')}. ${pctChange >= 0 ? 'Positive price action today suggests market confidence.' : 'Negative price action today warrants monitoring.'} The stock is trading ${((price - low52) / (high52 - low52) * 100).toFixed(0)}% through its annual range.`,
+    earningsNote: `${companyName} reports earnings at ${pe > 0 ? fmt(pe, 1) + 'x P/E' : 'N/A P/E'} with EPS of ${num(quote?.eps) > 0 ? currency + fmt(num(quote?.eps)) : 'N/A'}. ${pctChange >= 0 ? 'Positive price action today suggests market confidence.' : 'Negative price action today warrants monitoring.'}`,
     earningsSurprises: (() => {
-      const eps = num(quote?.eps);
-      const quarters = ['Q4', 'Q3', 'Q2', 'Q1'];
-      return quarters.map((q, i) => {
-        const est = eps * (1 - 0.05 * i);
-        const act = est * (1 + (Math.random() * 0.12 - 0.04));
-        const result = act >= est ? 'Beat' : 'Miss';
-        return { quarter: q, estimate: `${currency}${fmt(est)}`, actual: `${currency}${fmt(act)}`, result: result as 'Beat' | 'Miss' };
-      });
+      if (earningsHist.length > 0) {
+        return earningsHist.slice(0, 4).map((e: any) => {
+          const est = e.epsEstimate;
+          const act = e.epsActual;
+          const hasData = est != null && act != null;
+          return {
+            quarter: e.quarter || e.date || 'N/A',
+            estimate: est != null ? `${currency}${fmt(est)}` : 'N/A',
+            actual: act != null ? `${currency}${fmt(act)}` : 'N/A',
+            result: (hasData ? (act > est ? 'Beat' : act < est ? 'Miss' : 'Inline') : 'Inline') as 'Beat' | 'Miss' | 'Inline',
+          };
+        });
+      }
+      return [{ quarter: 'N/A', estimate: 'Data unavailable', actual: 'Data unavailable', result: 'Inline' as const }];
     })(),
-    nextEarningsDate: "Next quarter",
-    nextEarningsEstimate: `${currency}${fmt(num(quote?.eps) * 1.05)}`,
+    nextEarningsDate: "Data unavailable",
+    nextEarningsEstimate: num(quote?.eps) > 0 ? `${currency}${fmt(num(quote?.eps))}` : 'N/A',
     supportLevels: techs ? [
       `${currency}${Math.round(Math.min(price, low52 + (price - low52) * 0.7))}`,
       `${currency}${Math.round(low52 + (price - low52) * 0.4)}`,
@@ -443,42 +507,73 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       `${currency}${Math.round(price + (high52 - price) * 0.65)}`,
       `${currency}${Math.round(high52)}`,
     ] : [`${currency}${Math.round(price * 1.05)}`, `${currency}${Math.round(price * 1.12)}`],
-    insiderTransactions: [
-      { role: "CEO / MD", action: pctChange >= 0 ? "Buy" as const : "Sell" as const, shares: "25,000", date: "Recent" },
-      { role: "CFO", action: "Buy" as const, shares: "10,000", date: "Recent" },
-      { role: "Director", action: "Sell" as const, shares: "5,000", date: "Recent" },
-    ],
-    insiderSummary: { totalBuying: `${currency}${fmtLarge(price * 35000)}`, totalSelling: `${currency}${fmtLarge(price * 5000)}`, netSignal: "Net Buying" },
-    institutionalOwnership: Math.round(40 + Math.random() * 35),
-    topHolders: [
-      { name: "Vanguard Group", percentage: 8.2 },
-      { name: "BlackRock", percentage: 6.5 },
-      { name: "State Street", percentage: 4.1 },
-      { name: "Fidelity", percentage: 3.3 },
-      { name: "Capital Group", percentage: 2.8 },
-    ],
-    sentimentScore: Math.round(30 + totalScore * 0.5 + (pctChange > 0 ? 10 : -5)),
-    sentimentLabel: (totalScore >= 65 && pctChange >= 0 ? "Bullish" : totalScore <= 45 ? "Bearish" : "Neutral") as 'Bullish' | 'Neutral' | 'Bearish',
-    sentimentFactors: [
-      { name: "Analyst Consensus", value: totalScore >= 70 ? "Mostly Buy" : totalScore >= 55 ? "Hold" : "Sell", signal: (totalScore >= 65 ? "bullish" : totalScore >= 45 ? "neutral" : "bearish") as any },
-      { name: "Short Interest", value: pctChange >= 0 ? "Low (1.5%)" : "Moderate (4.2%)", signal: (pctChange >= 0 ? "bullish" : "bearish") as any },
-      { name: "Options P/C Ratio", value: pctChange >= 0 ? "0.65" : "1.15", signal: (pctChange >= 0 ? "bullish" : "bearish") as any },
-      { name: "News Sentiment", value: pctChange >= 0 ? "Positive" : "Mixed", signal: (pctChange >= 0 ? "bullish" : "neutral") as any },
-    ],
+    insiderTransactions: (() => {
+      if (insiderTxnData.length > 0) {
+        return insiderTxnData.slice(0, 5).map((t: any) => ({
+          role: t.relation || t.name || 'N/A',
+          action: (t.action?.toLowerCase().includes('purchase') || t.action?.toLowerCase().includes('buy') || t.shares > 0 ? 'Buy' : 'Sell') as 'Buy' | 'Sell',
+          shares: Math.abs(t.shares).toLocaleString(),
+          date: t.date || 'N/A',
+        }));
+      }
+      return [{ role: 'N/A', action: 'Buy' as const, shares: 'Data unavailable', date: 'N/A' }];
+    })(),
+    insiderSummary: (() => {
+      if (insiderTxnData.length > 0) {
+        let buyValue = 0, sellValue = 0;
+        for (const t of insiderTxnData) {
+          if (t.action?.toLowerCase().includes('purchase') || t.action?.toLowerCase().includes('buy') || t.shares > 0) buyValue += Math.abs(t.value || 0);
+          else sellValue += Math.abs(t.value || 0);
+        }
+        return { totalBuying: buyValue > 0 ? `${currency}${fmtLarge(buyValue)}` : 'N/A', totalSelling: sellValue > 0 ? `${currency}${fmtLarge(sellValue)}` : 'N/A', netSignal: buyValue > sellValue ? "Net Buying" : sellValue > buyValue ? "Net Selling" : "Balanced" };
+      }
+      return { totalBuying: 'Data unavailable', totalSelling: 'Data unavailable', netSignal: 'No data' };
+    })(),
+    institutionalOwnership: num(instData?.percentage),
+    topHolders: (() => {
+      const holders = instData?.holders;
+      if (holders && Array.isArray(holders) && holders.length > 0) {
+        return holders.slice(0, 5).map((h: any) => ({ name: h.name || 'Unknown', percentage: h.percentage || 0 }));
+      }
+      return [{ name: 'Data unavailable', percentage: 0 }];
+    })(),
+    sentimentScore: (() => {
+      if (recData) {
+        const total = recData.strongBuy + recData.buy + recData.hold + recData.sell + recData.strongSell;
+        if (total > 0) return Math.round((recData.strongBuy * 100 + recData.buy * 80 + recData.hold * 50 + recData.sell * 20) / total);
+      }
+      return Math.round(30 + totalScore * 0.5);
+    })(),
+    sentimentLabel: (() => {
+      if (recData) {
+        const b = (recData.strongBuy || 0) + (recData.buy || 0);
+        const s = (recData.sell || 0) + (recData.strongSell || 0);
+        if (b > s * 2) return "Bullish" as const;
+        if (s > b) return "Bearish" as const;
+      }
+      return (totalScore >= 65 ? "Bullish" : totalScore <= 45 ? "Bearish" : "Neutral") as 'Bullish' | 'Neutral' | 'Bearish';
+    })(),
+    sentimentFactors: (() => {
+      const factors: SentimentFactor[] = [];
+      if (recData) {
+        const total = recData.strongBuy + recData.buy + recData.hold + recData.sell + recData.strongSell;
+        if (total > 0) factors.push({ name: "Analyst Consensus", value: `${recData.strongBuy + recData.buy} Buy / ${recData.hold} Hold / ${recData.sell + recData.strongSell} Sell`, signal: ((recData.strongBuy + recData.buy) > (recData.sell + recData.strongSell) ? "bullish" : "bearish") as any });
+      } else {
+        factors.push({ name: "Analyst Consensus", value: "Data unavailable", signal: "neutral" });
+      }
+      if (quote?.short_ratio != null) factors.push({ name: "Short Ratio", value: `${fmt(quote.short_ratio, 1)} days`, signal: (quote.short_ratio < 3 ? "bullish" : "bearish") as any });
+      if (quote?.short_percent_float != null) { const sp = quote.short_percent_float * 100; factors.push({ name: "Short Interest", value: `${fmt(sp, 1)}%`, signal: (sp < 5 ? "bullish" : sp < 15 ? "neutral" : "bearish") as any }); }
+      if (fin?.recommendationKey) factors.push({ name: "Overall Rating", value: fin.recommendationKey.charAt(0).toUpperCase() + fin.recommendationKey.slice(1), signal: (fin.recommendationKey === 'buy' || fin.recommendationKey === 'strong_buy' ? "bullish" : fin.recommendationKey === 'sell' ? "bearish" : "neutral") as any });
+      if (factors.length === 0) factors.push({ name: "Market Sentiment", value: "Data unavailable", signal: "neutral" });
+      return factors;
+    })(),
     correlations: [
-      { asset: "S&P 500", correlation: 0.78 },
-      { asset: "NASDAQ", correlation: 0.85 },
-      { asset: "Sector ETF", correlation: 0.92 },
-      { asset: "Gold", correlation: -0.15 },
-      { asset: "10Y Treasury", correlation: -0.32 },
+      { asset: "S&P 500", correlation: beta > 0 ? parseFloat(Math.min(0.99, beta * 0.6).toFixed(2)) : 0 },
+      { asset: "Sector", correlation: beta > 0 ? parseFloat(Math.min(0.99, beta * 0.7 + 0.2).toFixed(2)) : 0 },
     ],
-    sectorRotation: [
-      { sector: sector || "Technology", direction: pctChange >= 0 ? "up" as const : "down" as const, performance: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange * 1.5)}%` },
-      { sector: "Financials", direction: "neutral" as const, performance: "+0.3%" },
-      { sector: "Energy", direction: "down" as const, performance: "-1.2%" },
-      { sector: "Healthcare", direction: "up" as const, performance: "+1.1%" },
-      { sector: "Consumer Discretionary", direction: "neutral" as const, performance: "-0.4%" },
-    ],
+    sectorRotation: sector && sector !== 'N/A'
+      ? [{ sector, direction: (pctChange >= 0.5 ? "up" : pctChange <= -0.5 ? "down" : "neutral") as 'up' | 'down' | 'neutral', performance: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange)}%` }]
+      : [{ sector: "N/A", direction: "neutral" as const, performance: "Data unavailable" }],
     finalVerdict: v.verdict,
     finalVerdictText: `<strong>${companyName}</strong> receives a multi-factor score of <strong>${totalScore}/100</strong>. The stock is currently at ${currency}${fmt(price)} with an expected 12-month target of ${currency}${expectedPrice} (${expectedUpside}% upside).`,
     finalAction: `<strong>Recommendation:</strong> ${totalScore >= 70 ? 'Initiate position at current levels with targets at ' + currency + t1 + '–' + currency + t2 + '.' : totalScore >= 60 ? 'Accumulate on dips near ' + currency + entryLow + '–' + currency + entryHigh + '. Hold with 12-month view.' : totalScore >= 50 ? 'Hold existing positions. Avoid fresh entry at current levels.' : 'Avoid. Wait for significant correction or fundamental improvement.'}`,
