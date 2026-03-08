@@ -48,7 +48,7 @@ const ValuationTriangle = ({ data }: { data: StockAnalysis }) => {
         <div>
           <p className="font-mono text-[10px] tracking-[3px] uppercase text-gold mb-1">Composite Fair Value</p>
           <p className="font-display text-3xl sm:text-[36px] font-bold">{composite}</p>
-          <p className="font-mono text-[10px] text-cream/50 mt-1">Average of DCF + Relative + Momentum</p>
+          <p className="font-mono text-[10px] text-cream/50 mt-1">DCF (40%) + Relative (35%) + Momentum (25%)</p>
         </div>
         <div className="sm:text-right">
           <p className={`font-mono text-lg sm:text-xl font-medium ${compositeReturn.startsWith('-') ? 'text-red-data' : 'text-gold'}`}>
