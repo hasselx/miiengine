@@ -283,8 +283,21 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const bullPrice = fin?.targetHighPrice ? Math.round(fin.targetHighPrice) : Math.round(price * 1.35);
   const basePrice = fin?.targetMeanPrice ? Math.round(fin.targetMeanPrice) : Math.round(price * 1.18);
   const bearPrice = fin?.targetLowPrice ? Math.round(fin.targetLowPrice) : Math.round(price * 0.82);
-  const expectedPrice = Math.round(bullPrice * 0.25 + basePrice * 0.50 + bearPrice * 0.25);
-  const expectedUpside = (((expectedPrice - price) / price) * 100).toFixed(1);
+  // Ensure scenarios are distinct: bull > base > bear
+  const sortedPrices = [bullPrice, basePrice, bearPrice].sort((a, b) => b - a);
+  const finalBull = sortedPrices[0];
+  const finalBase = sortedPrices[1];
+  const finalBear = sortedPrices[2];
+  // If all same (no analyst data differentiation), create spread from price
+  const allSame = finalBull === finalBase && finalBase === finalBear;
+  const adjBull = allSame ? Math.round(price * 1.25) : finalBull;
+  const adjBase = allSame ? Math.round(price * 1.05) : finalBase;
+  const adjBear = allSame ? Math.round(price * 0.80) : finalBear;
+
+  const expectedPrice = Math.round(adjBull * 0.25 + adjBase * 0.50 + adjBear * 0.25);
+  const expectedReturnPct = ((expectedPrice - price) / price) * 100;
+  const expectedReturnAbs = Math.abs(expectedReturnPct).toFixed(1);
+  const isUpside = expectedReturnPct >= 0;
 
   const entryLow = Math.round(price * 0.95);
   const entryHigh = Math.round(price * 1.0);

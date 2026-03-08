@@ -187,6 +187,11 @@ export interface StockAnalysis {
   sentimentFactors: SentimentFactor[];
   correlations: CorrelationItem[];
   sectorRotation: SectorRotationItem[];
+  fairValueRange: { low: string; high: string; midpoint: string };
+  accumulationZone: { low: string; high: string; show: boolean };
+  modelConfidence: { score: number; level: 'Low' | 'Moderate' | 'High'; factors: string[] };
+  modelAgreement: { level: 'Low' | 'Moderate' | 'High'; models: { name: string; signal: 'Bullish' | 'Bearish' | 'Neutral' }[] };
+  keyDrivers: string[];
   finalVerdict: string;
   finalVerdictText: string;
   finalAction: string;
