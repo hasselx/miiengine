@@ -4,7 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut, Sun, Moon, Eye, Bell, Plus, ChevronDown, ChevronUp, X, AlertTriangle } from "lucide-react";
+import { InvestmentStyle } from "@/lib/stockData";
+import InvestorProfileSelector from "@/components/InvestorProfileSelector";
+import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut, Sun, Moon, Eye, Bell, Plus, ChevronDown, ChevronUp, X, AlertTriangle, Settings } from "lucide-react";
 
 interface SavedSearch {
   id: string;
@@ -37,8 +39,9 @@ const Dashboard = () => {
   const [searches, setSearches] = useState<SavedSearch[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [tab, setTab] = useState<"searches" | "holdings" | "watchlist">("searches");
-  const [profile, setProfile] = useState<{ display_name: string | null } | null>(null);
+  const [tab, setTab] = useState<"searches" | "holdings" | "watchlist" | "settings">("searches");
+  const [profile, setProfile] = useState<{ display_name: string | null; investment_style: InvestmentStyle } | null>(null);
+  const [savingStyle, setSavingStyle] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -51,11 +54,11 @@ const Dashboard = () => {
       const [searchRes, holdingRes, profileRes] = await Promise.all([
         supabase.from("saved_searches").select("*").eq("user_id", user.id).order("searched_at", { ascending: false }),
         supabase.from("holdings").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+        supabase.from("profiles").select("display_name, investment_style").eq("id", user.id).single(),
       ]);
       if (searchRes.data) setSearches(searchRes.data);
       if (holdingRes.data) setHoldings(holdingRes.data);
-      if (profileRes.data) setProfile(profileRes.data);
+      if (profileRes.data) setProfile({ ...profileRes.data, investment_style: (profileRes.data.investment_style as InvestmentStyle) || null });
       setLoadingData(false);
     };
     fetchData();
@@ -174,6 +177,15 @@ const Dashboard = () => {
             <Eye className="h-3.5 w-3.5 inline mr-2" />
             Watchlist
           </button>
+          <button
+            onClick={() => setTab("settings")}
+            className={`font-mono text-[11px] tracking-[2px] uppercase px-5 py-3 border-b-2 transition-colors ${
+              tab === "settings" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
+            }`}
+          >
+            <Settings className="h-3.5 w-3.5 inline mr-2" />
+            Settings
+          </button>
         </div>
       </header>
 
@@ -273,6 +285,33 @@ const Dashboard = () => {
         )}
 
         {tab === "watchlist" && <WatchlistTab user={user} />}
+
+        {tab === "settings" && (
+          <div className="max-w-2xl space-y-6">
+            <div className="bg-card border border-border rounded-md p-5">
+              <InvestorProfileSelector
+                value={profile?.investment_style || null}
+                onChange={async (style) => {
+                  if (!user) return;
+                  setSavingStyle(true);
+                  const { error } = await supabase.from('profiles').update({ investment_style: style } as any).eq('id', user.id);
+                  setSavingStyle(false);
+                  if (error) {
+                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  } else {
+                    setProfile(prev => prev ? { ...prev, investment_style: style } : prev);
+                    toast({ title: "Profile updated", description: "Your investment style has been saved. Future analyses will use this weighting." });
+                  }
+                }}
+                disabled={savingStyle}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Your investment style adjusts how the analysis engine weights different scoring factors.
+              Analyses generated after changing your profile will reflect the new weighting.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN investment_style text DEFAULT null;

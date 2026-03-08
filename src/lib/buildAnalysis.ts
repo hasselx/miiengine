@@ -1,4 +1,18 @@
-import { StockAnalysis, MoatItem, RiskItem, PatternSignal, SentimentFactor } from "./stockData";
+import { StockAnalysis, MoatItem, RiskItem, PatternSignal, SentimentFactor, InvestmentStyle } from "./stockData";
+
+// Weight multipliers per investment style (keyed by score category index 0-7)
+// Categories: 0=Fundamental, 1=Valuation, 2=Moat, 3=Momentum, 4=Technical, 5=Quant, 6=Risk, 7=Macro
+function getStyleWeights(style: InvestmentStyle): number[] {
+  switch (style) {
+    case 'long_term':    return [1.3, 1.2, 1.3, 0.8, 0.7, 1.0, 1.0, 1.0];
+    case 'swing_trader': return [0.8, 0.8, 0.7, 1.3, 1.4, 1.0, 1.0, 0.8];
+    case 'short_term':   return [0.7, 0.7, 0.6, 1.4, 1.3, 1.1, 1.0, 0.7];
+    case 'intraday':     return [0.5, 0.5, 0.5, 1.5, 1.5, 1.2, 1.0, 0.5];
+    case 'value':        return [1.4, 1.5, 1.2, 0.7, 0.6, 0.9, 1.2, 0.8];
+    case 'growth':       return [1.1, 0.9, 0.9, 1.3, 1.0, 1.0, 0.8, 1.3];
+    default:             return [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+  }
+}
 import { StockRawData } from "./stockApi";
 
 function safe(val: any, fallback: string = 'N/A'): string {
@@ -168,7 +182,7 @@ function scoreTechnical(techs: any): { score: number; subtitle: string } {
   return { score, subtitle: `RSI: ${fmt(techs.rsi, 0)}; ${smaStatus}` };
 }
 
-export function buildAnalysisFromRealData(raw: StockRawData, company: string, country: string, exchange: string): StockAnalysis {
+export function buildAnalysisFromRealData(raw: StockRawData, company: string, country: string, exchange: string, investmentStyle?: InvestmentStyle): StockAnalysis {
   const { quote, profile, statistics, timeSeries, fundamentals } = raw;
   const techs = computeTechnicals(timeSeries);
   const currency = getCurrencyFromData(quote, exchange);
@@ -248,7 +262,12 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     return { score: Math.min(10, Math.max(0, score)), subtitle: revenueGrowth != null ? `Revenue growth: ${(revenueGrowth * 100).toFixed(1)}%` : 'Revenue growth data unavailable' };
   })();
 
-  const totalScore = fund.score + val.score + moat.score + momentum.score + tech.score + quant.score + risk.score + macro.score;
+  // Apply investment style weights
+  const weights = getStyleWeights(investmentStyle || null);
+  const rawScores = [fund.score, val.score, moat.score, momentum.score, tech.score, quant.score, risk.score, macro.score];
+  const maxScores = [20, 15, 10, 10, 15, 10, 10, 10];
+  const weightedScores = rawScores.map((s, i) => Math.min(maxScores[i], Math.round(s * weights[i])));
+  const totalScore = weightedScores.reduce((a, b) => a + b, 0);
 
   const getVerdict = (s: number) => {
     if (s >= 90) return { badge: "⬛ EXCEPTIONAL OPPORTUNITY", verdict: "Exceptional Opportunity", range: "90–100 = EXCEPTIONAL" };
@@ -299,6 +318,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
 
   return {
     company: companyName,
+    investmentStyle: investmentStyle || null,
     subtitle: `${companyName} · ${safe(quote?.exchange, exchange)} · ${ticker}`,
     verdictBadge: v.badge,
     reportType: `Institutional Equity Research · 12-Month Horizon · ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,
@@ -315,14 +335,14 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     verdictNote: totalScore < 70 ? `Entry below ${currency}${Math.round(price * 0.92)} upgrades to BUY` : 'Strong conviction level',
     scoreRange: v.range,
     scores: [
-      { step: 1, name: "Fundamental Quality", subtitle: fund.subtitle, score: fund.score, maxScore: 20, weight: "20% wt" },
-      { step: 2, name: "Intrinsic Valuation", subtitle: val.subtitle, score: val.score, maxScore: 15, weight: "15% wt" },
-      { step: 3, name: "Competitive Moat", subtitle: moat.subtitle, score: moat.score, maxScore: 10, weight: "10% wt" },
-      { step: 4, name: "Earnings Momentum", subtitle: momentum.subtitle, score: momentum.score, maxScore: 10, weight: "10% wt" },
-      { step: 5, name: "Technical Strength", subtitle: tech.subtitle, score: tech.score, maxScore: 15, weight: "15% wt" },
-      { step: 6, name: "Quantitative Signals", subtitle: quant.subtitle, score: quant.score, maxScore: 10, weight: "10% wt" },
-      { step: 7, name: "Risk Stability", subtitle: risk.subtitle, score: risk.score, maxScore: 10, weight: "10% wt" },
-      { step: 8, name: "Macro Tailwinds", subtitle: macro.subtitle, score: macro.score, maxScore: 10, weight: "10% wt" },
+      { step: 1, name: "Fundamental Quality", subtitle: fund.subtitle, score: weightedScores[0], maxScore: 20, weight: `${Math.round(weights[0] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
+      { step: 2, name: "Intrinsic Valuation", subtitle: val.subtitle, score: weightedScores[1], maxScore: 15, weight: `${Math.round(weights[1] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
+      { step: 3, name: "Competitive Moat", subtitle: moat.subtitle, score: weightedScores[2], maxScore: 10, weight: `${Math.round(weights[2] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
+      { step: 4, name: "Earnings Momentum", subtitle: momentum.subtitle, score: weightedScores[3], maxScore: 10, weight: `${Math.round(weights[3] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
+      { step: 5, name: "Technical Strength", subtitle: tech.subtitle, score: weightedScores[4], maxScore: 15, weight: `${Math.round(weights[4] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
+      { step: 6, name: "Quantitative Signals", subtitle: quant.subtitle, score: weightedScores[5], maxScore: 10, weight: `${Math.round(weights[5] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
+      { step: 7, name: "Risk Stability", subtitle: risk.subtitle, score: weightedScores[6], maxScore: 10, weight: `${Math.round(weights[6] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
+      { step: 8, name: "Macro Tailwinds", subtitle: macro.subtitle, score: weightedScores[7], maxScore: 10, weight: `${Math.round(weights[7] * 100 / weights.reduce((a, b) => a + b, 0) * 8)}% wt` },
     ],
     executiveSummary: [
       `<strong>${companyName}</strong> is currently trading at <strong>${currency}${fmt(price)}</strong> with a ${pctSign}${fmt(pctChange)}% change today. The stock operates in the <strong>${sector}</strong> sector${profile?.country ? ` based in <strong>${profile.country}</strong>` : ''}.`,
