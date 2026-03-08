@@ -163,6 +163,34 @@ img,svg{max-width:100%;height:auto}
             )}
           </div>
           <button
+            onClick={async () => {
+              if (!user) {
+                toast({ title: "Sign in required", description: "Create an account to use the watchlist." });
+                navigate("/auth");
+                return;
+              }
+              if (addedToWatchlist) return;
+              const ticker = data.subtitle?.split('·')[2]?.trim() || data.company;
+              const { error } = await supabase.from('watchlist').insert({
+                user_id: user.id,
+                ticker,
+                company_name: data.company,
+              });
+              if (error) {
+                toast({ title: error.message.includes("duplicate") ? "Already in watchlist" : "Error", description: error.message, variant: "destructive" });
+                if (error.message.includes("duplicate")) setAddedToWatchlist(true);
+              } else {
+                setAddedToWatchlist(true);
+                toast({ title: "Added to Watchlist", description: `${data.company} is now in your watchlist.` });
+              }
+            }}
+            disabled={addedToWatchlist}
+            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] text-sidebar-foreground/50 hover:text-sidebar-primary transition-colors disabled:text-sidebar-primary p-2 touch-target"
+          >
+            {addedToWatchlist ? <Check className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <span className="hidden sm:inline">{addedToWatchlist ? "Watching" : "Watch"}</span>
+          </button>
+          <button
             onClick={onToggleHoldings}
             className={`flex items-center gap-1.5 font-mono text-[10px] tracking-[1px] transition-colors p-2 touch-target ${holdingsOpen ? 'text-sidebar-primary' : 'text-sidebar-foreground/50 hover:text-sidebar-primary'}`}
           >

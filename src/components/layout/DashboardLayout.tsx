@@ -160,13 +160,37 @@ const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen
               <span className="hidden sm:inline">Search stock…</span>
             </button>
             {user ? (
-              <div className="flex items-center gap-1">
-                <button onClick={() => navigate("/dashboard")} className="p-2 hover:bg-accent rounded-md transition-colors touch-target" title="My Account">
+              <div className="relative" ref={accountRef}>
+                <button
+                  onClick={() => setAccountMenuOpen(!accountMenuOpen)}
+                  className="p-2 hover:bg-accent rounded-md transition-colors touch-target"
+                  title="Account"
+                >
                   <User className="h-4 w-4 text-muted-foreground" />
                 </button>
-                <button onClick={signOut} className="p-2 hover:bg-accent rounded-md transition-colors touch-target" title="Sign out">
-                  <LogOut className="h-4 w-4 text-muted-foreground" />
-                </button>
+                {accountMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-50 min-w-[180px] py-1 animate-in fade-in-0 zoom-in-95">
+                    <button
+                      onClick={() => { navigate("/dashboard"); setAccountMenuOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
+                      <BookOpen className="h-3.5 w-3.5" /> Saved Searches
+                    </button>
+                    <button
+                      onClick={() => { setWatchlistOpen(true); setAccountMenuOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Watchlist
+                    </button>
+                    <div className="h-px bg-border mx-2 my-1" />
+                    <button
+                      onClick={() => { signOut(); setAccountMenuOpen(false); }}
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-mono text-destructive/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    >
+                      <LogOut className="h-3.5 w-3.5" /> Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <button

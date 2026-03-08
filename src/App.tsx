@@ -53,7 +53,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppContent />
+            <WatchlistContext>
+              <AppContent />
+            </WatchlistContext>
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>
