@@ -283,6 +283,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   // === Valuation Guardrail ===
   // Prevent inflated scores when price is well above fair value
 
+  // Score-to-verdict mapping (used later after all adjustments)
   const getScoreVerdict = (s: number) => {
     if (s >= 90) return { badge: "⬛ STRONG BUY", range: "90–100 = STRONG BUY" };
     if (s >= 75) return { badge: "⬛ BUY", range: "75–89 = BUY" };
@@ -291,7 +292,6 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     if (s >= 30) return { badge: "⬛ REDUCE", range: "30–44 = REDUCE" };
     return { badge: "⬛ SELL", range: "Below 30 = SELL" };
   };
-  const v = getScoreVerdict(totalScore);
 
   // === Scenario-Based Price Projection Engine ===
   // Derive base financial assumptions from real data
