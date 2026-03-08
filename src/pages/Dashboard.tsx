@@ -271,6 +271,8 @@ const Dashboard = () => {
             )}
           </div>
         )}
+
+        {tab === "watchlist" && <WatchlistTab user={user} />}
       </div>
     </div>
   );
