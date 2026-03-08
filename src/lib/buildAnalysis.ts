@@ -840,6 +840,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     },
     fairValueRange: { low: `${currency}${fvLow}`, high: `${currency}${fvHigh}`, midpoint: `${currency}${fvMid}` },
     accumulationZone: { low: `${currency}${accZoneLow}`, high: `${currency}${accZoneHigh}`, show: showAccZone },
+    optimalEntry: { low: `${currency}${optEntryLow}`, high: `${currency}${optEntryHigh}`, basis: optEntryBasis },
     modelConfidence: { score: confidenceScore, level: confidenceLevel, factors: confidenceFactors },
     modelAgreement: { level: agreementLevel, models: agreementModels },
     keyDrivers: finalKeyDrivers,
