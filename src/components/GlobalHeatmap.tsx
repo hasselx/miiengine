@@ -331,10 +331,11 @@ const GlobalHeatmap = () => {
           {/* Treemap */}
           <div
             ref={containerRef}
-            className="relative w-full rounded-xl overflow-hidden border border-border"
-            style={{ height: containerSize.h }}
+            className="relative w-full rounded-xl overflow-x-auto overflow-y-hidden border border-border"
+            style={{ minHeight: 280 }}
             onMouseLeave={() => setHovered(null)}
           >
+            <div className="relative" style={{ width: Math.max(containerSize.w, 600), height: containerSize.h }}>
             {rects.map((rect) => {
               const d = rect.data;
               const positive = d.changePct >= 0;
