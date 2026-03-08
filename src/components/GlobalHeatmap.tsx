@@ -16,6 +16,7 @@ interface IndexData {
   change: number;
   changePct: number;
   isOpen: boolean;
+  marketStatus?: "live" | "pre-market" | "closed";
   chartData: { t: number; v: number }[];
   dayHigh: number;
   dayLow: number;
@@ -23,27 +24,17 @@ interface IndexData {
 }
 
 interface TreemapRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  data: IndexData;
+  x: number; y: number; w: number; h: number; data: IndexData;
 }
 
 const CACHE_KEY = "mii-heatmap";
 const CACHE_TTL = 30_000;
 const POLL_INTERVAL = 60_000;
-
 const REGION_ORDER = ["United States", "Asia", "Europe", "India", "Oceania", "Americas", "Middle East"];
 
-/* ══════════════════════════════════════════════
-   Squarified Treemap Algorithm
-   ══════════════════════════════════════════════ */
-function squarify(
-  items: { value: number; data: IndexData }[],
-  x: number, y: number, w: number, h: number
-): TreemapRect[] {
-  if (items.length === 0) return [];
+/* ── Squarified Treemap ── */
+function squarify(items: { value: number; data: IndexData }[], x: number, y: number, w: number, h: number): TreemapRect[] {
+  if (items.length === 0 || w <= 0 || h <= 0) return [];
   if (items.length === 1) return [{ x, y, w, h, data: items[0].data }];
 
   const total = items.reduce((s, i) => s + i.value, 0);
@@ -51,7 +42,6 @@ function squarify(
 
   const sorted = [...items].sort((a, b) => b.value - a.value);
   const rects: TreemapRect[] = [];
-
   let remaining = [...sorted];
   let cx = x, cy = y, cw = w, ch = h;
 
@@ -60,7 +50,6 @@ function squarify(
     const isVertical = cw >= ch;
     const side = isVertical ? ch : cw;
 
-    // Find the best row
     let row: typeof remaining = [];
     let bestAspect = Infinity;
 
@@ -68,53 +57,47 @@ function squarify(
       const candidate = remaining.slice(0, i);
       const rowSum = candidate.reduce((s, it) => s + it.value, 0);
       const rowWidth = (rowSum / remTotal) * (isVertical ? cw : ch);
-      
       let worstAspect = 0;
       for (const item of candidate) {
         const itemH = (item.value / rowSum) * side;
         const aspect = Math.max(rowWidth / itemH, itemH / rowWidth);
         worstAspect = Math.max(worstAspect, aspect);
       }
-
-      if (worstAspect <= bestAspect) {
-        bestAspect = worstAspect;
-        row = candidate;
-      } else {
-        break;
-      }
+      if (worstAspect <= bestAspect) { bestAspect = worstAspect; row = candidate; }
+      else break;
     }
 
-    // Layout the row
     const rowSum = row.reduce((s, it) => s + it.value, 0);
-    const rowWidth = (rowSum / remTotal) * (isVertical ? cw : ch);
-
+    const rowWidth = Math.max(1, (rowSum / remTotal) * (isVertical ? cw : ch));
     let offset = 0;
     for (const item of row) {
       const itemSize = (item.value / rowSum) * side;
-      if (isVertical) {
-        rects.push({ x: cx, y: cy + offset, w: rowWidth, h: itemSize, data: item.data });
-      } else {
-        rects.push({ x: cx + offset, y: cy, w: itemSize, h: rowWidth, data: item.data });
-      }
+      if (isVertical) rects.push({ x: cx, y: cy + offset, w: rowWidth, h: itemSize, data: item.data });
+      else rects.push({ x: cx + offset, y: cy, w: itemSize, h: rowWidth, data: item.data });
       offset += itemSize;
     }
-
-    // Reduce remaining area
-    if (isVertical) {
-      cx += rowWidth;
-      cw -= rowWidth;
-    } else {
-      cy += rowWidth;
-      ch -= rowWidth;
-    }
-
+    if (isVertical) { cx += rowWidth; cw -= rowWidth; }
+    else { cy += rowWidth; ch -= rowWidth; }
     remaining = remaining.slice(row.length);
   }
-
   return rects;
 }
 
-/* ── Inline HSL color (no Tailwind — used for absolute-positioned divs) ── */
+/* ── Derive market status from data ── */
+function deriveMarketStatus(idx: IndexData): "live" | "pre-market" | "closed" {
+  if (idx.marketStatus) return idx.marketStatus;
+  return idx.isOpen ? "live" : "closed";
+}
+
+function statusIndicator(status: "live" | "pre-market" | "closed") {
+  switch (status) {
+    case "live": return { dot: "🟢", label: "Live" };
+    case "pre-market": return { dot: "🟡", label: "Pre-market" };
+    case "closed": return { dot: "⚪", label: "Closed" };
+  }
+}
+
+/* ── Inline HSL color ── */
 function heatColorInline(pct: number, isDark: boolean): { bg: string; text: string; border: string } {
   const abs = Math.abs(pct);
   if (abs < 0.05) {
@@ -126,20 +109,12 @@ function heatColorInline(pct: number, isDark: boolean): { bg: string; text: stri
     const sat = isDark ? 35 : 45;
     const l = isDark ? Math.max(14, 28 - abs * 4) : Math.min(92, 88 - abs * 10);
     const tl = isDark ? Math.min(75, 45 + abs * 8) : Math.max(18, 35 - abs * 5);
-    return {
-      bg: `hsl(142,${sat + abs * 3}%,${l}%)`,
-      text: `hsl(142,${sat + 15}%,${tl}%)`,
-      border: `hsl(142,${sat - 5}%,${isDark ? l + 6 : l - 8}%)`,
-    };
+    return { bg: `hsl(142,${sat + abs * 3}%,${l}%)`, text: `hsl(142,${sat + 15}%,${tl}%)`, border: `hsl(142,${sat - 5}%,${isDark ? l + 6 : l - 8}%)` };
   }
   const sat = isDark ? 35 : 45;
   const l = isDark ? Math.max(14, 28 - abs * 4) : Math.min(92, 92 - abs * 10);
   const tl = isDark ? Math.min(75, 45 + abs * 8) : Math.max(18, 40 - abs * 6);
-  return {
-    bg: `hsl(0,${sat + abs * 3}%,${l}%)`,
-    text: `hsl(0,${sat + 15}%,${tl}%)`,
-    border: `hsl(0,${sat - 5}%,${isDark ? l + 6 : l - 8}%)`,
-  };
+  return { bg: `hsl(0,${sat + abs * 3}%,${l}%)`, text: `hsl(0,${sat + 15}%,${tl}%)`, border: `hsl(0,${sat - 5}%,${isDark ? l + 6 : l - 8}%)` };
 }
 
 /* ── Sparkline ── */
@@ -161,6 +136,8 @@ const Sparkline = ({ data, positive }: { data: { t: number; v: number }[]; posit
 /* ── Detail Modal ── */
 const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) => {
   const positive = idx.changePct >= 0;
+  const status = deriveMarketStatus(idx);
+  const si = statusIndicator(status);
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm p-5 animate-scale-in" onClick={(e) => e.stopPropagation()}>
@@ -188,11 +165,11 @@ const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) 
             { label: "Day High", value: idx.dayHigh.toLocaleString() },
             { label: "Day Low", value: idx.dayLow.toLocaleString() },
             { label: "Volume", value: idx.volume > 1e9 ? `${(idx.volume / 1e9).toFixed(1)}B` : idx.volume > 1e6 ? `${(idx.volume / 1e6).toFixed(1)}M` : idx.volume > 1e3 ? `${(idx.volume / 1e3).toFixed(0)}K` : idx.volume || "—" },
-            { label: "Status", value: idx.isOpen ? "Open" : "Closed", isStatus: true },
+            { label: "Status", value: `${si.dot} ${si.label}`, isStatus: true },
           ].map((s) => (
             <div key={s.label} className="bg-background rounded-lg p-3 border border-border">
               <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">{s.label}</p>
-              <p className={cn("text-sm font-mono font-semibold", s.isStatus ? (idx.isOpen ? "text-green-data" : "text-muted-foreground") : "text-foreground")}>{s.value}</p>
+              <p className={cn("text-sm font-mono font-semibold", s.isStatus ? (status === "live" ? "text-green-data" : status === "pre-market" ? "text-yellow-500" : "text-muted-foreground") : "text-foreground")}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -201,15 +178,17 @@ const DetailModal = ({ idx, onClose }: { idx: IndexData; onClose: () => void }) 
   );
 };
 
-/* ── Tooltip ── */
-const Tooltip = ({ idx, mouseX, mouseY, containerRect }: { idx: IndexData; mouseX: number; mouseY: number; containerRect: DOMRect }) => {
+/* ── Hover Tooltip ── */
+const HoverTooltip = ({ idx, mouseX, mouseY, containerRect }: { idx: IndexData; mouseX: number; mouseY: number; containerRect: DOMRect }) => {
   const positive = idx.changePct >= 0;
-  const left = mouseX - containerRect.left + 12;
+  const status = deriveMarketStatus(idx);
+  const si = statusIndicator(status);
+  const left = mouseX - containerRect.left + 16;
   const top = mouseY - containerRect.top - 10;
   return (
     <div
       className="absolute z-50 pointer-events-none bg-popover border border-border rounded-lg shadow-xl p-3 min-w-[180px]"
-      style={{ left: Math.min(left, containerRect.width - 200), top: Math.max(0, top - 80) }}
+      style={{ left: Math.min(left, containerRect.width - 210), top: Math.max(0, top - 90) }}
     >
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-base">{idx.flag}</span>
@@ -222,9 +201,7 @@ const Tooltip = ({ idx, mouseX, mouseY, containerRect }: { idx: IndexData; mouse
           {positive ? "+" : ""}{idx.changePct.toFixed(2)}%
         </span>
       </div>
-      <span className={cn("font-mono text-[10px]", idx.isOpen ? "text-green-data" : "text-muted-foreground")}>
-        {idx.isOpen ? "● Open" : "○ Closed"}
-      </span>
+      <span className="font-mono text-[10px] text-muted-foreground">{si.dot} {si.label}</span>
     </div>
   );
 };
@@ -237,11 +214,10 @@ const GlobalHeatmap = () => {
   const [selected, setSelected] = useState<IndexData | null>(null);
   const [hovered, setHovered] = useState<{ idx: IndexData; mx: number; my: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const [containerSize, setContainerSize] = useState({ w: 800, h: 440 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDark, setIsDark] = useState(false);
 
-  // Detect dark mode
   useEffect(() => {
     const check = () => setIsDark(document.documentElement.classList.contains("dark"));
     check();
@@ -250,16 +226,19 @@ const GlobalHeatmap = () => {
     return () => obs.disconnect();
   }, []);
 
-  // Observe container size
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const { width } = entries[0].contentRect;
-      // Height proportional to width for a nice aspect ratio
-      const h = Math.max(320, Math.min(width * 0.55, 560));
-      setContainerSize({ w: width, h });
-    });
+    // Measure immediately
+    const measure = () => {
+      const width = el.clientWidth;
+      if (width > 0) {
+        const h = Math.max(340, Math.min(width * 0.55, 560));
+        setContainerSize({ w: width, h });
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -296,17 +275,16 @@ const GlobalHeatmap = () => {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Compute treemap layout
   const rects = useMemo(() => {
-    if (!containerSize.w || indices.length === 0) return [];
-    const items = indices
+    if (containerSize.w <= 0 || indices.length === 0) return [];
+    const items = [...indices]
       .sort((a, b) => {
         const ai = REGION_ORDER.indexOf(a.region);
         const bi = REGION_ORDER.indexOf(b.region);
         if (ai !== bi) return ai - bi;
         return b.weight - a.weight;
       })
-      .map((d) => ({ value: d.weight * d.weight, data: d })); // square the weight for more dramatic size difference
+      .map((d) => ({ value: d.weight * d.weight, data: d }));
     return squarify(items, 0, 0, containerSize.w, containerSize.h);
   }, [indices, containerSize]);
 
@@ -350,52 +328,48 @@ const GlobalHeatmap = () => {
             </div>
           </div>
 
-          {/* Treemap Container */}
+          {/* Treemap */}
           <div
             ref={containerRef}
             className="relative w-full rounded-xl overflow-hidden border border-border"
-            style={{ height: containerSize.h || 400 }}
+            style={{ height: containerSize.h }}
             onMouseLeave={() => setHovered(null)}
           >
             {rects.map((rect) => {
               const d = rect.data;
               const positive = d.changePct >= 0;
               const colors = heatColorInline(d.changePct, isDark);
-              const isLarge = rect.w > 120 && rect.h > 90;
-              const isMedium = rect.w > 80 && rect.h > 60;
-              const isTiny = rect.w < 60 || rect.h < 45;
+              const isLarge = rect.w > 120 && rect.h > 100;
+              const isMedium = rect.w > 80 && rect.h > 65;
+              const isTiny = rect.w < 55 || rect.h < 40;
+              const status = deriveMarketStatus(d);
+              const si = statusIndicator(status);
 
               return (
                 <button
                   key={d.symbol}
-                  className="absolute flex flex-col justify-center items-center overflow-hidden transition-all duration-150 hover:brightness-110 hover:z-20 cursor-pointer group"
+                  className="absolute flex flex-col justify-center items-center overflow-hidden transition-[filter] duration-150 hover:brightness-[1.15] hover:z-20 cursor-pointer"
                   style={{
-                    left: rect.x,
-                    top: rect.y,
-                    width: rect.w,
-                    height: rect.h,
-                    backgroundColor: colors.bg,
+                    left: rect.x, top: rect.y, width: rect.w, height: rect.h,
+                    backgroundColor: colors.bg, color: colors.text,
                     borderRight: `1px solid ${colors.border}`,
                     borderBottom: `1px solid ${colors.border}`,
-                    color: colors.text,
                   }}
                   onClick={() => setSelected(d)}
                   onMouseMove={(e) => setHovered({ idx: d, mx: e.clientX, my: e.clientY })}
                   onMouseLeave={() => setHovered(null)}
                 >
-                  {/* Flag + Country */}
+                  {/* Flag + country */}
                   {!isTiny && (
                     <div className="flex items-center gap-1 mb-0.5">
-                      <span className={cn("leading-none", isLarge ? "text-lg" : "text-sm")}>{d.flag}</span>
+                      <span style={{ fontSize: isLarge ? 18 : 13, lineHeight: 1 }}>{d.flag}</span>
                       {isMedium && (
-                        <span className="font-mono uppercase tracking-wider opacity-70" style={{ fontSize: isLarge ? 10 : 8 }}>
-                          {d.country}
-                        </span>
+                        <span className="font-mono uppercase tracking-wider opacity-70" style={{ fontSize: isLarge ? 10 : 8 }}>{d.country}</span>
                       )}
                     </div>
                   )}
 
-                  {/* Index Name */}
+                  {/* Index name */}
                   <div className="font-bold font-mono truncate max-w-full px-1" style={{ fontSize: isLarge ? 13 : isMedium ? 11 : 9 }}>
                     {d.name}
                   </div>
@@ -405,26 +379,24 @@ const GlobalHeatmap = () => {
                     {positive ? "+" : ""}{d.changePct.toFixed(2)}%
                   </div>
 
-                  {/* Price (large tiles only) */}
+                  {/* Price */}
                   {isLarge && (
-                    <div className="font-mono opacity-50 mt-0.5" style={{ fontSize: 11 }}>
-                      {d.price.toLocaleString()}
-                    </div>
+                    <div className="font-mono opacity-50 mt-0.5" style={{ fontSize: 11 }}>{d.price.toLocaleString()}</div>
                   )}
 
-                  {/* Closed badge */}
-                  {!d.isOpen && isMedium && (
-                    <div className="absolute top-1.5 right-1.5 font-mono px-1 py-0.5 rounded opacity-50" style={{ fontSize: 7, background: "rgba(0,0,0,0.15)" }}>
-                      CLOSED
+                  {/* Market status badge */}
+                  {isMedium && (
+                    <div className="absolute top-1.5 right-1.5 font-mono flex items-center gap-0.5" style={{ fontSize: 8 }}>
+                      <span style={{ fontSize: 6 }}>{si.dot}</span>
+                      <span className="opacity-60">{si.label}</span>
                     </div>
                   )}
                 </button>
               );
             })}
 
-            {/* Hover Tooltip */}
             {hovered && containerRef.current && (
-              <Tooltip idx={hovered.idx} mouseX={hovered.mx} mouseY={hovered.my} containerRect={containerRef.current.getBoundingClientRect()} />
+              <HoverTooltip idx={hovered.idx} mouseX={hovered.mx} mouseY={hovered.my} containerRect={containerRef.current.getBoundingClientRect()} />
             )}
           </div>
 
@@ -443,6 +415,9 @@ const GlobalHeatmap = () => {
               <div className="w-5 h-3 rounded-sm bg-[hsl(142,55%,50%)] dark:bg-[hsl(142,45%,32%)]" />
             </div>
             <span>Strong ↑</span>
+            <span className="ml-3">🟢 Live</span>
+            <span>🟡 Pre-market</span>
+            <span>⚪ Closed</span>
           </div>
         </div>
       </div>
