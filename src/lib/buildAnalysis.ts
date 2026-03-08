@@ -441,24 +441,38 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   ];
 
 
-  const getValuationVerdict = (score: number, retPct: number): string => {
-    if (score >= 90) return "Exceptional Opportunity";
-    if (retPct > 15 && score >= 70) return "Strong Buy";
-    if (retPct > 5 && score >= 65) return "Buy";
-    if (retPct > 0 && score >= 60) return "Buy / Accumulate";
-    if (Math.abs(retPct) <= 5) return "Hold";
-    if (retPct < -5 && retPct >= -15) return "Hold / Reduce";
-    if (retPct < -15) return "Reduce / Wait for Pullback";
-    if (score >= 60) return "Hold / Accumulate on Dips";
-    if (score >= 50) return "Weak Hold";
-    return "Avoid";
-  };
-  const verdict = getValuationVerdict(totalScore, expectedReturnPct);
+  // === Target Price = Fair Value Midpoint ===
+  const targetPrice = fvMid;
+  const targetReturnPct = ((targetPrice - price) / price) * 100;
+  const targetReturnAbs = Math.abs(targetReturnPct).toFixed(1);
+  const targetIsUpside = targetReturnPct >= 0;
+  const targetReturnStr = `${targetIsUpside ? '+' : '-'}${targetReturnAbs}%`;
+  const targetReturnLabel = targetIsUpside ? "Expected Upside" : "Expected Downside";
 
-  // Accumulation zone: use capped fair value midpoint
-  const showAccZone = price > fvMid;
-  const accZoneLow = Math.round(fvMid * 0.96);
-  const accZoneHigh = Math.round(fvMid * 1.02);
+  // === Recommendation based on expected return thresholds ===
+  const getValuationVerdict = (retPct: number): string => {
+    if (retPct > 15) return "Strong Buy";
+    if (retPct > 8) return "Buy";
+    if (retPct >= 0) return "Hold";
+    if (retPct >= -8) return "Hold / Reduce";
+    return "Reduce / Sell";
+  };
+  const verdict = getValuationVerdict(targetReturnPct);
+
+  // === Accumulation Zone: relative to CMP ===
+  // For Buy recs: zone includes/slightly below CMP using nearest support
+  // For Hold/Reduce: zone is a lower entry range
+  const support1 = techs ? Math.round(Math.min(price, low52 + (price - low52) * 0.7)) : Math.round(price * 0.95);
+  const isBuyVerdict = verdict === 'Strong Buy' || verdict === 'Buy';
+  const accZoneLow = isBuyVerdict ? Math.round(Math.min(price * 0.97, support1)) : Math.round(fvMid * 0.94);
+  const accZoneHigh = isBuyVerdict ? Math.round(price * 1.02) : Math.round(fvMid * 1.0);
+  const showAccZone = true; // Always show — entry guidance is always useful
+
+  // === Optimal Entry Zone: support-based ===
+  const support2 = techs ? Math.round(low52 + (price - low52) * 0.4) : Math.round(price * 0.90);
+  const optEntryLow = Math.round(Math.max(support1, support2));
+  const optEntryHigh = Math.round(price);
+  const optEntryBasis = techs ? "Based on nearest support levels and recent price structure" : "Based on estimated support range";
 
   // Model confidence — capped at 85%
   const confidenceFactors: string[] = [];

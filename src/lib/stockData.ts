@@ -203,6 +203,7 @@ export interface StockAnalysis {
   };
   fairValueRange: { low: string; high: string; midpoint: string };
   accumulationZone: { low: string; high: string; show: boolean };
+  optimalEntry: { low: string; high: string; basis: string };
   modelConfidence: { score: number; level: 'Low' | 'Moderate' | 'High'; factors: string[] };
   modelAgreement: { level: 'Low' | 'Moderate' | 'High'; models: { name: string; signal: 'Bullish' | 'Bearish' | 'Neutral' }[] };
   keyDrivers: string[];
