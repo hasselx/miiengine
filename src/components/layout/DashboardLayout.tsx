@@ -36,6 +36,7 @@ const NAV_ITEMS = [
   { id: "sector-rotation", label: "Sector Rotation", icon: PieChart },
   { id: "correlation", label: "Correlation", icon: ArrowUpDown },
   { id: "moat", label: "Competitive Moat", icon: Shield },
+  { id: "factor-exposure", label: "Factor Exposure", icon: Gauge },
   { id: "risk", label: "Risk Analysis", icon: AlertTriangle },
   { id: "dividend", label: "Dividend Strategy", icon: PieChart },
   { id: "backtest", label: "Backtest Simulator", icon: FlaskConical },
