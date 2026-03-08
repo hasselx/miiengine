@@ -999,7 +999,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
       stack.push({ factor: 'Fundamentals', signal: fundPct >= 60 ? 'Bullish' : fundPct < 40 ? 'Bearish' : 'Neutral', detail: `Score: ${weightedScores[0]}/${maxScores[0]}` });
       const valPct = (weightedScores[1] / maxScores[1]) * 100;
       stack.push({ factor: 'Valuation', signal: valPct >= 60 ? 'Bullish' : valPct < 40 ? 'Bearish' : 'Neutral', detail: pe > 0 ? `P/E: ${fmt(pe, 1)}x` : 'N/A' });
-      stack.push({ factor: 'Technical Trend', signal: techPct >= 60 ? 'Bullish' : techPct < 40 ? 'Bearish' : 'Neutral', detail: techs ? `RSI: ${fmt(techs.rsi, 0)}` : 'N/A' });
+      // Technical trend respects signal consistency (death cross blocks bullish)
+      const techStackSignal = hasDeathCross ? (techPct >= 60 ? 'Neutral' : 'Bearish') : (techPct >= 60 ? 'Bullish' : techPct < 40 ? 'Bearish' : 'Neutral');
+      stack.push({ factor: 'Technical Trend', signal: techStackSignal as any, detail: techs ? `RSI: ${fmt(techs.rsi, 0)}${hasDeathCross ? ' · Death Cross' : hasGoldenCross ? ' · Golden Cross' : ''}` : 'N/A' });
       stack.push({ factor: 'Sector Momentum', signal: pctChange > 1 ? 'Bullish' : pctChange < -1 ? 'Bearish' : 'Neutral', detail: `${pctChange >= 0 ? '+' : ''}${fmt(pctChange)}% today` });
       if (isBearRegime) stack.push({ factor: 'Macro Regime', signal: 'Adjustment', detail: 'Bear Market — downgrade applied' });
       else stack.push({ factor: 'Macro Regime', signal: marketRegime.regime === 'Bull Market' ? 'Bullish' : 'Neutral', detail: marketRegime.regime });
