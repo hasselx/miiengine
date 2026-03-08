@@ -182,7 +182,7 @@ function scoreTechnical(techs: any): { score: number; subtitle: string } {
   return { score, subtitle: `RSI: ${fmt(techs.rsi, 0)}; ${smaStatus}` };
 }
 
-export function buildAnalysisFromRealData(raw: StockRawData, company: string, country: string, exchange: string): StockAnalysis {
+export function buildAnalysisFromRealData(raw: StockRawData, company: string, country: string, exchange: string, investmentStyle?: InvestmentStyle): StockAnalysis {
   const { quote, profile, statistics, timeSeries, fundamentals } = raw;
   const techs = computeTechnicals(timeSeries);
   const currency = getCurrencyFromData(quote, exchange);

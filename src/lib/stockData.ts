@@ -122,8 +122,20 @@ export interface ModelSummary {
   sentiment: 'positive' | 'negative' | 'neutral';
 }
 
+export type InvestmentStyle = 'long_term' | 'swing_trader' | 'short_term' | 'intraday' | 'value' | 'growth' | null;
+
+export const INVESTMENT_STYLES: { value: InvestmentStyle; label: string; description: string }[] = [
+  { value: 'long_term', label: 'Long-Term Investor', description: 'Fundamentals, moat, institutional ownership' },
+  { value: 'swing_trader', label: 'Swing Trader', description: 'Technicals, support/resistance, momentum' },
+  { value: 'short_term', label: 'Short-Term Trader', description: 'Momentum, volume, short-term patterns' },
+  { value: 'intraday', label: 'Intraday Trader', description: 'Volatility, volume spikes, real-time signals' },
+  { value: 'value', label: 'Value Investor', description: 'P/E, DCF valuation, balance sheet' },
+  { value: 'growth', label: 'Growth Investor', description: 'Revenue growth, earnings growth, sector momentum' },
+];
+
 export interface StockAnalysis {
   company: string;
+  investmentStyle?: InvestmentStyle;
   subtitle: string;
   verdictBadge: string;
   reportType: string;
