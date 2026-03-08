@@ -15,15 +15,27 @@ interface DashboardLayoutProps {
 }
 
 const NAV_ITEMS = [
+  { id: "ai-summary", label: "AI Summary", icon: Brain },
   { id: "summary", label: "Summary", icon: FileText },
   { id: "scores", label: "Score Matrix", icon: BarChart3 },
   { id: "fundamentals", label: "Fundamentals", icon: Layers },
+  { id: "earnings", label: "Earnings", icon: DollarSign },
+  { id: "earnings-surprise", label: "Earnings Surprise", icon: Zap },
   { id: "valuation", label: "Valuation", icon: TrendingUp },
   { id: "price", label: "Price Targets", icon: Target },
+  { id: "backtest", label: "Backtest Simulator", icon: FlaskConical },
   { id: "macro", label: "Macro", icon: Activity },
+  { id: "dividend", label: "Dividends", icon: PieChart },
+  { id: "insider", label: "Insider Activity", icon: Building2 },
+  { id: "correlation", label: "Correlation", icon: ArrowUpDown },
   { id: "technical", label: "Technicals", icon: LineChart },
+  { id: "support-resistance", label: "Support/Resistance", icon: Target },
   { id: "moat", label: "Moat", icon: Shield },
+  { id: "pattern", label: "Patterns", icon: Activity },
   { id: "risk", label: "Risk Matrix", icon: AlertTriangle },
+  { id: "sentiment", label: "Sentiment", icon: Globe },
+  { id: "institutional", label: "Institutional", icon: Building2 },
+  { id: "sector-rotation", label: "Sector Rotation", icon: PieChart },
 ];
 
 const DashboardLayout = ({ children, activeSection, onSectionClick, onSearchOpen, companyName }: DashboardLayoutProps) => {
