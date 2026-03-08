@@ -174,8 +174,10 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
       </div>
 
-      {/* Global Market Heatmap */}
       <GlobalHeatmap />
+
+      {/* Global Sector Performance Tracker */}
+      <SectorPerformanceTracker />
 
       {/* About / Features Section */}
       <div className="border-t border-border bg-card">
