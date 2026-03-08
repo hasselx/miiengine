@@ -460,7 +460,12 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   const targetReturnStr = `${targetIsUpside ? '+' : '-'}${targetReturnAbs}%`;
   const targetReturnLabel = targetIsUpside ? "Expected Upside" : "Expected Downside";
 
+  // === Valuation Guardrail: cap recommendation if price >> fair value ===
+  const priceAboveFV = fvMid > 0 ? (price - fvMid) / fvMid : 0;
+  const maxVerdictIfOvervalued = priceAboveFV > 0.15; // price > 115% of fair value
+
   // === Recommendation based on score thresholds ===
+  const VERDICT_LEVELS = ["Sell", "Reduce", "Hold", "Accumulate", "Buy", "Strong Buy"];
   const getScoreBasedVerdict = (score: number): string => {
     if (score >= 90) return "Strong Buy";
     if (score >= 75) return "Buy";
@@ -469,7 +474,36 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     if (score >= 30) return "Reduce";
     return "Sell";
   };
-  const verdict = getScoreBasedVerdict(totalScore);
+
+  const downgradeVerdict = (v: string): string => {
+    const idx = VERDICT_LEVELS.indexOf(v);
+    return idx > 0 ? VERDICT_LEVELS[idx - 1] : v;
+  };
+
+  let verdict = getScoreBasedVerdict(totalScore);
+
+  // === Market Regime Adjustment: Bear market downgrades by one level ===
+  // (marketRegime computed later, so we do a preliminary check here)
+  const prelimBull = techs?.sma50 && techs?.sma200 && techs.sma50 > techs.sma200 ? 1 : 0;
+  const prelimBear = (techs?.sma50 && techs?.sma200 && techs.sma50 < techs.sma200 ? 1 : 0)
+    + (vol52Prelim > 0.50 ? 1 : 0)
+    + (pctChange < -1 ? 1 : 0);
+  const isBearRegime = prelimBear >= 2 && prelimBull === 0;
+  if (isBearRegime) {
+    verdict = downgradeVerdict(verdict);
+  }
+
+  // === Valuation Guardrail: if price > 115% of fair value, max = Hold ===
+  if (maxVerdictIfOvervalued) {
+    const maxIdx = VERDICT_LEVELS.indexOf("Hold");
+    const curIdx = VERDICT_LEVELS.indexOf(verdict);
+    if (curIdx > maxIdx) verdict = "Hold";
+  }
+
+  // === High Volatility Downgrade ===
+  if (vol52Prelim > 0.60 && (verdict === "Strong Buy" || verdict === "Buy")) {
+    verdict = downgradeVerdict(verdict);
+  }
 
   // === Accumulation Zone: relative to CMP ===
   // For Buy recs: zone includes/slightly below CMP using nearest support
