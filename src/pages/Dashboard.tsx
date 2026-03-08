@@ -4,7 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut, Sun, Moon, Eye, Bell, Plus, ChevronDown, ChevronUp, X, AlertTriangle } from "lucide-react";
+import { InvestmentStyle } from "@/lib/stockData";
+import InvestorProfileSelector from "@/components/InvestorProfileSelector";
+import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut, Sun, Moon, Eye, Bell, Plus, ChevronDown, ChevronUp, X, AlertTriangle, Settings } from "lucide-react";
 
 interface SavedSearch {
   id: string;
