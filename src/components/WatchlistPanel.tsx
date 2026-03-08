@@ -140,20 +140,24 @@ const WatchlistPanel = ({ open, onClose }: { open: boolean; onClose: () => void 
 
   // Add stock
   const handleAdd = async () => {
-    if (!user || !addTicker.trim() || !addName.trim()) return;
+    if (!user || !addTicker.trim()) return;
+    const val = addTicker.trim();
+    const isUpperTicker = val === val.toUpperCase() && val.length <= 6 && !val.includes(" ");
+    const ticker = isUpperTicker ? val : val.toUpperCase().replace(/\s+/g, "").slice(0, 10);
+    const companyName = val;
+
     const { error } = await supabase.from("watchlist").insert({
       user_id: user.id,
-      ticker: addTicker.trim().toUpperCase(),
-      company_name: addName.trim(),
+      ticker,
+      company_name: companyName,
     });
     if (error) {
       toast({ title: "Error", description: error.message.includes("duplicate") ? "Already in watchlist" : error.message, variant: "destructive" });
     } else {
       setAddTicker("");
-      setAddName("");
       setShowAddForm(false);
       fetchWatchlist();
-      toast({ title: "Added", description: `${addTicker.trim().toUpperCase()} added to watchlist` });
+      toast({ title: "Added", description: `${ticker} added to watchlist` });
     }
   };
 
