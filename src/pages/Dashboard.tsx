@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut, Sun, Moon } from "lucide-react";
+import { Trash2, Search, TrendingUp, ArrowLeft, User, LogOut, Sun, Moon, Eye, Bell, Plus, ChevronDown, ChevronUp, X, AlertTriangle } from "lucide-react";
 
 interface SavedSearch {
   id: string;
