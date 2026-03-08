@@ -32,7 +32,8 @@ const ValuationTriangle = ({ data }: { data: StockAnalysis }) => {
         {models.map((m) => (
           <div key={m.label} className={`${signalBg[m.signal]} p-4 text-center`}>
             <p className="text-lg mb-1">{m.icon}</p>
-            <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-2">{m.label}</p>
+            <p className="font-mono text-[9px] tracking-[2px] uppercase text-muted-foreground mb-1">{m.label}</p>
+            <p className="font-mono text-[8px] tracking-[1px] text-muted-foreground/60 mb-2">Weight: {m.weight}</p>
             <p className={`font-display text-xl sm:text-2xl font-bold mb-1 ${signalColor[m.signal]}`}>{m.price}</p>
             <span className={`inline-block font-mono text-[10px] px-2 py-0.5 rounded ${signalBg[m.signal]} ${signalColor[m.signal]}`}>
               {m.signal}
