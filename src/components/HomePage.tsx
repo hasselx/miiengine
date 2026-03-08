@@ -3,6 +3,7 @@ import { Search, BarChart3, Shield, TrendingUp, Activity, Target, Layers, LineCh
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import GlobalHeatmap from "@/components/GlobalHeatmap";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
