@@ -22,10 +22,11 @@ const ScoreBanner = ({ data }: { data: StockAnalysis }) => (
           <div className="h-full bg-ink rounded" style={{ width: `${data.totalScore}%`, animation: 'fillBar 1.5s ease-out forwards' }} />
         </div>
         <div className="flex justify-between font-mono text-[8px] sm:text-[9px] text-ink/50 mt-1">
-          <span>0 — Avoid</span>
-          <span className="hidden sm:inline">50 — Weak Hold</span>
-          <span>70 — Buy</span>
-          <span>90 — Exceptional</span>
+          <span>0 — Sell</span>
+          <span className="hidden sm:inline">45 — Hold</span>
+          <span>60 — Accumulate</span>
+          <span>75 — Buy</span>
+          <span>90 — Strong Buy</span>
         </div>
       </div>
     </div>
