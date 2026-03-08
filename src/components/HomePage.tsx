@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Search, BarChart3, Shield, TrendingUp, Activity, Target, Layers, LineChart, Brain, Zap, ArrowRight, CheckCircle, User } from "lucide-react";
+import { Search, ArrowRight, CheckCircle, User, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GlobalHeatmap from "@/components/GlobalHeatmap";
 import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 import MarketTimings from "@/components/MarketTimings";
+import HomeFeatures from "@/components/HomeFeatures";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
@@ -33,29 +34,24 @@ const VERDICTS = [
   { label: "Sell", color: "bg-destructive text-destructive-foreground" },
 ];
 
-const FEATURES = [
-  { icon: BarChart3, text: "Multi-Factor Scoring" },
-  { icon: TrendingUp, text: "DCF Valuation" },
-  { icon: Shield, text: "Moat Analysis" },
-  { icon: Target, text: "Price Targets" },
-  { icon: Activity, text: "Technical Indicators" },
-  { icon: Layers, text: "Fundamental Analysis" },
-  { icon: LineChart, text: "Historical Trends" },
-  { icon: Brain, text: "AI-Powered Insights" },
-  { icon: Zap, text: "Real-Time Data" },
-  { icon: BarChart3, text: "Risk Assessment" },
+const HIGHLIGHTS = [
+  "Institutional-style multi-factor analysis",
+  "Aggregation of data from multiple financial sources",
+  "Transparent valuation models and risk frameworks",
+  "Automated equity research generation",
 ];
 
-const HIGHLIGHTS = [
-  "Institutional-grade equity research",
-  "Multi-source data aggregation",
-  "Comprehensive risk & moat analysis",
-  "Automated DCF valuation models",
+const WORKFLOW_STEPS = [
+  "Market Data",
+  "Multi-Factor Analysis",
+  "Valuation Models",
+  "Risk Assessment",
+  "Investment Verdict",
 ];
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   const [company, setCompany] = useState("");
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -63,11 +59,9 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
     if (company.trim()) onAnalyze(company.trim());
   };
 
-  // marquee removed
-
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden">
-      {/* Top bar — sticky, minimal gap from ticker */}
+      {/* Top bar */}
       <div className="flex justify-end px-4 sm:px-6 py-2 sticky top-8 bg-background/80 backdrop-blur-sm z-20">
         {user ? (
           <button
@@ -90,7 +84,6 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 pb-12 pt-4">
-        {/* Brand */}
         <div className="text-center mb-8 sm:mb-10">
           <p className="font-mono text-[10px] sm:text-[11px] tracking-[4px] sm:tracking-[6px] uppercase text-muted-foreground mb-5 sm:mb-6">
             Multi-Institutional Intelligence Engine
@@ -99,7 +92,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
             MII Engine
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto leading-relaxed px-2">
-            Professional-grade, multi-factor equity research reports — generated in seconds.
+            Structured institutional-grade equity research reports — generated in seconds.
           </p>
         </div>
 
@@ -116,10 +109,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
 
         {/* Search form */}
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-xl px-2"
-        >
+        <form onSubmit={handleSubmit} className="w-full max-w-xl px-2">
           <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden transition-colors focus-within:border-primary">
             <div className="pl-4 sm:pl-5">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -150,7 +140,6 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
           </div>
         </form>
 
-        {/* Error */}
         {error && (
           <p className="mt-4 text-sm text-destructive font-mono px-4 text-center">{error}</p>
         )}
@@ -173,7 +162,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
       </div>
 
-      {/* Heatmap + Market Timings side by side */}
+      {/* Heatmap + Market Timings */}
       <div className="border-t border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
@@ -183,10 +172,34 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
         </div>
       </div>
 
-      {/* Global Sector Performance Tracker */}
       <SectorPerformanceTracker />
 
-      {/* About / Features Section */}
+      {/* Workflow */}
+      <div className="border-t border-border bg-background">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-6 text-center">How It Works</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-0">
+            {WORKFLOW_STEPS.map((step, i) => (
+              <div key={step} className="flex flex-col sm:flex-row items-center">
+                <div className="px-4 py-2.5 border border-border rounded-md bg-card">
+                  <span className="font-mono text-[11px] sm:text-[12px] tracking-wide text-foreground font-medium">{step}</span>
+                </div>
+                {i < WORKFLOW_STEPS.length - 1 && (
+                  <>
+                    <ArrowDown className="h-4 w-4 text-muted-foreground my-2 sm:hidden" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground mx-2 hidden sm:block" />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-center mt-6 font-mono text-[10px] sm:text-[11px] text-muted-foreground tracking-wide">
+            Analyzing stocks across 10+ financial dimensions
+          </p>
+        </div>
+      </div>
+
+      {/* About + Features */}
       <div className="border-t border-border bg-card">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-14 items-start">
@@ -196,12 +209,20 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
               <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-4">
                 What is MII Engine?
               </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                MII Engine is a Multi-Institutional Intelligence platform that aggregates data from
-                multiple financial sources to deliver professional-grade equity research reports.
-                Our engine evaluates stocks across 10+ dimensions including fundamentals, technicals,
-                valuation, moat strength, and macroeconomic factors.
-              </p>
+              <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-6">
+                <p>
+                  MII Engine is a multi-institutional intelligence platform designed to generate structured equity research reports using data from multiple financial sources.
+                </p>
+                <p>
+                  The engine evaluates stocks using a multi-factor analytical framework that combines fundamentals, valuation models, technical momentum, institutional activity, and macroeconomic signals.
+                </p>
+                <p>
+                  Instead of providing simple price predictions, the platform produces transparent research outputs including fair value estimates, risk assessments, factor exposure analysis, and probability-weighted price scenarios.
+                </p>
+                <p>
+                  Each report is structured to resemble professional institutional research used by investment analysts and portfolio managers.
+                </p>
+              </div>
               <ul className="space-y-3">
                 {HIGHLIGHTS.map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-foreground">
@@ -212,24 +233,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
               </ul>
             </div>
 
-            {/* Feature grid */}
-            <div>
-              <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-3">Features</p>
-              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-6">
-                What you get
-              </h2>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                {FEATURES.map((feat, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 bg-background border border-border rounded-lg hover:border-foreground/20 transition-colors"
-                  >
-                    <feat.icon className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-xs sm:text-sm font-medium text-foreground">{feat.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Features */}
+            <HomeFeatures />
           </div>
         </div>
       </div>
