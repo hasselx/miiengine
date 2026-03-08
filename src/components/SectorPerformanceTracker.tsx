@@ -115,10 +115,10 @@ const SectorPerformanceTracker = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
           <div>
-            <p className="font-mono text-[10px] tracking-[4px] uppercase text-primary mb-1.5">
+            <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-1.5">
               Sector Tracker
             </p>
-            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-foreground">
               Global Sector Performance
             </h2>
           </div>
