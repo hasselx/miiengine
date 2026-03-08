@@ -8,43 +8,59 @@ const FinalVerdict = ({ data }: { data: StockAnalysis }) => (
     <p className="text-[11px] sm:text-[12px] text-[hsl(0,0%,67%)] leading-[1.7] mb-2" dangerouslySetInnerHTML={{ __html: data.finalVerdictText }} />
     <p className="text-[11px] sm:text-[12px] text-[hsl(0,0%,67%)] leading-[1.7]" dangerouslySetInnerHTML={{ __html: data.finalAction }} />
 
-    {/* Fair Value Range */}
-    <div className="border-t border-[hsl(0,0%,20%)] pt-3 mt-4">
-      <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1.5">Fair Value Range</p>
-      <p className="font-mono text-sm text-cream">{data.fairValueRange.low} — {data.fairValueRange.high}</p>
-      <p className="font-mono text-[10px] text-gold mt-0.5">Midpoint: {data.fairValueRange.midpoint}</p>
-    </div>
-
-    {/* Accumulation Zone */}
-    {data.accumulationZone.show && (
-      <div className="mt-3">
-        <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Accumulation Zone</p>
-        <p className="font-mono text-sm text-green-data">{data.accumulationZone.low} – {data.accumulationZone.high}</p>
-      </div>
-    )}
-
-    {/* Optimal Entry Zone */}
-    <div className="mt-3">
-      <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Optimal Entry Zone</p>
-      <p className="font-mono text-sm text-gold">{data.optimalEntry.low} – {data.optimalEntry.high}</p>
-      <p className="font-mono text-[10px] text-[hsl(0,0%,45%)] mt-0.5">{data.optimalEntry.basis}</p>
-    </div>
-
-    {/* Model Confidence */}
-    <div className="mt-3">
-      <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Model Confidence</p>
-      <div className="flex items-center gap-2">
-        <p className="font-mono text-sm text-cream">{data.modelConfidence.score}%</p>
-        <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${data.modelConfidence.level === 'High' ? 'bg-green-data/20 text-green-data' : data.modelConfidence.level === 'Moderate' ? 'bg-gold/20 text-gold' : 'bg-red-data/20 text-red-data'}`}>
-          {data.modelConfidence.level}
-        </span>
+    {/* === Valuation Block === */}
+    <div className="border-t border-[hsl(0,0%,20%)] pt-4 mt-5">
+      <p className="font-mono text-[9px] tracking-[3px] text-gold uppercase mb-3">Valuation</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Fair Value Range</p>
+          <p className="font-mono text-sm text-cream">{data.fairValueRange.low} — {data.fairValueRange.high}</p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Target Price</p>
+          <p className="font-mono text-sm text-gold">{data.fairValueRange.midpoint}</p>
+        </div>
       </div>
     </div>
 
-    {/* Model Agreement */}
-    <div className="mt-3">
-      <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1.5">Model Agreement: <span className={data.modelAgreement.level === 'High' ? 'text-green-data' : data.modelAgreement.level === 'Moderate' ? 'text-gold' : 'text-red-data'}>{data.modelAgreement.level}</span></p>
-      <div className="space-y-1">
+    {/* === Trading Guidance Block === */}
+    <div className="border-t border-[hsl(0,0%,20%)] pt-4 mt-4">
+      <p className="font-mono text-[9px] tracking-[3px] text-gold uppercase mb-3">Trading Guidance</p>
+      <div className="space-y-2.5">
+        {data.accumulationZone.show && (
+          <div>
+            <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Accumulation Zone</p>
+            <p className="font-mono text-sm text-green-data">{data.accumulationZone.low} – {data.accumulationZone.high}</p>
+          </div>
+        )}
+        <div>
+          <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Optimal Entry Zone</p>
+          <p className="font-mono text-sm text-gold">{data.optimalEntry.low} – {data.optimalEntry.high}</p>
+          <p className="font-mono text-[10px] text-[hsl(0,0%,45%)] mt-0.5">{data.optimalEntry.basis}</p>
+        </div>
+      </div>
+    </div>
+
+    {/* === Model Confidence & Agreement === */}
+    <div className="border-t border-[hsl(0,0%,20%)] pt-4 mt-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Model Confidence</p>
+          <div className="flex items-center gap-2">
+            <p className="font-mono text-sm text-cream">{data.modelConfidence.score}%</p>
+            <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${data.modelConfidence.level === 'High' ? 'bg-green-data/20 text-green-data' : data.modelConfidence.level === 'Moderate' ? 'bg-gold/20 text-gold' : 'bg-red-data/20 text-red-data'}`}>
+              {data.modelConfidence.level}
+            </span>
+          </div>
+        </div>
+        <div>
+          <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1">Model Agreement</p>
+          <span className={data.modelAgreement.level === 'High' ? 'text-green-data font-mono text-sm' : data.modelAgreement.level === 'Moderate' ? 'text-gold font-mono text-sm' : 'text-red-data font-mono text-sm'}>
+            {data.modelAgreement.level}
+          </span>
+        </div>
+      </div>
+      <div className="mt-2.5 space-y-1">
         {data.modelAgreement.models.map((m, i) => (
           <div key={i} className="flex justify-between font-mono text-[10px]">
             <span className="text-[hsl(0,0%,50%)]">{m.name}</span>
@@ -54,8 +70,8 @@ const FinalVerdict = ({ data }: { data: StockAnalysis }) => (
       </div>
     </div>
 
-    {/* Key Drivers */}
-    <div className="mt-3">
+    {/* === Key Drivers === */}
+    <div className="border-t border-[hsl(0,0%,20%)] pt-4 mt-4">
       <p className="font-mono text-[9px] tracking-[2px] text-[hsl(0,0%,33%)] uppercase mb-1.5">Key Drivers</p>
       <ul className="space-y-0.5">
         {data.keyDrivers.map((d, i) => (
@@ -64,6 +80,33 @@ const FinalVerdict = ({ data }: { data: StockAnalysis }) => (
           </li>
         ))}
       </ul>
+    </div>
+
+    {/* === Rating Change Triggers === */}
+    <div className="border-t border-[hsl(0,0%,20%)] pt-4 mt-4">
+      <p className="font-mono text-[9px] tracking-[3px] text-gold uppercase mb-3">Rating Change Triggers</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="font-mono text-[10px] tracking-[2px] text-green-data uppercase mb-1.5">Upgrade If</p>
+          <ul className="space-y-1">
+            {data.ratingChangeTriggers.upgrades.map((t, i) => (
+              <li key={i} className="text-[11px] text-[hsl(0,0%,60%)] flex items-start gap-1.5">
+                <span className="text-green-data mt-0.5">▲</span> {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="font-mono text-[10px] tracking-[2px] text-red-data uppercase mb-1.5">Downgrade If</p>
+          <ul className="space-y-1">
+            {data.ratingChangeTriggers.downgrades.map((t, i) => (
+              <li key={i} className="text-[11px] text-[hsl(0,0%,60%)] flex items-start gap-1.5">
+                <span className="text-red-data mt-0.5">▼</span> {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
 
     {/* Footer metrics */}

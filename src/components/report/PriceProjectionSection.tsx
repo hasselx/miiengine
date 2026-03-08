@@ -54,31 +54,41 @@ const PriceProjectionSection = ({ data }: { data: StockAnalysis }) => (
       </div>
     </div>
 
-    {/* Fair Value Range */}
-    <div className="mt-3 p-3 bg-accent-area border border-border rounded-sm flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <p className="font-mono text-[9px] tracking-[2px] text-muted-foreground uppercase mb-1">Fair Value Range</p>
-        <p className="font-mono text-sm font-semibold text-ink">{data.fairValueRange.low} — {data.fairValueRange.high}</p>
+    {/* === Valuation Block === */}
+    <div className="mt-4 border border-border rounded-sm overflow-hidden">
+      <div className="bg-accent-area px-3 sm:px-4 py-2 border-b border-border">
+        <p className="font-mono text-[9px] tracking-[3px] text-muted-foreground uppercase">Valuation</p>
       </div>
-      <div className="text-right">
-        <p className="font-mono text-[9px] tracking-[2px] text-muted-foreground uppercase mb-1">Midpoint Target</p>
-        <p className="font-mono text-sm font-semibold text-gold">{data.fairValueRange.midpoint}</p>
+      <div className="p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-mono text-[9px] tracking-[2px] text-muted-foreground uppercase mb-1">Fair Value Range</p>
+          <p className="font-mono text-sm font-semibold text-ink">{data.fairValueRange.low} — {data.fairValueRange.high}</p>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-[9px] tracking-[2px] text-muted-foreground uppercase mb-1">Target Price</p>
+          <p className="font-mono text-sm font-semibold text-gold">{data.fairValueRange.midpoint}</p>
+        </div>
       </div>
     </div>
 
-    {/* Accumulation Zone */}
-    {data.accumulationZone.show && (
-      <div className="mt-2 p-2.5 bg-bull-light border-l-[3px] border-green-dark rounded-sm">
-        <p className="font-mono text-[9px] tracking-[2px] text-green-dark uppercase mb-0.5">Accumulation Zone</p>
-        <p className="font-mono text-sm font-semibold text-green-dark">{data.accumulationZone.low} – {data.accumulationZone.high}</p>
+    {/* === Trading Guidance Block === */}
+    <div className="mt-3 border border-border rounded-sm overflow-hidden">
+      <div className="bg-accent-area px-3 sm:px-4 py-2 border-b border-border">
+        <p className="font-mono text-[9px] tracking-[3px] text-muted-foreground uppercase">Trading Guidance</p>
       </div>
-    )}
-
-    {/* Optimal Entry Zone */}
-    <div className="mt-2 p-2.5 bg-accent-area border-l-[3px] border-gold rounded-sm">
-      <p className="font-mono text-[9px] tracking-[2px] text-gold uppercase mb-0.5">Optimal Entry Zone</p>
-      <p className="font-mono text-sm font-semibold text-ink">{data.optimalEntry.low} – {data.optimalEntry.high}</p>
-      <p className="text-[10px] text-muted-foreground mt-0.5">{data.optimalEntry.basis}</p>
+      <div className="p-3 sm:p-4 space-y-2.5">
+        {data.accumulationZone.show && (
+          <div className="p-2.5 bg-bull-light border-l-[3px] border-green-dark rounded-sm">
+            <p className="font-mono text-[9px] tracking-[2px] text-green-dark uppercase mb-0.5">Accumulation Zone</p>
+            <p className="font-mono text-sm font-semibold text-green-dark">{data.accumulationZone.low} – {data.accumulationZone.high}</p>
+          </div>
+        )}
+        <div className="p-2.5 bg-accent-area border-l-[3px] border-gold rounded-sm">
+          <p className="font-mono text-[9px] tracking-[2px] text-gold uppercase mb-0.5">Optimal Entry Zone</p>
+          <p className="font-mono text-sm font-semibold text-ink">{data.optimalEntry.low} – {data.optimalEntry.high}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{data.optimalEntry.basis}</p>
+        </div>
+      </div>
     </div>
 
     <div className="mt-3.5 text-[12px] text-muted-foreground p-3 border-l-[3px] border-ink bg-accent-area leading-[1.7] rounded-sm">
