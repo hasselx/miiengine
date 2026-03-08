@@ -59,7 +59,7 @@ const ValuationTriangle = ({ data }: { data: StockAnalysis }) => {
       </div>
 
       <div className="mt-3 text-[12px] text-muted-foreground p-3 border-l-[3px] border-gold bg-accent-area leading-[1.7] rounded-sm">
-        <strong>Methodology:</strong> The Valuation Triangle averages three independent approaches — discounted cash flow (earnings-based), relative valuation (sector P/E comparison), and momentum valuation (price trend extrapolation) — to reduce single-model bias and improve target reliability.
+        <strong>Methodology:</strong> The Valuation Triangle uses a weighted composite — DCF (40%), Relative (35%), and Momentum (25%) — to reduce single-model bias. Weights are calibrated to prioritize fundamental models while incorporating market trend signals.
       </div>
     </SectionWrapper>
   );
