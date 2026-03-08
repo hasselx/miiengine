@@ -148,6 +148,7 @@ serve(async (req) => {
         } catch {
           data = await fetchFromFinnhub(idx.symbol);
         }
+        const marketStatus = getMarketStatus(idx);
         return {
           symbol: idx.symbol,
           name: idx.name,
@@ -159,7 +160,8 @@ serve(async (req) => {
           price: Number(data.price.toFixed(2)),
           change: Number(data.change.toFixed(2)),
           changePct: Number(data.changePct.toFixed(2)),
-          isOpen: isMarketOpen(idx),
+          isOpen: marketStatus === "live",
+          marketStatus,
           chartData: data.chartData.slice(-78),
           dayHigh: Number(data.dayHigh.toFixed(2)),
           dayLow: Number(data.dayLow.toFixed(2)),
