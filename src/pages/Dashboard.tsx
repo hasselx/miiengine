@@ -165,6 +165,15 @@ const Dashboard = () => {
             <TrendingUp className="h-3.5 w-3.5 inline mr-2" />
             My Holdings ({holdings.length})
           </button>
+          <button
+            onClick={() => setTab("watchlist")}
+            className={`font-mono text-[11px] tracking-[2px] uppercase px-5 py-3 border-b-2 transition-colors ${
+              tab === "watchlist" ? "border-sidebar-primary text-sidebar-primary" : "border-transparent text-sidebar-foreground/40 hover:text-sidebar-foreground/70"
+            }`}
+          >
+            <Eye className="h-3.5 w-3.5 inline mr-2" />
+            Watchlist
+          </button>
         </div>
       </header>
 
