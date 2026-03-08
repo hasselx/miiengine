@@ -285,7 +285,8 @@ const GlobalHeatmap = () => {
         return b.weight - a.weight;
       })
       .map((d) => ({ value: d.weight * d.weight, data: d }));
-    return squarify(items, 0, 0, containerSize.w, containerSize.h);
+    const effectiveW = Math.max(containerSize.w, 600);
+    return squarify(items, 0, 0, effectiveW, containerSize.h);
   }, [indices, containerSize]);
 
   if (loading && indices.length === 0) {
