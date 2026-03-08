@@ -16,6 +16,26 @@ const PriceProjectionSection = ({ data }: { data: StockAnalysis }) => (
             <p className="font-mono text-[11px] text-muted-foreground mb-1">{s.probability}</p>
             <p className={`text-[11px] font-semibold ${s.type === 'bull' ? 'text-green-dark' : s.type === 'bear' ? 'text-red-dark' : 'text-gold'}`}>{s.change}</p>
             <p className="text-[11px] text-muted-foreground mt-1.5">{s.description}</p>
+            {/* Scenario Assumptions */}
+            <div className="mt-3 pt-2.5 border-t border-border/50 space-y-1">
+              <p className="font-mono text-[8px] tracking-[2px] uppercase text-muted-foreground/70 mb-1">Assumptions</p>
+              <div className="flex justify-between font-mono text-[10px]">
+                <span className="text-muted-foreground">Rev Growth</span>
+                <span className={`${s.type === 'bull' ? 'text-green-dark' : s.type === 'bear' ? 'text-red-dark' : 'text-ink'}`}>{s.assumptions.revenueGrowth}</span>
+              </div>
+              <div className="flex justify-between font-mono text-[10px]">
+                <span className="text-muted-foreground">Op. Margin</span>
+                <span className={`${s.type === 'bull' ? 'text-green-dark' : s.type === 'bear' ? 'text-red-dark' : 'text-ink'}`}>{s.assumptions.operatingMargin}</span>
+              </div>
+              <div className="flex justify-between font-mono text-[10px]">
+                <span className="text-muted-foreground">P/E Multiple</span>
+                <span className={`${s.type === 'bull' ? 'text-green-dark' : s.type === 'bear' ? 'text-red-dark' : 'text-ink'}`}>{s.assumptions.peMultiple}</span>
+              </div>
+              <div className="flex justify-between font-mono text-[10px]">
+                <span className="text-muted-foreground">Proj. EPS</span>
+                <span className={`font-semibold ${s.type === 'bull' ? 'text-green-dark' : s.type === 'bear' ? 'text-red-dark' : 'text-ink'}`}>{s.assumptions.projectedEps}</span>
+              </div>
+            </div>
           </div>
         );
       })}

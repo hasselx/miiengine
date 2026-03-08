@@ -279,20 +279,76 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
   };
   const v = getScoreVerdict(totalScore);
 
-  // Price projections - use analyst targets if available
-  const bullPrice = fin?.targetHighPrice ? Math.round(fin.targetHighPrice) : Math.round(price * 1.35);
-  const basePrice = fin?.targetMeanPrice ? Math.round(fin.targetMeanPrice) : Math.round(price * 1.18);
-  const bearPrice = fin?.targetLowPrice ? Math.round(fin.targetLowPrice) : Math.round(price * 0.82);
-  // Ensure scenarios are distinct: bull > base > bear
-  const sortedPrices = [bullPrice, basePrice, bearPrice].sort((a, b) => b - a);
-  const finalBull = sortedPrices[0];
-  const finalBase = sortedPrices[1];
-  const finalBear = sortedPrices[2];
-  // If all same (no analyst data differentiation), create spread from price
-  const allSame = finalBull === finalBase && finalBase === finalBear;
-  const adjBull = allSame ? Math.round(price * 1.25) : finalBull;
-  const adjBase = allSame ? Math.round(price * 1.05) : finalBase;
-  const adjBear = allSame ? Math.round(price * 0.80) : finalBear;
+  // === Scenario-Based Price Projection Engine ===
+  // Derive base financial assumptions from real data
+  const eps = num(quote?.eps);
+  const baseRevGrowth = revenueGrowth != null ? revenueGrowth : 0.10;
+  const baseOpMargin = profitMargins != null ? profitMargins : 0.12;
+  const basePE = pe > 0 ? pe : 20;
+  const revenue = marketCap > 0 && profitMargins != null && eps > 0
+    ? (eps * (marketCap / price)) / (profitMargins || 0.1)
+    : price * 100; // fallback
+
+  // Scenario assumptions: each modifies growth, margin, and multiple independently
+  const scenarios = {
+    bull: {
+      revGrowth: Math.min(baseRevGrowth + 0.08, 0.50),
+      opMargin: Math.min(baseOpMargin + 0.03, 0.40),
+      peMultiple: Math.round(basePE * 1.25),
+    },
+    base: {
+      revGrowth: baseRevGrowth,
+      opMargin: baseOpMargin,
+      peMultiple: Math.round(basePE),
+    },
+    bear: {
+      revGrowth: Math.max(baseRevGrowth - 0.08, -0.10),
+      opMargin: Math.max(baseOpMargin - 0.03, 0.02),
+      peMultiple: Math.max(Math.round(basePE * 0.75), 5),
+    },
+  };
+
+  // Calculate projected EPS and target price for each scenario
+  const calcScenarioPrice = (s: typeof scenarios.bull) => {
+    const projRevenue = revenue * (1 + s.revGrowth);
+    const projEarnings = projRevenue * s.opMargin;
+    const sharesOutstanding = marketCap > 0 ? marketCap / price : 1;
+    const projEps = sharesOutstanding > 0 ? projEarnings / sharesOutstanding : eps * (1 + s.revGrowth);
+    const targetPrice = projEps * s.peMultiple;
+    return { targetPrice: Math.round(targetPrice), projEps: parseFloat(projEps.toFixed(2)) };
+  };
+
+  let bullCalc = calcScenarioPrice(scenarios.bull);
+  let baseCalc = calcScenarioPrice(scenarios.base);
+  let bearCalc = calcScenarioPrice(scenarios.bear);
+
+  // Use analyst targets as anchors/overrides when available
+  if (fin?.targetHighPrice && fin?.targetMeanPrice && fin?.targetLowPrice) {
+    // Blend: 60% model + 40% analyst
+    bullCalc.targetPrice = Math.round(bullCalc.targetPrice * 0.6 + fin.targetHighPrice * 0.4);
+    baseCalc.targetPrice = Math.round(baseCalc.targetPrice * 0.6 + fin.targetMeanPrice * 0.4);
+    bearCalc.targetPrice = Math.round(bearCalc.targetPrice * 0.6 + fin.targetLowPrice * 0.4);
+  }
+
+  // Enforce separation: bull > base > bear, and all must be distinct
+  const sorted = [
+    { key: 'bull', calc: bullCalc },
+    { key: 'base', calc: baseCalc },
+    { key: 'bear', calc: bearCalc },
+  ].sort((a, b) => b.calc.targetPrice - a.calc.targetPrice);
+
+  let adjBull = sorted[0].calc.targetPrice;
+  let adjBase = sorted[1].calc.targetPrice;
+  let adjBear = sorted[2].calc.targetPrice;
+
+  // If any are identical, force separation
+  if (adjBull === adjBase) adjBull = Math.round(adjBase * 1.15);
+  if (adjBase === adjBear) adjBear = Math.round(adjBase * 0.85);
+  if (adjBull === adjBear) { adjBull = Math.round(price * 1.25); adjBear = Math.round(price * 0.80); }
+
+  const bullProjEps = sorted[0].calc.projEps;
+  const baseProjEps = sorted[1].calc.projEps;
+  const bearProjEps = sorted[2].calc.projEps;
 
   const expectedPrice = Math.round(adjBull * 0.25 + adjBase * 0.50 + adjBear * 0.25);
   const expectedReturnPct = ((expectedPrice - price) / price) * 100;
@@ -495,9 +551,9 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     ],
     valuationNote: `At ${currency}${fmt(price)}, the stock trades at ${pe > 0 ? fmt(pe, 1) + 'x earnings' : 'an undetermined P/E'}. ${fin?.targetMeanPrice ? `Analyst consensus target is ${currency}${fmt(fin.targetMeanPrice)}${fin.numberOfAnalystOpinions ? ` (${fin.numberOfAnalystOpinions} analysts)` : ''}.` : ''} Our probability-weighted expected value of ${currency}${expectedPrice} represents a ${expectedReturnStr} potential ${isUpside ? 'return' : 'decline'}.`,
     priceScenarios: [
-      { label: "▲ Bull Case", price: `${currency}${adjBull}`, probability: "Probability: 25%", change: `${((adjBull - price) / price * 100) >= 0 ? '+' : ''}${((adjBull - price) / price * 100).toFixed(0)}% ${(adjBull >= price) ? 'upside' : 'downside'}`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull" },
-      { label: "◆ Base Case", price: `${currency}${adjBase}`, probability: "Probability: 50%", change: `${((adjBase - price) / price * 100) >= 0 ? '+' : ''}${((adjBase - price) / price * 100).toFixed(0)}% ${(adjBase >= price) ? 'upside' : 'downside'}`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base" },
-      { label: "▼ Bear Case", price: `${currency}${adjBear}`, probability: "Probability: 25%", change: `${((adjBear - price) / price * 100).toFixed(0)}% downside`, description: "Margin compression, macro headwinds, sector rotation", type: "bear" },
+      { label: "▲ Bull Case", price: `${currency}${adjBull}`, probability: "Probability: 25%", change: `${((adjBull - price) / price * 100) >= 0 ? '+' : ''}${((adjBull - price) / price * 100).toFixed(0)}% ${(adjBull >= price) ? 'upside' : 'downside'}`, description: "Strong earnings growth, sector re-rating, expansion catalysts", type: "bull", assumptions: { revenueGrowth: `${(scenarios.bull.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.bull.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.bull.peMultiple}x`, projectedEps: `${currency}${bullProjEps}` } },
+      { label: "◆ Base Case", price: `${currency}${adjBase}`, probability: "Probability: 50%", change: `${((adjBase - price) / price * 100) >= 0 ? '+' : ''}${((adjBase - price) / price * 100).toFixed(0)}% ${(adjBase >= price) ? 'upside' : 'downside'}`, description: "Steady revenue growth, stable margins, modest multiple expansion", type: "base", assumptions: { revenueGrowth: `${(scenarios.base.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.base.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.base.peMultiple}x`, projectedEps: `${currency}${baseProjEps}` } },
+      { label: "▼ Bear Case", price: `${currency}${adjBear}`, probability: "Probability: 25%", change: `${((adjBear - price) / price * 100).toFixed(0)}% downside`, description: "Margin compression, macro headwinds, sector rotation", type: "bear", assumptions: { revenueGrowth: `${(scenarios.bear.revGrowth * 100).toFixed(1)}%`, operatingMargin: `${(scenarios.bear.opMargin * 100).toFixed(1)}%`, peMultiple: `${scenarios.bear.peMultiple}x`, projectedEps: `${currency}${bearProjEps}` } },
     ],
     expectedPrice: `${currency}${expectedPrice}`,
     expectedFormula: `(${currency}${adjBull}×25%) + (${currency}${adjBase}×50%) + (${currency}${adjBear}×25%)`,
