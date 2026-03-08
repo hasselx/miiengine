@@ -4,7 +4,7 @@ import SectionWrapper from "./SectionWrapper";
 const colorMap = { green: "text-green-data", red: "text-red-data", gold: "text-gold", muted: "text-muted-foreground" };
 
 const FundamentalAnalysis = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="03" title="Fundamental Analysis" score="13 / 20">
+  <SectionWrapper num="04" title="Fundamental Analysis" score="13 / 20">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {data.fundamentalMetrics.map((m, i) => (
         <div key={i} className="bg-accent-area border border-border p-3 sm:p-3.5 rounded-sm">

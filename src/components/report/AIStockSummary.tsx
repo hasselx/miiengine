@@ -87,7 +87,7 @@ const AIStockSummary = ({ data }: Props) => {
   const SentimentIcon = cfg.icon;
 
   return (
-    <SectionWrapper num="AI" title="AI Investment Summary">
+    <SectionWrapper num="01" title="AI Investment Summary">
       {/* Sentiment Badge */}
       <div className="flex items-center gap-2 mb-3">
         <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-mono text-[11px] font-semibold tracking-wider uppercase", cfg.color)}>

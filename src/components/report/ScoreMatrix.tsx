@@ -10,7 +10,7 @@ const ScoreMatrix = ({ data }: { data: StockAnalysis }) => {
   };
 
   return (
-    <SectionWrapper num="02" title="Multi-Factor Score Matrix" score={`Total: ${data.totalScore} / 100`}>
+    <SectionWrapper num="03" title="Multi-Factor Score Matrix" score={`Total: ${data.totalScore} / 100`}>
       {/* Mobile: card-based layout; Desktop: table */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full border-collapse">

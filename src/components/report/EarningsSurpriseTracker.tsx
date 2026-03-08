@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { CalendarDays } from "lucide-react";
 
 const EarningsSurpriseTracker = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="11" title="Earnings Surprise Tracker">
+  <SectionWrapper num="06" title="Earnings Surprise Tracker">
     <div className="overflow-x-auto">
       <table className="w-full text-left font-mono text-[12px] sm:text-[13px]">
         <thead>

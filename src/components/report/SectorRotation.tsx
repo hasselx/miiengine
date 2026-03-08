@@ -10,7 +10,7 @@ const icons = {
 };
 
 const SectorRotation = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="17" title="Sector Rotation Tracker">
+  <SectionWrapper num="19" title="Sector Rotation Tracker">
     <div className="space-y-2">
       {data.sectorRotation.map((s, i) => (
         <div key={i} className="flex items-center gap-3 bg-accent-area rounded-md px-3 py-2.5 border border-border">

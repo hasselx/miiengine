@@ -2,7 +2,7 @@ import { StockAnalysis } from "@/lib/stockData";
 import SectionWrapper from "./SectionWrapper";
 
 const DCFValuation = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="04" title="Intrinsic Valuation — DCF Model" score="8 / 15">
+  <SectionWrapper num="07" title="Intrinsic Valuation — DCF Model" score="8 / 15">
     {/* Assumptions + Revenue — stack on mobile */}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-4">
       <div className="overflow-x-auto">

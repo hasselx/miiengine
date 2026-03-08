@@ -2,7 +2,7 @@ import { StockAnalysis } from "@/lib/stockData";
 import SectionWrapper from "./SectionWrapper";
 
 const MoatSection = ({ data }: { data: StockAnalysis }) => (
-  <SectionWrapper num="06" title="Competitive Moat" score="8 / 10">
+  <SectionWrapper num="21" title="Competitive Moat" score="8 / 10">
     <div className="divide-y divide-border">
       {data.moatItems.map((m, i) => (
         <div key={i} className="flex items-center gap-2.5 py-3">

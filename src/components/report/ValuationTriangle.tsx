@@ -22,7 +22,7 @@ const ValuationTriangle = ({ data }: { data: StockAnalysis }) => {
   ];
 
   return (
-    <SectionWrapper num="04b" title="Valuation Triangle">
+    <SectionWrapper num="08" title="Valuation Triangle">
       <p className="text-[12px] text-muted-foreground mb-4 leading-relaxed">
         Three independent valuation models converge to form a composite fair value target.
       </p>
