@@ -7,27 +7,42 @@ interface Exchange {
   code: string;
   flag: string;
   timezone: string;
-  utcOffset: number; // hours from UTC
-  openHour: number;  // local hour
+  utcOffset: number;
+  openHour: number;
   openMin: number;
   closeHour: number;
   closeMin: number;
+  currencyPair: string; // e.g. "USD/INR"
 }
 
 const EXCHANGES: Exchange[] = [
-  { name: "NSE / BSE", code: "India", flag: "🇮🇳", timezone: "IST", utcOffset: 5.5, openHour: 9, openMin: 15, closeHour: 15, closeMin: 30 },
-  { name: "NYSE", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0 },
-  { name: "NASDAQ", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0 },
-  { name: "LSE", code: "UK", flag: "🇬🇧", timezone: "GMT", utcOffset: 1, openHour: 8, openMin: 0, closeHour: 16, closeMin: 30 },
-  { name: "TSE", code: "Japan", flag: "🇯🇵", timezone: "JST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 0 },
-  { name: "SSE", code: "China", flag: "🇨🇳", timezone: "CST", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 15, closeMin: 0 },
-  { name: "HKEX", code: "HK", flag: "🇭🇰", timezone: "HKT", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0 },
-  { name: "Xetra", code: "Germany", flag: "🇩🇪", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30 },
-  { name: "Euronext", code: "France", flag: "🇫🇷", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30 },
-  { name: "ASX", code: "Australia", flag: "🇦🇺", timezone: "AEST", utcOffset: 10, openHour: 10, openMin: 0, closeHour: 16, closeMin: 0 },
-  { name: "KRX", code: "Korea", flag: "🇰🇷", timezone: "KST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 30 },
-  { name: "TSX", code: "Canada", flag: "🇨🇦", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0 },
+  { name: "NSE / BSE", code: "India", flag: "🇮🇳", timezone: "IST", utcOffset: 5.5, openHour: 9, openMin: 15, closeHour: 15, closeMin: 30, currencyPair: "USD/INR" },
+  { name: "NYSE", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "DXY" },
+  { name: "NASDAQ", code: "US", flag: "🇺🇸", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "DXY" },
+  { name: "LSE", code: "UK", flag: "🇬🇧", timezone: "GMT", utcOffset: 1, openHour: 8, openMin: 0, closeHour: 16, closeMin: 30, currencyPair: "GBP/USD" },
+  { name: "TSE", code: "Japan", flag: "🇯🇵", timezone: "JST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 0, currencyPair: "USD/JPY" },
+  { name: "SSE", code: "China", flag: "🇨🇳", timezone: "CST", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 15, closeMin: 0, currencyPair: "USD/CNY" },
+  { name: "HKEX", code: "HK", flag: "🇭🇰", timezone: "HKT", utcOffset: 8, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "USD/HKD" },
+  { name: "Xetra", code: "Germany", flag: "🇩🇪", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30, currencyPair: "EUR/USD" },
+  { name: "Euronext", code: "France", flag: "🇫🇷", timezone: "CET", utcOffset: 2, openHour: 9, openMin: 0, closeHour: 17, closeMin: 30, currencyPair: "EUR/USD" },
+  { name: "ASX", code: "Australia", flag: "🇦🇺", timezone: "AEST", utcOffset: 10, openHour: 10, openMin: 0, closeHour: 16, closeMin: 0, currencyPair: "AUD/USD" },
+  { name: "KRX", code: "Korea", flag: "🇰🇷", timezone: "KST", utcOffset: 9, openHour: 9, openMin: 0, closeHour: 15, closeMin: 30, currencyPair: "USD/KRW" },
+  { name: "TSX", code: "Canada", flag: "🇨🇦", timezone: "ET", utcOffset: -4, openHour: 9, openMin: 30, closeHour: 16, closeMin: 0, currencyPair: "USD/CAD" },
 ];
+
+// Fallback rates (used if API fails)
+const FALLBACK_RATES: Record<string, number> = {
+  "USD/INR": 87.12,
+  "DXY": 103.85,
+  "GBP/USD": 1.29,
+  "USD/JPY": 147.52,
+  "USD/CNY": 7.24,
+  "USD/HKD": 7.78,
+  "EUR/USD": 1.09,
+  "AUD/USD": 0.66,
+  "USD/KRW": 1345.20,
+  "USD/CAD": 1.36,
+};
 
 function getExchangeStatus(ex: Exchange): { status: "open" | "pre-market" | "closed"; localTime: string } {
   const now = new Date();
@@ -50,11 +65,48 @@ function getExchangeStatus(ex: Exchange): { status: "open" | "pre-market" | "clo
   return { status: "closed", localTime };
 }
 
+async function fetchCurrencyRates(): Promise<Record<string, number>> {
+  try {
+    // Fetch major currency pairs from Yahoo Finance
+    const symbols = ["USDINR=X", "DX-Y.NYB", "GBPUSD=X", "USDJPY=X", "USDCNY=X", "USDHKD=X", "EURUSD=X", "AUDUSD=X", "USDKRW=X", "USDCAD=X"];
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(",")}`;
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    if (!res.ok) throw new Error("Failed to fetch");
+    const json = await res.json();
+    const results = json.quoteResponse?.result || [];
+    
+    const rates: Record<string, number> = { ...FALLBACK_RATES };
+    for (const r of results) {
+      const price = r.regularMarketPrice;
+      if (!price) continue;
+      if (r.symbol === "USDINR=X") rates["USD/INR"] = price;
+      if (r.symbol === "DX-Y.NYB") rates["DXY"] = price;
+      if (r.symbol === "GBPUSD=X") rates["GBP/USD"] = price;
+      if (r.symbol === "USDJPY=X") rates["USD/JPY"] = price;
+      if (r.symbol === "USDCNY=X") rates["USD/CNY"] = price;
+      if (r.symbol === "USDHKD=X") rates["USD/HKD"] = price;
+      if (r.symbol === "EURUSD=X") rates["EUR/USD"] = price;
+      if (r.symbol === "AUDUSD=X") rates["AUD/USD"] = price;
+      if (r.symbol === "USDKRW=X") rates["USD/KRW"] = price;
+      if (r.symbol === "USDCAD=X") rates["USD/CAD"] = price;
+    }
+    return rates;
+  } catch {
+    return FALLBACK_RATES;
+  }
+}
+
 const MarketTimings = () => {
   const [tick, setTick] = useState(0);
+  const [currencyRates, setCurrencyRates] = useState<Record<string, number>>(FALLBACK_RATES);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 6 * 60 * 60_000);
+    // Fetch currency rates on mount and every 6 hours
+    fetchCurrencyRates().then(setCurrencyRates);
+    const interval = setInterval(() => {
+      setTick((t) => t + 1);
+      fetchCurrencyRates().then(setCurrencyRates);
+    }, 6 * 60 * 60_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -62,9 +114,16 @@ const MarketTimings = () => {
     return EXCHANGES.map((ex) => ({
       ...ex,
       ...getExchangeStatus(ex),
+      currencyValue: currencyRates[ex.currencyPair] || 0,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick]);
+  }, [tick, currencyRates]);
+
+  const formatCurrency = (pair: string, value: number) => {
+    if (pair === "DXY") return value.toFixed(2);
+    if (pair.includes("JPY") || pair.includes("KRW")) return value.toFixed(0);
+    return value.toFixed(2);
+  };
 
   return (
     <div className="space-y-3">
@@ -87,8 +146,11 @@ const MarketTimings = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="font-mono text-[10px] text-muted-foreground">{ex.localTime}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="text-right">
+                <p className="font-mono text-[10px] text-muted-foreground">{ex.localTime}</p>
+                <p className="font-mono text-[9px] text-primary/80">{ex.currencyPair}: {formatCurrency(ex.currencyPair, ex.currencyValue)}</p>
+              </div>
               <span
                 className={cn(
                   "font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded-full",
