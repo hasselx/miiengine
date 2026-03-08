@@ -145,10 +145,11 @@ const MarketTimings = () => {
                 {ex.openHour.toString().padStart(2, "0")}:{ex.openMin.toString().padStart(2, "0")}–{ex.closeHour.toString().padStart(2, "0")}:{ex.closeMin.toString().padStart(2, "0")} {ex.timezone}
               </p>
             </div>
-            <div className="text-center min-w-[64px]">
+            <div className="text-center">
               <p className="font-mono text-[10px] font-medium text-primary">{ex.currencyLabel}</p>
               <p className="font-mono text-[10px] text-foreground">{formatCurrency(ex.currencyPair, ex.currencyValue)}</p>
             </div>
+            <div className="min-w-0" />
             <div className="text-right min-w-[44px]">
               <p className="font-mono text-[8px] text-muted-foreground uppercase">Local</p>
               <p className="font-mono text-[10px] text-muted-foreground">{ex.localTime}</p>
