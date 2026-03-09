@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.fetch-sector-performance]
 verify_jwt = false
+
+[functions.fetch-capital-flows]
+verify_jwt = false
