@@ -246,12 +246,14 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
 
   const risk = (() => {
     let score = 7;
-    if (debtToEquity != null) { if (debtToEquity < 30) score += 2; else if (debtToEquity > 100) score -= 2; }
+    // D/E thresholds: <150 (1.5x) conservative, 150-300 moderate, 300-600 high, >600 extremely high
+    if (debtToEquity != null) { if (debtToEquity < 150) score += 2; else if (debtToEquity < 300) score += 0; else if (debtToEquity < 600) score -= 2; else score -= 3; }
     const vol52 = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
     if (vol52 > 0.6) score -= 1;
     if (beta > 0) { if (beta > 1.5) score -= 1; else if (beta < 0.8) score += 1; }
     score = Math.min(10, Math.max(0, score));
-    return { score, subtitle: `${debtToEquity != null ? `D/E: ${debtToEquity.toFixed(1)}` : 'D/E: N/A'}; 52W range: ${(vol52 * 100).toFixed(0)}%` };
+    const deLabel = debtToEquity != null ? `D/E: ${(debtToEquity / 100).toFixed(1)}x` : 'D/E: N/A';
+    return { score, subtitle: `${deLabel}; 52W range: ${(vol52 * 100).toFixed(0)}%` };
   })();
 
   const macro = (() => {
@@ -733,7 +735,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
         { label: "Market Cap", value: marketCap > 0 ? `${currency}${fmtLarge(marketCap)}` : 'N/A', note: sector !== 'N/A' ? sector : '', color: 'muted' as any },
       ];
       if (returnOnEquity != null) metrics.push({ label: "ROE", value: `${(returnOnEquity * 100).toFixed(1)}%`, note: "Return on equity", color: (returnOnEquity > 0.15 ? 'green' : returnOnEquity > 0.08 ? 'gold' : 'red') as any });
-      if (debtToEquity != null) metrics.push({ label: "Debt/Equity", value: `${debtToEquity.toFixed(1)}`, note: debtToEquity < 150 ? "Conservative leverage" : debtToEquity < 300 ? "Moderate leverage" : debtToEquity < 600 ? "High leverage" : "Extremely high leverage risk", color: (debtToEquity < 150 ? 'green' : debtToEquity < 300 ? 'gold' : 'red') as any });
+      if (debtToEquity != null) metrics.push({ label: "Debt/Equity", value: `${(debtToEquity / 100).toFixed(1)}x`, note: debtToEquity < 150 ? "Conservative leverage" : debtToEquity < 300 ? "Moderate leverage" : debtToEquity < 600 ? "High leverage" : "Extremely high leverage risk", color: (debtToEquity < 150 ? 'green' : debtToEquity < 300 ? 'gold' : 'red') as any });
       if (profitMargins != null) metrics.push({ label: "Profit Margin", value: `${(profitMargins * 100).toFixed(1)}%`, note: "Net profit margin", color: (profitMargins > 0.15 ? 'green' : profitMargins > 0.05 ? 'gold' : 'red') as any });
       if (revenueGrowth != null) metrics.push({ label: "Revenue Growth", value: `${(revenueGrowth * 100).toFixed(1)}%`, note: "Year-over-year", color: (revenueGrowth > 0.1 ? 'green' : revenueGrowth > 0 ? 'gold' : 'red') as any });
       metrics.push({ label: "52-Week Range", value: `${currency}${fmt(low52, 0)} – ${currency}${fmt(high52, 0)}`, note: `${((price - high52) / high52 * 100).toFixed(1)}% from peak`, color: 'muted' as any });
@@ -790,7 +792,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     ],
     riskReward: { ratio: rrRatio, detail: `Risk ${currency}${riskAmt} · Reward ${currency}${rewardAmt} (to T2)` },
     technicalSignals: techSignals,
-    technicalNote: techs ? `The stock is ${price > (techs.sma50 || 0) ? 'above' : 'below'} its 50-day SMA and ${price > (techs.sma200 || 0) ? 'above' : 'below'} its 200-day SMA. RSI at ${fmt(techs.rsi, 0)} indicates ${techs.rsi > 70 ? 'overbought conditions' : techs.rsi < 30 ? 'oversold conditions — potential bounce' : 'neutral momentum'}.` : 'Insufficient data for detailed technical analysis.',
+    technicalNote: techs ? `The stock is ${price > (techs.sma50 || 0) ? 'above' : 'below'} its 50-day SMA and ${price > (techs.sma200 || 0) ? 'above' : 'below'} its 200-day SMA. RSI at ${fmt(techs.rsi, 0)} indicates ${techs.rsi > 70 ? 'overbought conditions' : techs.rsi < 30 ? 'oversold conditions — potential bounce' : 'neutral momentum'}. ${hasDeathCross ? 'Death cross active (SMA50 < SMA200) — technical trend classified as neutral/bearish.' : hasGoldenCross ? 'Golden cross active (SMA50 > SMA200) — bullish technical structure.' : ''}` : 'Insufficient data for detailed technical analysis.',
     moatItems: (() => {
       const items: MoatItem[] = [];
       const brandScore = num(profile?.employees) > 10000 ? 8 : num(profile?.employees) > 1000 ? 6.5 : 5;
@@ -806,10 +808,11 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     riskItems: (() => {
       const items: RiskItem[] = [
         { name: "Valuation Risk", level: pe > 40 ? "HIGH" : pe > 20 ? "MEDIUM" : pe > 0 ? "LOW" : "MEDIUM", filled: pe > 40 ? 4 : pe > 20 ? 3 : 2 },
-        { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.5 ? "HIGH" : "MEDIUM") as any, filled: (high52 - low52) / low52 > 0.5 ? 4 : 3 },
-        { name: "Technical Risk", level: price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM", filled: price < (techs?.sma200 || price) ? 4 : 2 },
+        { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.8 ? "HIGH" : (high52 - low52) / low52 > 0.5 ? "MEDIUM" : "LOW") as any, filled: (high52 - low52) / low52 > 0.8 ? 5 : (high52 - low52) / low52 > 0.5 ? 4 : 2 },
+        { name: "Technical Risk", level: (hasDeathCross ? "HIGH" : price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM") as any, filled: hasDeathCross ? 4 : price < (techs?.sma200 || price) ? 4 : 2 },
       ];
-      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 150 ? "HIGH" : debtToEquity > 100 ? "MEDIUM" : "LOW", filled: debtToEquity > 600 ? 5 : debtToEquity > 300 ? 4 : debtToEquity > 150 ? 3 : debtToEquity > 100 ? 2 : 1 });
+      // D/E: <150 (1.5x) LOW, 150-300 MEDIUM, 300-600 HIGH, >600 HIGH+max filled
+      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 300 ? "HIGH" : debtToEquity > 150 ? "MEDIUM" : "LOW", filled: debtToEquity > 600 ? 5 : debtToEquity > 300 ? 4 : debtToEquity > 150 ? 3 : 1 });
       if (beta > 0) items.push({ name: "Beta Risk", level: beta > 1.5 ? "HIGH" : beta > 1 ? "MEDIUM" : "LOW", filled: beta > 1.5 ? 4 : beta > 1 ? 3 : 2 });
       items.push({ name: "Momentum Risk", level: pctChange < -3 ? "HIGH" : pctChange < 0 ? "MEDIUM" : "LOW", filled: pctChange < -3 ? 4 : pctChange < 0 ? 3 : 1 });
       return items;
