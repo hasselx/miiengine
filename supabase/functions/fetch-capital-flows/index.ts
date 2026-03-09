@@ -10,7 +10,8 @@ const FLOW_ETFS: Record<string, { symbol: string; label: string; category: 'regi
   'VGK':   { symbol: 'VGK',  label: 'Europe',           category: 'region' },
   'VPL':   { symbol: 'VPL',  label: 'Asia-Pacific',     category: 'region' },
   'VWO':   { symbol: 'VWO',  label: 'Emerging Markets', category: 'region' },
-  // Asset classes
+// Asset classes
+  'VTI':   { symbol: 'VTI',  label: 'Equities',         category: 'asset' },
   'AGG':   { symbol: 'AGG',  label: 'Bonds',            category: 'asset' },
   'DBC':   { symbol: 'DBC',  label: 'Commodities',      category: 'asset' },
   'GLD':   { symbol: 'GLD',  label: 'Gold',             category: 'asset' },
