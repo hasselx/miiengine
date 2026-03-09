@@ -792,7 +792,7 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     ],
     riskReward: { ratio: rrRatio, detail: `Risk ${currency}${riskAmt} · Reward ${currency}${rewardAmt} (to T2)` },
     technicalSignals: techSignals,
-    technicalNote: techs ? `The stock is ${price > (techs.sma50 || 0) ? 'above' : 'below'} its 50-day SMA and ${price > (techs.sma200 || 0) ? 'above' : 'below'} its 200-day SMA. RSI at ${fmt(techs.rsi, 0)} indicates ${techs.rsi > 70 ? 'overbought conditions' : techs.rsi < 30 ? 'oversold conditions — potential bounce' : 'neutral momentum'}.` : 'Insufficient data for detailed technical analysis.',
+    technicalNote: techs ? `The stock is ${price > (techs.sma50 || 0) ? 'above' : 'below'} its 50-day SMA and ${price > (techs.sma200 || 0) ? 'above' : 'below'} its 200-day SMA. RSI at ${fmt(techs.rsi, 0)} indicates ${techs.rsi > 70 ? 'overbought conditions' : techs.rsi < 30 ? 'oversold conditions — potential bounce' : 'neutral momentum'}. ${hasDeathCross ? 'Death cross active (SMA50 < SMA200) — technical trend classified as neutral/bearish.' : hasGoldenCross ? 'Golden cross active (SMA50 > SMA200) — bullish technical structure.' : ''}` : 'Insufficient data for detailed technical analysis.',
     moatItems: (() => {
       const items: MoatItem[] = [];
       const brandScore = num(profile?.employees) > 10000 ? 8 : num(profile?.employees) > 1000 ? 6.5 : 5;
