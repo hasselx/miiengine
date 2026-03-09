@@ -85,13 +85,19 @@ const CapitalFlowMap = ({ currentSector }: CapitalFlowMapProps) => {
         setLoading(true);
         const { data, error: fnError } = await supabase.functions.invoke('fetch-capital-flows');
         if (fnError) throw fnError;
-        if (data?.success && data.flows) {
+        if (data?.success && data.flows && data.flows.length > 0) {
           setFlows(data.flows);
           setLastUpdated(new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        } else {
+          // Use fallback proxy data from sector performance
+          setFlows(generateFallbackFlows());
+          setLastUpdated('Estimated');
         }
       } catch (e: any) {
         console.error('Capital flow fetch error:', e);
-        setError('Capital flow data unavailable');
+        // Still show fallback data instead of empty
+        setFlows(generateFallbackFlows());
+        setLastUpdated('Estimated');
       } finally {
         setLoading(false);
       }
