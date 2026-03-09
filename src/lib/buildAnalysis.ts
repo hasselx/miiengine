@@ -246,12 +246,14 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
 
   const risk = (() => {
     let score = 7;
-    if (debtToEquity != null) { if (debtToEquity < 30) score += 2; else if (debtToEquity > 100) score -= 2; }
+    // D/E thresholds: <150 (1.5x) conservative, 150-300 moderate, 300-600 high, >600 extremely high
+    if (debtToEquity != null) { if (debtToEquity < 150) score += 2; else if (debtToEquity < 300) score += 0; else if (debtToEquity < 600) score -= 2; else score -= 3; }
     const vol52 = high52 > 0 && low52 > 0 ? (high52 - low52) / low52 : 0;
     if (vol52 > 0.6) score -= 1;
     if (beta > 0) { if (beta > 1.5) score -= 1; else if (beta < 0.8) score += 1; }
     score = Math.min(10, Math.max(0, score));
-    return { score, subtitle: `${debtToEquity != null ? `D/E: ${debtToEquity.toFixed(1)}` : 'D/E: N/A'}; 52W range: ${(vol52 * 100).toFixed(0)}%` };
+    const deLabel = debtToEquity != null ? `D/E: ${(debtToEquity / 100).toFixed(1)}x` : 'D/E: N/A';
+    return { score, subtitle: `${deLabel}; 52W range: ${(vol52 * 100).toFixed(0)}%` };
   })();
 
   const macro = (() => {
