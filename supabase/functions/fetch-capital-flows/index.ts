@@ -36,14 +36,19 @@ Deno.serve(async (req) => {
 
     // Fetch quotes for all ETFs in one batch call
     const url = `https://api.twelvedata.com/quote?symbol=${symbols}&apikey=${apiKey}`;
+    console.log('Fetching capital flows for:', symbols);
     const resp = await fetch(url);
     const raw = await resp.json();
+    console.log('Raw response keys:', Object.keys(raw));
 
     const flows: any[] = [];
 
     for (const [sym, meta] of Object.entries(FLOW_ETFS)) {
-      const q = raw[sym] || raw;
-      if (!q || q.code) continue;
+      const q = raw[sym] || (Object.keys(FLOW_ETFS).length === 1 ? raw : null);
+      if (!q || q.code || q.status === 'error') {
+        console.log(`Skipping ${sym}: no data or error`, q?.code || q?.status);
+        continue;
+      }
 
       const price = parseFloat(q.close || q.price || '0');
       const prevClose = parseFloat(q.previous_close || '0');
