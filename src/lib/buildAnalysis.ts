@@ -808,10 +808,11 @@ export function buildAnalysisFromRealData(raw: StockRawData, company: string, co
     riskItems: (() => {
       const items: RiskItem[] = [
         { name: "Valuation Risk", level: pe > 40 ? "HIGH" : pe > 20 ? "MEDIUM" : pe > 0 ? "LOW" : "MEDIUM", filled: pe > 40 ? 4 : pe > 20 ? 3 : 2 },
-        { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.5 ? "HIGH" : "MEDIUM") as any, filled: (high52 - low52) / low52 > 0.5 ? 4 : 3 },
-        { name: "Technical Risk", level: price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM", filled: price < (techs?.sma200 || price) ? 4 : 2 },
+        { name: "Volatility Risk", level: ((high52 - low52) / low52 > 0.8 ? "HIGH" : (high52 - low52) / low52 > 0.5 ? "MEDIUM" : "LOW") as any, filled: (high52 - low52) / low52 > 0.8 ? 5 : (high52 - low52) / low52 > 0.5 ? 4 : 2 },
+        { name: "Technical Risk", level: (hasDeathCross ? "HIGH" : price < (techs?.sma200 || price) ? "HIGH" : "MEDIUM") as any, filled: hasDeathCross ? 4 : price < (techs?.sma200 || price) ? 4 : 2 },
       ];
-      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 150 ? "HIGH" : debtToEquity > 100 ? "MEDIUM" : "LOW", filled: debtToEquity > 600 ? 5 : debtToEquity > 300 ? 4 : debtToEquity > 150 ? 3 : debtToEquity > 100 ? 2 : 1 });
+      // D/E: <150 (1.5x) LOW, 150-300 MEDIUM, 300-600 HIGH, >600 HIGH+max filled
+      if (debtToEquity != null) items.push({ name: "Debt Risk", level: debtToEquity > 300 ? "HIGH" : debtToEquity > 150 ? "MEDIUM" : "LOW", filled: debtToEquity > 600 ? 5 : debtToEquity > 300 ? 4 : debtToEquity > 150 ? 3 : 1 });
       if (beta > 0) items.push({ name: "Beta Risk", level: beta > 1.5 ? "HIGH" : beta > 1 ? "MEDIUM" : "LOW", filled: beta > 1.5 ? 4 : beta > 1 ? 3 : 2 });
       items.push({ name: "Momentum Risk", level: pctChange < -3 ? "HIGH" : pctChange < 0 ? "MEDIUM" : "LOW", filled: pctChange < -3 ? 4 : pctChange < 0 ? 3 : 1 });
       return items;
