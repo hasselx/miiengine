@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.fetch-capital-flows]
 verify_jwt = false
+
+[functions.fetch-cross-assets]
+verify_jwt = false
