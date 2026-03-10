@@ -170,6 +170,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
       <CrossAssetHeatmap />
 
+      <GlobalRiskRadar />
+
       <SectorPerformanceTracker />
 
       <HowItWorks />
