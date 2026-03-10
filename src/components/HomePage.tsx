@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import GlobalHeatmap from "@/components/GlobalHeatmap";
+import CrossAssetHeatmap from "@/components/CrossAssetHeatmap";
 import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 import MarketTimings from "@/components/MarketTimings";
 import HomeFeatures from "@/components/HomeFeatures";
@@ -165,6 +166,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
           </div>
         </div>
       </div>
+
+      <CrossAssetHeatmap />
 
       <SectorPerformanceTracker />
 
