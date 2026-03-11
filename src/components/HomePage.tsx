@@ -36,12 +36,7 @@ const VERDICTS = [
   { label: "Sell", color: "bg-destructive text-destructive-foreground" },
 ];
 
-const HIGHLIGHTS = [
-  "Institutional-style multi-factor analysis",
-  "Aggregation of data from multiple financial sources",
-  "Transparent valuation models and risk frameworks",
-  "Automated equity research generation",
-];
+
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   const [company, setCompany] = useState("");
