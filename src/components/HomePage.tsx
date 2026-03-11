@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ArrowRight, CheckCircle, User } from "lucide-react";
+import { Search, ArrowRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -8,9 +8,7 @@ import CrossAssetHeatmap from "@/components/CrossAssetHeatmap";
 import GlobalRiskRadar from "@/components/GlobalRiskRadar";
 import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 import MarketTimings from "@/components/MarketTimings";
-import HomeFeatures from "@/components/HomeFeatures";
-import HowItWorks from "@/components/HowItWorks";
-import Methodology from "@/components/Methodology";
+import LearnAboutEngine from "@/components/LearnAboutEngine";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
