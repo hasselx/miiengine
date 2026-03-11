@@ -8,6 +8,7 @@ import CrossAssetHeatmap from "@/components/CrossAssetHeatmap";
 import GlobalRiskRadar from "@/components/GlobalRiskRadar";
 import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 import MarketTimings from "@/components/MarketTimings";
+import LiquidityFlowMap from "@/components/LiquidityFlowMap";
 import LearnAboutEngine from "./LearnAboutEngine";
 
 interface HomePageProps {
@@ -164,6 +165,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
       <CrossAssetHeatmap />
 
       <GlobalRiskRadar />
+
+      <LiquidityFlowMap />
 
       <SectorPerformanceTracker />
 

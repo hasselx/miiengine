@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.fetch-risk-radar]
 verify_jwt = false
+
+[functions.fetch-liquidity-flows]
+verify_jwt = false
