@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ArrowRight, CheckCircle, User } from "lucide-react";
+import { Search, ArrowRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -8,9 +8,7 @@ import CrossAssetHeatmap from "@/components/CrossAssetHeatmap";
 import GlobalRiskRadar from "@/components/GlobalRiskRadar";
 import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 import MarketTimings from "@/components/MarketTimings";
-import HomeFeatures from "@/components/HomeFeatures";
-import HowItWorks from "@/components/HowItWorks";
-import Methodology from "@/components/Methodology";
+import LearnAboutEngine from "@/components/LearnAboutEngine";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
@@ -38,12 +36,7 @@ const VERDICTS = [
   { label: "Sell", color: "bg-destructive text-destructive-foreground" },
 ];
 
-const HIGHLIGHTS = [
-  "Institutional-style multi-factor analysis",
-  "Aggregation of data from multiple financial sources",
-  "Transparent valuation models and risk frameworks",
-  "Automated equity research generation",
-];
+
 
 const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
   const [company, setCompany] = useState("");
@@ -174,49 +167,7 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
       <SectorPerformanceTracker />
 
-      <HowItWorks />
-
-      {/* About + Features */}
-      <div className="border-t border-border bg-card">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 sm:gap-14 items-start">
-            {/* About */}
-            <div>
-              <p className="font-mono text-[10px] tracking-[4px] uppercase text-muted-foreground mb-3">About</p>
-              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-4">
-                What is MII Engine?
-              </h2>
-              <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-6">
-                <p>
-                  MII Engine is a multi-institutional intelligence platform designed to generate structured equity research reports using data from multiple financial sources.
-                </p>
-                <p>
-                  The engine evaluates stocks using a multi-factor analytical framework that combines fundamentals, valuation models, technical momentum, institutional activity, and macroeconomic signals.
-                </p>
-                <p>
-                  Instead of providing simple price predictions, the platform produces transparent research outputs including fair value estimates, risk assessments, factor exposure analysis, and probability-weighted price scenarios.
-                </p>
-                <p>
-                  Each report is structured to resemble professional institutional research used by investment analysts and portfolio managers.
-                </p>
-              </div>
-              <ul className="space-y-3">
-                {HIGHLIGHTS.map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-foreground">
-                    <CheckCircle className="h-4 w-4 text-primary shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Features */}
-            <HomeFeatures />
-          </div>
-        </div>
-      </div>
-
-      <Methodology />
+      <LearnAboutEngine />
 
       {/* Footer */}
       <div className="border-t border-border px-4 sm:px-6 py-6 text-center space-y-2">
