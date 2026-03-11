@@ -8,7 +8,7 @@ import CrossAssetHeatmap from "@/components/CrossAssetHeatmap";
 import GlobalRiskRadar from "@/components/GlobalRiskRadar";
 import SectorPerformanceTracker from "@/components/SectorPerformanceTracker";
 import MarketTimings from "@/components/MarketTimings";
-import LearnAboutEngine from "@/components/LearnAboutEngine";
+import LearnAboutEngine from "./LearnAboutEngine";
 
 interface HomePageProps {
   onAnalyze: (company: string) => void;
