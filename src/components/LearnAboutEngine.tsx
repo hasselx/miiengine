@@ -109,6 +109,18 @@ const LearnAboutEngine = () => {
             </div>
           )}
         </div>
+
+        {/* Contact Us */}
+        <div className="mt-8 text-center">
+          <a
+            href="https://www.heypage.online/hasselx?referrer=MIIEngine&type=redirect"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-xs font-mono text-primary hover:text-primary/80 tracking-wide transition-colors"
+          >
+            Contact Us
+          </a>
+        </div>
       </div>
     </div>
   );
