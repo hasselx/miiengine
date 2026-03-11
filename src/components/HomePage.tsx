@@ -165,6 +165,8 @@ const HomePage = ({ onAnalyze, isLoading, error }: HomePageProps) => {
 
       <GlobalRiskRadar />
 
+      <LiquidityFlowMap />
+
       <SectorPerformanceTracker />
 
       <LearnAboutEngine />
