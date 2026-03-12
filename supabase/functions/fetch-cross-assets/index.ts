@@ -28,6 +28,15 @@ const ASSETS = {
     { symbol: "GILT-UK", name: "UK 10Y Gilt", yahoo: "IGLT.L" },
     { symbol: "JGB-JP", name: "Japan 10Y Bond", yahoo: "1321.T" },
   ],
+  currencies: [
+    { symbol: "DX-Y.NYB", name: "US Dollar (DXY)", yahoo: "DX-Y.NYB" },
+    { symbol: "EURUSD=X", name: "Euro", yahoo: "EURUSD=X" },
+    { symbol: "INR=X", name: "Indian Rupee", yahoo: "INR=X" },
+    { symbol: "CNY=X", name: "Chinese Yuan", yahoo: "CNY=X" },
+    { symbol: "JPY=X", name: "Japanese Yen", yahoo: "JPY=X" },
+    { symbol: "AED=X", name: "UAE Dirham", yahoo: "AED=X" },
+    { symbol: "RUB=X", name: "Russian Ruble", yahoo: "RUB=X" },
+  ],
 };
 
 async function fetchYahooQuote(yahooSymbol: string) {
