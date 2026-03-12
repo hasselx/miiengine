@@ -63,6 +63,13 @@ const FALLBACK_DATA: AssetData[] = [
   { symbol: "BUND-DE", name: "Germany 10Y Bund", category: "bonds", price: 2.35, change: -0.01, changePct: -0.42, chartData: [] },
   { symbol: "GILT-UK", name: "UK 10Y Gilt", category: "bonds", price: 4.05, change: 0.03, changePct: 0.74, chartData: [] },
   { symbol: "JGB-JP", name: "Japan 10Y Bond", category: "bonds", price: 0.88, change: 0.0, changePct: 0.0, chartData: [] },
+  { symbol: "DX-Y.NYB", name: "US Dollar (DXY)", category: "currencies", price: 104.2, change: 0.15, changePct: 0.14, chartData: [] },
+  { symbol: "EURUSD=X", name: "Euro", category: "currencies", price: 1.08, change: 0.003, changePct: 0.32, chartData: [] },
+  { symbol: "INR=X", name: "Indian Rupee", category: "currencies", price: 83.4, change: -0.12, changePct: -0.14, chartData: [] },
+  { symbol: "CNY=X", name: "Chinese Yuan", category: "currencies", price: 7.24, change: 0.01, changePct: 0.08, chartData: [] },
+  { symbol: "JPY=X", name: "Japanese Yen", category: "currencies", price: 151.8, change: -0.45, changePct: -0.3, chartData: [] },
+  { symbol: "AED=X", name: "UAE Dirham", category: "currencies", price: 3.67, change: 0.0, changePct: 0.0, chartData: [] },
+  { symbol: "RUB=X", name: "Russian Ruble", category: "currencies", price: 92.5, change: 0.8, changePct: 0.87, chartData: [] },
 ];
 
 // Softer, reduced-intensity heat colors (~30% less saturated)
