@@ -28,6 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   etfs: "ETFs / Commodities",
   crypto: "Cryptocurrencies",
   bonds: "Bonds",
+  currencies: "Currencies",
 };
 
 const ASSET_WEIGHTS: Record<string, number> = {
