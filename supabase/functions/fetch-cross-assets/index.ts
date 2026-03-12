@@ -103,6 +103,7 @@ serve(async (req) => {
       ...ASSETS.etfs.map((a) => ({ ...a, category: "etfs" })),
       ...ASSETS.crypto.map((a) => ({ ...a, category: "crypto" })),
       ...ASSETS.bonds.map((a) => ({ ...a, category: "bonds" })),
+      ...ASSETS.currencies.map((a) => ({ ...a, category: "currencies" })),
     ];
 
     const results = await Promise.allSettled(
