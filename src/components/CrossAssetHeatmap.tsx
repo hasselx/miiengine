@@ -185,7 +185,7 @@ const CrossAssetHeatmap = () => {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  const categories = ["etfs", "crypto", "bonds"] as const;
+  const categories = ["etfs", "crypto", "bonds", "currencies"] as const;
 
   const categoryMaps = useMemo(() => {
     const maps: Record<string, TreeRect[]> = {};
