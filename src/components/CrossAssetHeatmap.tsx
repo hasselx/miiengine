@@ -35,6 +35,7 @@ const ASSET_WEIGHTS: Record<string, number> = {
   "BTC-USD": 10, "ETH-USD": 5, "SOL-USD": 2.5, "BNB-USD": 2, "XRP-USD": 1.5,
   GLD: 6, SLV: 3, USO: 4, CPER: 2, UNG: 2,
   "^TNX": 6, "^IRX": 3, "BUND-DE": 2.5, "GILT-UK": 2, "JGB-JP": 2,
+  "DX-Y.NYB": 6, "EURUSD=X": 5, "CNY=X": 4, "JPY=X": 3, "INR=X": 3, "AED=X": 1.5, "RUB=X": 1.5,
 };
 
 const TICKER_MAP: Record<string, string> = {
@@ -42,6 +43,8 @@ const TICKER_MAP: Record<string, string> = {
   "XRP-USD": "XRP", GLD: "GLD", SLV: "SLV", USO: "USO", CPER: "CPER",
   UNG: "UNG", "^TNX": "10Y", "^IRX": "2Y", "BUND-DE": "BUND",
   "GILT-UK": "GILT", "JGB-JP": "JGB",
+  "DX-Y.NYB": "DXY", "EURUSD=X": "EUR", "INR=X": "INR", "CNY=X": "CNY",
+  "JPY=X": "JPY", "AED=X": "AED", "RUB=X": "RUB",
 };
 
 const FALLBACK_DATA: AssetData[] = [
