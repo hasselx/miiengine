@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
@@ -25,9 +25,28 @@ interface AssetData {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  etfs: "ETFs (Commodities)",
+  etfs: "ETFs / Commodities",
   crypto: "Cryptocurrencies",
   bonds: "Bonds",
+};
+
+// Relative weight for tile sizing (importance)
+const ASSET_WEIGHTS: Record<string, number> = {
+  "BTC-USD": 10,
+  "ETH-USD": 5,
+  "SOL-USD": 2,
+  "BNB-USD": 2,
+  "XRP-USD": 1.5,
+  GLD: 6,
+  SLV: 3,
+  USO: 4,
+  CPER: 2,
+  UNG: 2,
+  "^TNX": 6,
+  "^IRX": 3,
+  "BUND-DE": 2.5,
+  "GILT-UK": 2,
+  "JGB-JP": 2,
 };
 
 const FALLBACK_DATA: AssetData[] = [
@@ -48,14 +67,20 @@ const FALLBACK_DATA: AssetData[] = [
   { symbol: "JGB-JP", name: "Japan 10Y Bond", category: "bonds", price: 0.88, change: 0.0, changePct: 0.0, chartData: [] },
 ];
 
-function getHeatColor(pct: number): string {
-  if (pct >= 3) return "bg-[hsl(142,60%,30%)] text-[hsl(0,0%,95%)]";
-  if (pct >= 1) return "bg-[hsl(142,45%,40%)] text-[hsl(0,0%,95%)]";
-  if (pct >= 0.2) return "bg-[hsl(142,30%,50%)] text-[hsl(0,0%,95%)]";
-  if (pct > -0.2) return "bg-muted text-muted-foreground";
-  if (pct > -1) return "bg-[hsl(0,35%,50%)] text-[hsl(0,0%,95%)]";
-  if (pct > -3) return "bg-[hsl(0,50%,40%)] text-[hsl(0,0%,95%)]";
-  return "bg-[hsl(0,60%,30%)] text-[hsl(0,0%,95%)]";
+function getHeatBg(pct: number): string {
+  if (pct >= 3) return "bg-[hsl(142,60%,25%)]";
+  if (pct >= 1) return "bg-[hsl(142,45%,32%)]";
+  if (pct >= 0.2) return "bg-[hsl(142,30%,38%)]";
+  if (pct > -0.2) return "bg-muted";
+  if (pct > -1) return "bg-[hsl(0,35%,38%)]";
+  if (pct > -3) return "bg-[hsl(0,50%,32%)]";
+  return "bg-[hsl(0,60%,25%)]";
+}
+
+function getHeatBorder(pct: number): string {
+  if (pct >= 1) return "border-[hsl(142,50%,40%)]/30";
+  if (pct > -1) return "border-border/30";
+  return "border-[hsl(0,40%,40%)]/30";
 }
 
 function formatPrice(price: number): string {
@@ -74,12 +99,56 @@ function MiniChart({ data }: { data: { t: number; v: number }[] }) {
   const h = 120;
   const points = data.map((d, i) => `${(i / (data.length - 1)) * w},${h - ((d.v - min) / range) * h}`).join(" ");
   const isUp = vals[vals.length - 1] >= vals[0];
-
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-32">
       <polyline fill="none" stroke={isUp ? "hsl(142,60%,45%)" : "hsl(0,60%,50%)"} strokeWidth="2" points={points} />
     </svg>
   );
+}
+
+// Squarified treemap layout algorithm
+interface TreeRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  asset: AssetData;
+}
+
+function squarify(
+  items: { asset: AssetData; weight: number }[],
+  x: number,
+  y: number,
+  w: number,
+  h: number
+): TreeRect[] {
+  if (items.length === 0) return [];
+  if (items.length === 1) {
+    return [{ x, y, w, h, asset: items[0].asset }];
+  }
+
+  const total = items.reduce((s, i) => s + i.weight, 0);
+  const sorted = [...items].sort((a, b) => b.weight - a.weight);
+
+  // Simple slice-and-dice based on aspect ratio
+  const isWide = w >= h;
+  const rects: TreeRect[] = [];
+  let cx = x,
+    cy = y;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const ratio = sorted[i].weight / total;
+    if (isWide) {
+      const tileW = w * ratio;
+      rects.push({ x: cx, y, w: tileW, h, asset: sorted[i].asset });
+      cx += tileW;
+    } else {
+      const tileH = h * ratio;
+      rects.push({ x, y: cy, w, h: tileH, asset: sorted[i].asset });
+      cy += tileH;
+    }
+  }
+  return rects;
 }
 
 const CrossAssetHeatmap = () => {
@@ -115,6 +184,18 @@ const CrossAssetHeatmap = () => {
 
   const categories = ["etfs", "crypto", "bonds"];
 
+  // Build treemap rects per category
+  const categoryMaps = useMemo(() => {
+    const maps: Record<string, TreeRect[]> = {};
+    for (const cat of categories) {
+      const items = assets
+        .filter((a) => a.category === cat)
+        .map((a) => ({ asset: a, weight: ASSET_WEIGHTS[a.symbol] || 1 }));
+      maps[cat] = squarify(items, 0, 0, 100, 100);
+    }
+    return maps;
+  }, [assets]);
+
   if (loading) {
     return (
       <div className="border-t border-border bg-card">
@@ -126,11 +207,7 @@ const CrossAssetHeatmap = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="space-y-2">
-                {[1, 2, 3, 4, 5].map((j) => (
-                  <div key={j} className="h-16 rounded bg-muted animate-pulse" />
-                ))}
-              </div>
+              <div key={i} className="h-48 rounded bg-muted animate-pulse" />
             ))}
           </div>
         </div>
@@ -153,48 +230,69 @@ const CrossAssetHeatmap = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {categories.map((cat) => {
-              const items = assets.filter((a) => a.category === cat);
-              if (items.length === 0) return null;
+              const rects = categoryMaps[cat] || [];
+              if (rects.length === 0) return null;
               return (
                 <div key={cat}>
-                  <p className="font-mono text-[10px] tracking-[2px] uppercase text-muted-foreground mb-3">
+                  <p className="font-mono text-[10px] tracking-[2px] uppercase text-muted-foreground mb-2">
                     {CATEGORY_LABELS[cat]}
                   </p>
-                  <div className="space-y-1.5">
-                    {items.map((asset) => (
-                      <Tooltip key={asset.symbol}>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={() => setSelectedAsset(asset)}
-                            className={cn(
-                              "w-full flex items-center justify-between px-3 py-2.5 rounded border border-border/50 transition-all hover:scale-[1.01] cursor-pointer",
-                              getHeatColor(asset.changePct)
-                            )}
-                          >
-                            <span className="font-mono text-[11px] sm:text-xs font-medium truncate">
-                              {asset.name}
-                            </span>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="font-mono text-[11px] sm:text-xs">
-                                {formatPrice(asset.price)}
+                  <div className="relative w-full" style={{ paddingBottom: "100%" }}>
+                    <div className="absolute inset-0">
+                      {rects.map((rect) => (
+                        <Tooltip key={rect.asset.symbol}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setSelectedAsset(rect.asset)}
+                              className={cn(
+                                "absolute flex flex-col items-center justify-center border transition-all hover:brightness-125 hover:z-10 cursor-pointer overflow-hidden",
+                                getHeatBg(rect.asset.changePct),
+                                getHeatBorder(rect.asset.changePct)
+                              )}
+                              style={{
+                                left: `${rect.x}%`,
+                                top: `${rect.y}%`,
+                                width: `${rect.w}%`,
+                                height: `${rect.h}%`,
+                              }}
+                            >
+                              <span className="font-mono text-[10px] sm:text-[11px] font-medium text-[hsl(0,0%,92%)] leading-tight text-center px-1 truncate max-w-full">
+                                {rect.asset.name}
                               </span>
-                              <span className="font-mono text-[11px] sm:text-xs font-semibold min-w-[52px] text-right">
-                                {asset.changePct >= 0 ? "+" : ""}
-                                {asset.changePct.toFixed(2)}%
+                              <span className="font-mono text-[10px] text-[hsl(0,0%,75%)]">
+                                {formatPrice(rect.asset.price)}
                               </span>
-                            </div>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="font-mono text-[11px]">
-                          <p className="font-semibold">{asset.name}</p>
-                          <p>Price: {formatPrice(asset.price)}</p>
-                          <p>Change: {asset.change >= 0 ? "+" : ""}{asset.change.toFixed(2)} ({asset.changePct >= 0 ? "+" : ""}{asset.changePct.toFixed(2)}%)</p>
-                          <p>Status: {asset.category === "crypto" ? "24/7" : "Market hours"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
+                              <span
+                                className={cn(
+                                  "font-mono text-[10px] sm:text-[11px] font-semibold",
+                                  rect.asset.changePct >= 0
+                                    ? "text-[hsl(142,70%,65%)]"
+                                    : "text-[hsl(0,70%,65%)]"
+                                )}
+                              >
+                                {rect.asset.changePct >= 0 ? "+" : ""}
+                                {rect.asset.changePct.toFixed(2)}%
+                              </span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="font-mono text-[11px]">
+                            <p className="font-semibold">{rect.asset.name}</p>
+                            <p>Price: {formatPrice(rect.asset.price)}</p>
+                            <p>
+                              Change: {rect.asset.change >= 0 ? "+" : ""}
+                              {rect.asset.change.toFixed(2)} ({rect.asset.changePct >= 0 ? "+" : ""}
+                              {rect.asset.changePct.toFixed(2)}%)
+                            </p>
+                            <p>
+                              Status:{" "}
+                              {rect.asset.category === "crypto" ? "24/7" : "Market hours"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
@@ -213,9 +311,19 @@ const CrossAssetHeatmap = () => {
           {selectedAsset && (
             <div>
               <div className="flex items-baseline gap-3 mb-4">
-                <span className="text-xl font-semibold">{formatPrice(selectedAsset.price)}</span>
-                <span className={cn("font-mono text-sm font-medium", selectedAsset.changePct >= 0 ? "text-[hsl(142,60%,45%)]" : "text-destructive")}>
-                  {selectedAsset.changePct >= 0 ? "+" : ""}{selectedAsset.changePct.toFixed(2)}%
+                <span className="text-xl font-semibold">
+                  {formatPrice(selectedAsset.price)}
+                </span>
+                <span
+                  className={cn(
+                    "font-mono text-sm font-medium",
+                    selectedAsset.changePct >= 0
+                      ? "text-[hsl(142,60%,45%)]"
+                      : "text-destructive"
+                  )}
+                >
+                  {selectedAsset.changePct >= 0 ? "+" : ""}
+                  {selectedAsset.changePct.toFixed(2)}%
                 </span>
               </div>
               <MiniChart data={selectedAsset.chartData} />
